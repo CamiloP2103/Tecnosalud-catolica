@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini SPA - Código base</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ============================================= -->
+  <!-- BARRA DE NAVEGACIÓN                            -->
+  <!-- Los botones NO son <a href="otra-pagina.html">  -->
+  <!-- porque en una SPA no navegamos a otro archivo. -->
+  <!-- Cada botón dispara una función de JS que        -->
+  <!-- cambia el contenido visible.                    -->
+  <!-- ============================================= -->
+  <nav class="navbar">
+    <h1 class="logo">Mini SPA</h1>
+    <div class="nav-buttons">
+      <button class="nav-btn active" data-page="inicio">Inicio</button>
+      <button class="nav-btn" data-page="acerca">Acerca de</button>
+    </div>
+  </nav>
+
+  <!-- ============================================= -->
+  <!-- CONTENEDOR PRINCIPAL                           -->
+  <!-- Aquí viven las dos "páginas" simuladas.         -->
+  <!-- Solo UNA se muestra a la vez (la otra tiene     -->
+  <!-- la clase "hidden"). JS se encarga de alternar.  -->
+  <!-- ============================================= -->
+  <main class="content">
+
+    <!-- Página: Inicio -->
+    <section id="inicio" class="page">
+      <h2>Bienvenido</h2>
+      <p>
+        Esta es la sección de <strong>Inicio</strong>. Todo el contenido
+        que ves está dentro del mismo archivo <code>index.html</code>;
+        no hubo ninguna recarga del navegador para llegar aquí.
+      </p>
+      <p>Hora en la que se cargó esta página por primera vez:
+        <span id="hora-carga">--:--:--</span>
+      </p>
+    </section>
+
+    <!-- Página: Acerca de -->
+    <section id="acerca" class="page hidden">
+      <h2>Acerca de este ejercicio</h2>
+      <p>
+        Este código es la base de práctica para entender el concepto de
+        <strong>SPA (Single Page Application)</strong>: una sola página HTML
+        cuyo contenido cambia dinámicamente vía JavaScript, sin solicitar
+        un nuevo documento al servidor.
+      </p>
+      <p>Clics registrados en "Acerca de": <span id="contador-clics">0</span></p>
+    </section>
+
+  </main>
+
+  <!-- El JS va al final del body para que el DOM ya exista cuando se ejecute -->
+  <script src="script.js"></script>
+</body>
+</html>
