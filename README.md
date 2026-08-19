@@ -1,1 +1,1 @@
-# Tecnosalud-catolica
+# Tecnosalud Catolica
