@@ -1,124 +1,256 @@
-/* =============================================
-   RESET BÁSICO
-   ============================================= */
+/* ============================================= */
+/* RESET BÁSICO                                  */
+/* ============================================= */
+
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  background-color: #f4f5f7;
-  color: #1f2937;
-  line-height: 1.6;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #f4f5f7;
+    color: #1f2937;
+    line-height: 1.6;
 }
 
-/* =============================================
-   BARRA DE NAVEGACIÓN
-   ============================================= */
+
+/* ============================================= */
+/* BARRA DE NAVEGACIÓN                           */
+/* ============================================= */
+
 .navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #1f2937;
-  padding: 16px 32px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #1f2937;
+    padding: 0 30px;
+    box-sizing: border-box;
 }
 
 .logo {
-  color: #ffffff;
-  font-size: 1.4rem;
-}
-
-.nav-buttons {
-  display: flex;
-  gap: 12px;
-}
-
-/* Botones de navegación */
-.nav-btn {
-  background-color: transparent;
-  color: #d1d5db;
-  border: 2px solid #374151;
-  border-radius: 6px;
-  padding: 8px 18px;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-}
-
-/* Interacción: cambio de color al pasar el cursor (hover) */
-.nav-btn:hover {
-  background-color: #374151;
-  color: #ffffff;
-  border-color: #4b5563;
-}
-
-/* Estado activo: indica en qué "página" estamos parados */
-.nav-btn.active {
-  background-color: #2563eb;
-  color: #ffffff;
-  border-color: #2563eb;
-}
-
-/* =============================================
-   CONTENIDO / PÁGINAS SIMULADAS
-   ============================================= */
-.content {
-  max-width: 700px;
-  margin: 48px auto;
-  padding: 0 24px;
-}
-
-.page {
-  background-color: #ffffff;
-  border-radius: 10px;
-  padding: 32px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.page h2 {
-  margin-bottom: 16px;
-  color: #111827;
-}
-
-.page p {
-  margin-bottom: 12px;
-}
-
-/* Clase clave de la SPA: oculta una sección sin eliminarla del DOM */
-.hidden {
-  display: none;
-}
-
-.navbar {
-  height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 30px;
-  box-sizing: border-box;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 80%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 80%;
+    color: #ffffff;
+    font-size: 1.4rem;
 }
 
 .logo img {
-  width: 100px;
-  height: 100px;
-  object-fit: contain;
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
 }
 
 .logo span {
-  font-size: 24px;
-  font-weight: bold;
+    font-size: 24px;
+    font-weight: bold;
 }
 
+
+/* ============================================= */
+/* BOTONES DE NAVEGACIÓN                         */
+/* ============================================= */
+
 .nav-buttons {
-  display: flex;
-  gap: 10px;
+    display: flex;
+    gap: 10px;
 }
+
+.nav-btn {
+    background-color: transparent;
+    color: #d1d5db;
+    border: 2px solid #374151;
+    border-radius: 6px;
+    padding: 8px 18px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+
+/* Hover */
+
+.nav-btn:hover {
+    background-color: #374151;
+    color: #ffffff;
+    border-color: #4b5563;
+}
+
+
+/* Botón activo */
+
+.nav-btn.active {
+    background-color: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+}
+
+
+/* ============================================= */
+/* CONTENIDO / PÁGINAS SIMULADAS                */
+/* ============================================= */
+
+.content {
+    max-width: 700px;
+    margin: 48px auto;
+    padding: 0 24px;
+}
+
+.page {
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.page h2 {
+    margin-bottom: 16px;
+    color: #111827;
+}
+
+.page p {
+    margin-bottom: 12px;
+}
+
+
+/* ============================================= */
+/* OCULTAR SECCIONES DE LA SPA                  */
+/* ============================================= */
+
+.hidden {
+    display: none;
+}
+
+
+/* ============================================= */
+/* FORMULARIOS                                  */
+/* ============================================= */
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 24px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #374151;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    background-color: #ffffff;
+    color: #1f2937;
+    outline: none;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+/* Cuando el usuario selecciona un campo */
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+
+/* Texto de ejemplo dentro de los campos */
+
+.form-group input::placeholder {
+    color: #9ca3af;
+}
+
+
+/* ============================================= */
+/* BOTONES DE LOS FORMULARIOS                  */
+/* ============================================= */
+
+.form-btn {
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 11px 18px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        transform 0.1s ease;
+}
+
+
+/* Hover */
+
+.form-btn:hover {
+    background-color: #1d4ed8;
+}
+
+
+/* Efecto al presionar */
+
+.form-btn:active {
+    transform: scale(0.98);
+}
+
+
+/* ============================================= */
+/* RESPONSIVE PARA PANTALLAS PEQUEÑAS           */
+/* ============================================= */
+
+@media (max-width: 700px) {
+
+    .navbar {
+        height: auto;
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+    }
+
+    .logo {
+        height: auto;
+    }
+
+    .logo img {
+        width: 70px;
+        height: 70px;
+    }
+
+    .nav-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .content {
+        margin: 25px auto;
+        padding: 0 15px;
+    }
+
+    .page {
+        padding: 24px;
+    }
+}
+
