@@ -5,51 +5,170 @@
 // existen en el DOM desde que se cargó el HTML.
 // =============================================
 
-// 1. Referencias a los elementos que vamos a manipular
+
+// =============================================
+// 1. Referencias a los elementos
+// =============================================
+
 const botones = document.querySelectorAll('.nav-btn');
 const paginas = document.querySelectorAll('.page');
 
+
+// =============================================
 // 2. Función principal: cambia qué sección está visible
+// =============================================
+
 function mostrarPagina(idPagina) {
-  // Oculta todas las páginas...
-  paginas.forEach((pagina) => {
-    pagina.classList.add('hidden');
-  });
 
-  // ...y muestra solo la que corresponde al botón clickeado
-  const paginaActiva = document.getElementById(idPagina);
-  paginaActiva.classList.remove('hidden');
+    // Oculta todas las páginas
+    paginas.forEach((pagina) => {
+        pagina.classList.add('hidden');
+    });
 
-  // Actualiza cuál botón se ve "activo" (resaltado)
-  botones.forEach((boton) => {
-    boton.classList.remove('active');
-    if (boton.dataset.page === idPagina) {
-      boton.classList.add('active');
+    // Muestra la página correspondiente
+    const paginaActiva = document.getElementById(idPagina);
+
+    if (paginaActiva) {
+        paginaActiva.classList.remove('hidden');
     }
-  });
+
+    // Actualiza el botón activo
+    botones.forEach((boton) => {
+
+        boton.classList.remove('active');
+
+        if (boton.dataset.page === idPagina) {
+            boton.classList.add('active');
+        }
+
+    });
 }
 
+
+// =============================================
 // 3. Escuchar clics en cada botón de navegación
+// =============================================
+
 botones.forEach((boton) => {
-  boton.addEventListener('click', () => {
-    const destino = boton.dataset.page; // lee data-page="inicio" o "acerca"
-    mostrarPagina(destino);
-  });
+
+    boton.addEventListener('click', () => {
+
+        const destino = boton.dataset.page;
+
+        mostrarPagina(destino);
+
+    });
+
 });
+
 
 // =============================================
 // EXTRA 1: mostrar la hora en la que cargó Inicio
-// (demuestra que el JS corre una sola vez al
-// cargar, y no se vuelve a ejecutar al "navegar")
 // =============================================
+
 const horaCarga = document.getElementById('hora-carga');
-horaCarga.textContent = new Date().toLocaleTimeString();
+
+if (horaCarga) {
+    horaCarga.textContent = new Date().toLocaleTimeString();
+}
+
 
 // =============================================
 // EXTRA 2: contador de clics en "Acerca de"
-// Punto de partida para que los estudiantes
-// extiendan el ejercicio con más interactividad.
 // =============================================
+
 let clicsAcerca = 0;
+
 const contadorClics = document.getElementById('contador-clics');
-const botonAcerca = docu
+const botonAcerca = document.querySelector('[data-page="acerca"]');
+
+if (botonAcerca && contadorClics) {
+
+    botonAcerca.addEventListener('click', () => {
+
+        clicsAcerca++;
+
+        contadorClics.textContent = clicsAcerca;
+
+    });
+
+}
+
+
+// =============================================
+// EXTRA 3: FORMULARIO DE AFILIADOS
+// =============================================
+
+const formularioAfiliados = document.getElementById('form-afiliados');
+
+if (formularioAfiliados) {
+
+    formularioAfiliados.addEventListener('submit', (evento) => {
+
+        // Evita que el navegador recargue la página
+        evento.preventDefault();
+
+        // Obtener los valores del formulario
+        const nombre = document.getElementById('nombre').value;
+        const correo = document.getElementById('correo').value;
+        const telefono = document.getElementById('telefono').value;
+        const documento = document.getElementById('documento').value;
+        const tipoAfiliado = document.getElementById('tipo-afiliado').value;
+
+        // Mostrar los datos en consola
+        console.log('Nuevo afiliado:');
+        console.log('Nombre:', nombre);
+        console.log('Correo:', correo);
+        console.log('Teléfono:', telefono);
+        console.log('Documento:', documento);
+        console.log('Tipo de afiliado:', tipoAfiliado);
+
+        // Mensaje al usuario
+        alert('Registro realizado correctamente. ¡Bienvenido a Technosalud!');
+
+        // Limpiar formulario
+        formularioAfiliados.reset();
+
+    });
+
+}
+
+
+// =============================================
+// EXTRA 4: FORMULARIO DE ACCESO
+// =============================================
+
+const formularioAcceso = document.getElementById('form-acceso');
+
+if (formularioAcceso) {
+
+    formularioAcceso.addEventListener('submit', (evento) => {
+
+        // Evita que el navegador recargue la página
+        evento.preventDefault();
+
+        // Obtener los datos
+        const usuario = document.getElementById('usuario').value;
+        const contrasena = document.getElementById('contrasena').value;
+
+        // Mostrar información en consola
+        console.log('Intento de acceso:');
+        console.log('Usuario:', usuario);
+
+        // Validación básica de ejemplo
+        if (usuario === '' || contrasena === '') {
+
+            alert('Por favor, completa todos los campos.');
+
+            return;
+        }
+
+        // Mensaje de ejemplo
+        alert('Inicio de sesión realizado correctamente.');
+
+        // Limpiar formulario
+        formularioAcceso.reset();
+
+    });
+
+}
