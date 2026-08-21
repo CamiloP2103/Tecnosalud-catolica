@@ -50,7 +50,25 @@ body {
     font-weight: bold;
 }
 
+/* Asegura que el contenedor no permita desbordamientos */
+.inicio-logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: 1.5rem 0;
+    overflow: hidden; /* Evita que sobrepase el contenedor */
+}
 
+/* Control estricto de dimensiones para la imagen */
+.logo-portada {
+    max-width: 420px;        /* Tamaño máximo controlado (ajústalo entre 150px y 220px según tu gusto) */
+    width: 100%;
+    height: auto;           /* Mantiene la proporción original sin deformarse */
+    display: block;
+    object-fit: contain;
+    border-radius: 8px;
+}
 /* ============================================= */
 /* BOTONES DE NAVEGACIÓN                         */
 /* ============================================= */

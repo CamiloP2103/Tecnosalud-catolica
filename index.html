@@ -4,25 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Technosalud</title>
+    <title>Tecnosalud</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Script de Google reCAPTCHA v2 -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 
 <body>
 
-    <!-- ============================================= -->
-    <!-- BARRA DE NAVEGACIÓN                           -->
-    <!-- Los botones NO son <a href="otra-pagina.html"> -->
-    <!-- porque en una SPA no navegamos a otro archivo. -->
-    <!-- Cada botón dispara una función de JS que     -->
-    <!-- cambia el contenido visible.                  -->
-    <!-- ============================================= -->
-
     <nav class="navbar">
-
         <div class="logo">
-            <img src="Logo.png" alt="Logo Technosalud">
-            <span>Technosalud</span>
+            <img src="Logo.png" alt="Logo Tecnosalud">
+            <span>Tecnosalud</span>
         </div>
 
         <div class="nav-buttons">
@@ -31,113 +24,70 @@
             <button class="nav-btn" data-page="afiliados">Afiliados</button>
             <button class="nav-btn" data-page="acceso">Acceso</button>
         </div>
-
     </nav>
 
     <main class="content">
 
-        <!-- ============================================= -->
-        <!-- Página: Inicio                                -->
-        <!-- ============================================= -->
-
+        <!-- Página: Inicio -->
         <section id="inicio" class="page">
-
+  
             <h2>Bienvenido</h2>
-
             <p>
                 Esta es la sección de <strong>Inicio</strong>. Todo el contenido
                 que ves está dentro del mismo archivo <code>index.html</code>;
                 no hubo ninguna recarga del navegador para llegar aquí.
             </p>
-
             <p>
                 Hora en la que se cargó esta página por primera vez:
                 <span id="hora-carga">--:--:--</span>
             </p>
-
+            <div class="inicio-logo-container">
+                <img src="logo-inicio.jpg" alt="Logo Tecnosalud" class="logo-portada">
+            </div>
         </section>
 
-
-        <!-- ============================================= -->
-        <!-- Página: Acerca de                             -->
-        <!-- ============================================= -->
-
+        <!-- Página: Acerca de -->
         <section id="acerca" class="page hidden">
-
             <h2>Acerca de este ejercicio</h2>
-
             <p>
                 Este código es la base de práctica para entender el concepto de
                 <strong>SPA (Single Page Application)</strong>: una sola página HTML
                 cuyo contenido cambia dinámicamente vía JavaScript, sin solicitar
                 un nuevo documento al servidor.
             </p>
-
             <p>
                 Clics registrados en "Acerca de":
                 <span id="contador-clics">0</span>
             </p>
-
         </section>
 
-
-        <!-- ============================================= -->
-        <!-- Página: Afiliados                             -->
-        <!-- ============================================= -->
-
+        <!-- Página: Afiliados -->
         <section id="afiliados" class="page hidden">
-
             <h2>Afiliados</h2>
-
             <p>
                 Completa el siguiente formulario para registrarte como afiliado
                 de Technosalud.
             </p>
 
             <form id="form-afiliados">
-
                 <div class="form-group">
                     <label for="nombre">Nombre completo:</label>
-                    <input
-                        type="text"
-                        id="nombre"
-                        name="nombre"
-                        placeholder="Ingresa tu nombre completo"
-                        required
-                    >
+                    <input type="text" id="nombre" name="nombre" placeholder="Ingresa tu nombre completo" required>
                 </div>
 
                 <div class="form-group">
                     <label for="correo">Correo electrónico:</label>
-                    <input
-                        type="email"
-                        id="correo"
-                        name="correo"
-                        placeholder="ejemplo@correo.com"
-                        required
-                    >
+                    <input type="email" id="correo" name="correo" placeholder="ejemplo@correo.com" required>
                 </div>
 
                 <div class="form-group">
                     <label for="telefono">Teléfono:</label>
-                    <input
-                        type="tel"
-                        id="telefono"
-                        name="telefono"
-                        placeholder="Ingresa tu número de teléfono"
-                        required
-                    >
+                    <input type="tel" id="telefono" name="telefono" placeholder="Ingresa tu número de teléfono" required>
                 </div>
 
                 <div class="form-group">
                     <label for="documento">Número de documento:</label>
-                    <input
-                        type="text"
-                        id="documento"
-                        name="documento"
-                        placeholder="Ingresa tu número de documento"
-                        required
-                    >
+                    <input type="text" id="documento" name="documento" placeholder="Ingresa tu número de documento" required>
                 </div>
 
                 <div class="form-group">
@@ -150,63 +100,44 @@
                     </select>
                 </div>
 
-                <button type="submit" class="form-btn">
-                    Registrarme
-                </button>
+                <!-- Widget de reCAPTCHA con test key -->
+                <div class="form-group">
+                    <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+                </div>
 
+                <button type="submit" class="form-btn">Registrarme</button>
             </form>
-
         </section>
 
-
-        <!-- ============================================= -->
-        <!-- Página: Acceso                                -->
-        <!-- ============================================= -->
-
+        <!-- Página: Acceso -->
         <section id="acceso" class="page hidden">
-
             <h2>Acceso</h2>
-
             <p>
                 Ingresa tus datos para acceder a tu cuenta de Technosalud.
             </p>
 
             <form id="form-acceso">
-
                 <div class="form-group">
                     <label for="usuario">Correo electrónico:</label>
-                    <input
-                        type="email"
-                        id="usuario"
-                        name="usuario"
-                        placeholder="ejemplo@correo.com"
-                        required
-                    >
+                    <input type="email" id="usuario" name="usuario" placeholder="ejemplo@correo.com" required>
                 </div>
 
                 <div class="form-group">
                     <label for="contrasena">Contraseña:</label>
-                    <input
-                        type="password"
-                        id="contrasena"
-                        name="contrasena"
-                        placeholder="Ingresa tu contraseña"
-                        required
-                    >
+                    <input type="password" id="contrasena" name="contrasena" placeholder="Ingresa tu contraseña" required>
                 </div>
 
-                <button type="submit" class="form-btn">
-                    Iniciar sesión
-                </button>
+                <!-- Widget de reCAPTCHA con test key -->
+                <div class="form-group">
+                    <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+                </div>
 
+                <button type="submit" class="form-btn">Iniciar sesión</button>
             </form>
-
         </section>
 
     </main>
+
     <script src="script.js"></script>
-
 </body>
-
 </html>
-

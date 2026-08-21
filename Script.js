@@ -108,6 +108,14 @@ if (formularioAfiliados) {
         // Evita que el navegador recargue la página
         evento.preventDefault();
 
+        // VALIDACIÓN DE CAPTCHA (Primer widget en el DOM = índice 0)
+        const captchaAfiliados = (typeof grecaptcha !== 'undefined') ? grecaptcha.getResponse(0) : '';
+
+        if (captchaAfiliados.length === 0) {
+            alert('Por favor, completa el captcha antes de registrarte.');
+            return;
+        }
+
         // Obtener los valores del formulario
         const nombre = document.getElementById('nombre').value;
         const correo = document.getElementById('correo').value;
@@ -126,8 +134,9 @@ if (formularioAfiliados) {
         // Mensaje al usuario
         alert('Registro realizado correctamente. ¡Bienvenido a Technosalud!');
 
-        // Limpiar formulario
+        // Limpiar formulario y reiniciar captcha
         formularioAfiliados.reset();
+        grecaptcha.reset(0);
 
     });
 
@@ -146,6 +155,14 @@ if (formularioAcceso) {
 
         // Evita que el navegador recargue la página
         evento.preventDefault();
+
+        // VALIDACIÓN DE CAPTCHA (Segundo widget en el DOM = índice 1)
+        const captchaAcceso = (typeof grecaptcha !== 'undefined') ? grecaptcha.getResponse(1) : '';
+
+        if (captchaAcceso.length === 0) {
+            alert('Por favor, completa el captcha para iniciar sesión.');
+            return;
+        }
 
         // Obtener los datos
         const usuario = document.getElementById('usuario').value;
@@ -166,8 +183,9 @@ if (formularioAcceso) {
         // Mensaje de ejemplo
         alert('Inicio de sesión realizado correctamente.');
 
-        // Limpiar formulario
+        // Limpiar formulario y reiniciar captcha
         formularioAcceso.reset();
+        grecaptcha.reset(1);
 
     });
 
