@@ -1,0 +1,9 @@
+.layout {
+  min-height: calc(100vh - 80px);
+  padding: 3rem 1.5rem;
+}
+
+.layout__container {
+  width: min(700px, 100%);
+  margin: 0 auto;
+}

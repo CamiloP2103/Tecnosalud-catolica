@@ -1,0 +1,44 @@
+.page--form h2 {
+  color: #145da0;
+}
+
+.page--form form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.page--form label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.page--form input,
+.page--form select {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  color: #1f2937;
+}
+
+.page--form input:focus,
+.page--form select:focus {
+  outline: 2px solid rgba(20, 93, 160, 0.25);
+  border-color: #145da0;
+}
+
+.page--form form > button {
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-radius: 6px;
+  background: #145da0;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.page--form form > button:hover {
+  background: #0f477c;
+}

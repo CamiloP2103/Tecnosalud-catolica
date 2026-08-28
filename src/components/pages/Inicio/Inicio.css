@@ -1,0 +1,29 @@
+.page--inicio h2 {
+  color: #145da0;
+}
+
+.highlight {
+  color: #d99d00;
+}
+
+.inicio__brand {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding: 2rem 1rem;
+  border-top: 4px solid #145da0;
+  border-bottom: 4px solid #f2b705;
+  color: #145da0;
+  text-align: center;
+}
+
+.inicio__brand span {
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.inicio__brand small {
+  color: #4b5563;
+  letter-spacing: 0.2em;
+}

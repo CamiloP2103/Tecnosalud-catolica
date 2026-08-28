@@ -1,0 +1,27 @@
+.page--nosotros h2 {
+  color: #145da0;
+}
+
+.visits {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding: 1.25rem;
+  border-left: 4px solid #f2b705;
+  background: #f8fafc;
+}
+
+.visits strong {
+  color: #145da0;
+  font-size: 2rem;
+}
+
+.visits button {
+  width: fit-content;
+  padding: 0.65rem 1rem;
+  border: 0;
+  border-radius: 6px;
+  background: #145da0;
+  color: #fff;
+  cursor: pointer;
+}
