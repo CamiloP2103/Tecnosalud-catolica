@@ -1,1 +1,430 @@
+.salud-panel {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  font-family: inherit;
+}
 
+.salud-panel__header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.salud-panel__header h2 {
+  color: #145da0;
+  margin-bottom: 0.35rem;
+}
+
+.salud-panel__header p {
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+/* MENÚ NAVEGACIÓN POR PESTAÑAS */
+.salud-nav {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.salud-nav__btn {
+  padding: 0.75rem 1.25rem;
+  border: 1px solid transparent;
+  border-radius: 8px 8px 0 0;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.salud-nav__btn:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.salud-nav__btn--active {
+  background: #145da0 !important;
+  color: #ffffff !important;
+  border-color: #145da0;
+}
+
+/* CARDS Y CONTENEDORES */
+.salud-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.salud-card h3 {
+  color: #145da0;
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+}
+
+.salud-card p {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-bottom: 1.25rem;
+}
+
+/* ALERTAS */
+.salud-alert {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.salud-alert--exito {
+  background-color: #f0fdf4;
+  border-left: 4px solid #22c55e;
+  color: #15803d;
+}
+
+.salud-alert--error {
+  background-color: #fef2f2;
+  border-left: 4px solid #ef4444;
+  color: #b91c1c;
+}
+
+/* FORMULARIOS Y GRID */
+.salud-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.salud-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .salud-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .salud-col-full {
+    grid-column: span 2;
+  }
+}
+
+.salud-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.salud-form input,
+.salud-form select,
+.salud-form textarea {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.salud-form input:focus,
+.salud-form select:focus,
+.salud-form textarea:focus {
+  outline: 2px solid rgba(20, 93, 160, 0.25);
+  border-color: #145da0;
+}
+
+/* BOTONES */
+.salud-btn-primary {
+  padding: 0.75rem 1.5rem;
+  background: #145da0;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  align-self: flex-start;
+}
+
+.salud-btn-primary:hover {
+  background: #0f477c;
+}
+
+.salud-btn-secondary {
+  padding: 0.5rem 0.85rem;
+  background: #145da0;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.salud-btn-outline {
+  padding: 0.5rem 0.85rem;
+  background: transparent;
+  color: #145da0;
+  border: 1px solid #145da0;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.salud-btn-danger {
+  padding: 0.4rem 0.75rem;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.salud-btn-danger:hover {
+  background: #fecaca;
+}
+
+.salud-btn-link {
+  background: none;
+  border: none;
+  color: #145da0;
+  text-decoration: underline;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* TABLA DE CITAS */
+.salud-table-responsive {
+  overflow-x: auto;
+}
+
+.salud-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.salud-table th,
+.salud-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.salud-table th {
+  background: #f8fafc;
+  color: #374151;
+  font-weight: 700;
+}
+
+.badge-hora {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-estado {
+  background: #dcfce7;
+  color: #15803d;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.salud-vacio {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+/* SECCIÓN UPLOADER E IMÁGENES */
+.salud-uploader-details {
+  margin-bottom: 1.5rem;
+  border: 1px dashed #93c5fd;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  background: #eff6ff;
+}
+
+.salud-uploader-summary {
+  font-weight: 700;
+  color: #1d4ed8;
+  cursor: pointer;
+}
+
+.salud-form--uploader {
+  margin-top: 1rem;
+}
+
+.salud-gallery {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .salud-gallery {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.salud-card-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.salud-card-item__preview {
+  position: relative;
+  height: 180px;
+  background: #111827;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.salud-card-item__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.salud-card-item__preview:hover img {
+  transform: scale(1.05);
+}
+
+.salud-card-item__zoom {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.salud-card-item__info {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex-grow: 1;
+}
+
+.salud-card-item__info h4 {
+  margin: 0;
+  color: #145da0;
+  font-size: 1rem;
+}
+
+.salud-card-item__info p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.salud-card-item__informe {
+  margin-top: 0.35rem !important;
+  color: #6b7280 !important;
+  font-size: 0.8rem !important;
+}
+
+.salud-card-item__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+/* MODAL DE VISOR EXTENDIDO */
+.modal-content--wide {
+  max-width: 750px !important;
+  text-align: left !important;
+}
+
+.modal-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.modal-visor-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 640px) {
+  .modal-visor-body {
+    grid-template-columns: 1.2fr 1fr;
+  }
+}
+
+.modal-visor-img-container {
+  background: #0f172a;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 320px;
+  overflow: hidden;
+}
+
+.modal-visor-img {
+  max-width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+}
+
+.modal-visor-details {
+  font-size: 0.88rem;
+  color: #374151;
+}
+
+.modal-visor-details p {
+  margin: 0.35rem 0;
+}
+
+.modal-visor-report {
+  background: #f8fafc;
+  border-left: 3px solid #145da0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  color: #475569;
+  border-radius: 0 4px 4px 0;
+}
