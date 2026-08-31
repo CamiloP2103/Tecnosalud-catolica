@@ -6,14 +6,27 @@ import Nosotros from './components/pages/Nosotros/Nosotros';
 import Registro from './components/pages/Registro/Registro';
 import Acceso from './components/pages/Acceso/Acceso';
 import ServiciosSalud from './components/pages/ServiciosSalud/ServiciosSalud';
+import MuerteDigna from './components/pages/Afiliados/MuerteDigna';
+import Medicamentos from './components/pages/Afiliados/Medicamentos';
+import Triage from './components/pages/Afiliados/Triage';
 import './styles/global.css';
 
+// Enlaces principales del navbar (sin contar el botón Acceso, que va aparte como CTA)
 const baseNavItems = [
   { id: 'inicio', label: 'Inicio' },
-  { id: 'nosotros', label: 'Nosotros' },
   { id: 'registro', label: 'Registro' },
-  { id: 'acceso', label: 'Acceso' },
+  {
+    id: 'afiliados',
+    label: 'Afiliados',
+    children: [
+      { id: 'muerte-digna', label: 'Muerte digna' },
+      { id: 'medicamentos', label: 'Medicamentos' },
+      { id: 'triage', label: 'Triage' },
+    ],
+  },
 ];
+
+const accesoItem = { id: 'acceso', label: 'Acceso' };
 
 const pages = {
   inicio: Inicio,
@@ -21,6 +34,9 @@ const pages = {
   registro: Registro,
   acceso: Acceso,
   servicios: ServiciosSalud,
+  'muerte-digna': MuerteDigna,
+  medicamentos: Medicamentos,
+  triage: Triage,
 };
 
 function App() {
@@ -56,13 +72,14 @@ function App() {
       <Navbar
         currentPage={currentPage}
         onNavigate={handleNavigate}
-        logo="Tecnosalud Católica"
         navItems={navItems}
+        ctaItem={accesoItem}
       />
       <Layout>
-        <ActivePage 
-          onLoginExitoso={handleLoginExitoso} 
+        <ActivePage
+          onLoginExitoso={handleLoginExitoso}
           onLogout={handleLogout}
+          onNavigate={handleNavigate}
         />
       </Layout>
     </>

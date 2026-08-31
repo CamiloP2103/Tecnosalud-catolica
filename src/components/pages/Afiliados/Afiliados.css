@@ -1,0 +1,18 @@
+.page--afiliados-sub {
+  max-width: 760px;
+}
+
+.page--afiliados-sub h2 {
+  color: var(--tn-navy, #060b16);
+}
+
+.page--afiliados-sub .afiliados-sub__tag {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(47, 107, 255, 0.1);
+  color: var(--tn-blue, #2f6bff);
+  font-size: 0.8rem;
+  font-weight: 600;
+}

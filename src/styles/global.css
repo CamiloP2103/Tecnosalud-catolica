@@ -1,7 +1,16 @@
+:root {
+  --tn-navy: #060b16;
+  --tn-navy-soft: #0b1424;
+  --tn-navy-elevated: #101b30;
+  --tn-blue: #2f6bff;
+  --tn-blue-light: #4f8cff;
+  --tn-border-blue: rgba(79, 140, 255, 0.35);
+  --tn-text: #f5f7fb;
+  --tn-text-muted: #8b98b3;
+}
 * {
   box-sizing: border-box;
 }
-
 body {
   margin: 0;
   background: #f4f5f7;

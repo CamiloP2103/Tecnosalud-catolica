@@ -1,38 +1,119 @@
-.page--inicio h2 {
-  color: #145da0;
+/* Rompe el ancho máximo de 700px del Layout SOLO en la página de Inicio,
+   para que el hero y las tarjetas ocupen todo el ancho de la pantalla */
+.layout:has(.page--inicio) {
+  padding: 0;
+  min-height: auto;
 }
 
-.highlight {
-  color: #d99d00;
+.layout:has(.page--inicio) .layout__container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
-.inicio__brand {
-  display: grid;
-  gap: 0.5rem;
-  margin-top: 2rem;
-  padding: 2rem 1rem;
-  border-top: 4px solid #145da0;
-  border-bottom: 4px solid #f2b705;
-  color: #145da0;
-  text-align: center;
+.page--inicio {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 84px);
 }
 
-.inicio__logo {
-  width: 400px;          /* Ajusta el ancho que mejor se adapte a tu diseño */
-  max-width: 400%;       /* Evita que se desborde si el contenedor es más pequeño */
-  height: auto;          /* Mantiene la proporción original sin deformar la imagen */
-  object-fit: contain;   /* Asegura que el logo encaje limpio dentro de su espacio */
-  display: block;
-  margin: 10px auto;     /* Opcional: centra la imagen y añade separación */
+/* ---------- Hero ---------- */
+
+.inicio-hero {
+  position: relative;
+  flex: 1 0 auto;
+  min-height: 640px;
+  display: flex;
+  align-items: center;
+  background-color: var(--tn-navy, #060b16);
+  background-image: linear-gradient(
+      90deg,
+      var(--tn-navy, #060b16) 30%,
+      rgba(6, 11, 22, 0.55) 60%,
+      rgba(6, 11, 22, 0.15) 100%
+    ),
+    var(--inicio-hero-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
-.inicio__brand span {
-  font-size: clamp(2rem, 8vw, 3.5rem);
+.inicio-hero__content {
+  max-width: 620px;
+  padding: 4rem 2.5rem;
+  color: var(--tn-text, #f5f7fb);
+}
+
+.inicio-hero__title {
+  margin: 0 0 1.25rem;
+  font-size: clamp(2.25rem, 5vw, 3.25rem);
   font-weight: 800;
-  letter-spacing: 0.08em;
+  line-height: 1.15;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
-.inicio__brand small {
-  color: #4b5563;
-  letter-spacing: 0.2em;
+.inicio-hero__title-accent {
+  color: var(--tn-blue-light, #4f8cff);
+}
+
+.inicio-hero__text {
+  margin: 0 0 2rem;
+  max-width: 46ch;
+  font-size: 1.05rem;
+  color: var(--tn-text-muted, #8b98b3);
+}
+
+.inicio-hero__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.6rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--tn-blue, #2f6bff);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.inicio-hero__cta:hover {
+  background: var(--tn-blue-light, #4f8cff);
+  transform: translateY(-1px);
+}
+
+.inicio-hero__meta {
+  margin: 1.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--tn-text-muted, #8b98b3);
+  opacity: 0.7;
+}
+
+/* ---------- Franja final ---------- */
+
+.inicio-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--tn-navy, #060b16);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--tn-blue-light, #4f8cff);
+  font-size: 0.95rem;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 640px) {
+  .inicio-hero {
+    min-height: 520px;
+  }
+
+  .inicio-hero__content {
+    padding: 3rem 1.5rem;
+  }
 }
