@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import fondoInicio from './Images/Fondo_Inicio.PNG';
+import fondoInicio from './Images/Fondo_Inicio.webp';
 import './Inicio.css';
 
 

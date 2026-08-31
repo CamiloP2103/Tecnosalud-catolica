@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import './Registro.css';
-
-const captchaKey = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
 
 const DIAS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
 const MESES = [
@@ -85,33 +83,19 @@ function Registro() {
   const [modalExito, setModalExito] = useState(false);
   const [correoEnviado, setCorreoEnviado] = useState('');
 
-  const recaptchaRef = useRef(null);
-  const widgetIdRef = useRef(null);
+  // Captcha local
+  const [captchaChallenge, setCaptchaChallenge] = useState({ num1: 0, num2: 0, resultado: 0 });
+  const [captchaInput, setCaptchaInput] = useState('');
+
+  const generarCaptchaLocal = () => {
+    const num1 = Math.floor(Math.random() * 9) + 1;
+    const num2 = Math.floor(Math.random() * 9) + 1;
+    setCaptchaChallenge({ num1, num2, resultado: num1 + num2 });
+    setCaptchaInput('');
+  };
 
   useEffect(() => {
-    const renderRecaptcha = () => {
-      if (window.grecaptcha && window.grecaptcha.render && recaptchaRef.current && widgetIdRef.current === null) {
-        try {
-          widgetIdRef.current = window.grecaptcha.render(recaptchaRef.current, {
-            sitekey: captchaKey,
-          });
-        } catch (error) {
-          console.warn('reCAPTCHA ya inicializado:', error);
-        }
-      }
-    };
-
-    if (window.grecaptcha?.render) {
-      renderRecaptcha();
-    } else {
-      const interval = setInterval(() => {
-        if (window.grecaptcha?.render) {
-          renderRecaptcha();
-          clearInterval(interval);
-        }
-      }, 300);
-      return () => clearInterval(interval);
-    }
+    generarCaptchaLocal();
   }, []);
 
   const handleChange = (event) => {
@@ -165,6 +149,10 @@ function Registro() {
       return 'Debes autorizar el tratamiento de tus datos personales y sensibles conforme a la Ley 1581 de 2012 para afiliarte.';
     }
 
+    if (parseInt(captchaInput, 10) !== captchaChallenge.resultado) {
+      return 'El resultado del captcha es incorrecto. Intenta de nuevo.';
+    }
+
     return null;
   };
 
@@ -175,21 +163,10 @@ function Registro() {
     const error = validarFormulario();
     if (error) {
       setErrorMsg(error);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-
-    let response = '';
-    if (window.grecaptcha && widgetIdRef.current !== null) {
-      try {
-        response = window.grecaptcha.getResponse(widgetIdRef.current);
-      } catch (err) {
-        console.error('Error al consultar reCAPTCHA:', err);
+      if (parseInt(captchaInput, 10) !== captchaChallenge.resultado) {
+        generarCaptchaLocal();
       }
-    }
-
-    if (!response) {
-      setErrorMsg('Por favor, completa el captcha antes de registrarte.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -197,13 +174,7 @@ function Registro() {
     setModalExito(true);
 
     setForm(estadoInicial);
-    if (window.grecaptcha && widgetIdRef.current !== null) {
-      try {
-        window.grecaptcha.reset(widgetIdRef.current);
-      } catch (err) {
-        console.warn('Error al resetear captcha:', err);
-      }
-    }
+    generarCaptchaLocal();
   };
 
   const cerrarModal = () => {
@@ -490,8 +461,30 @@ function Registro() {
           </label>
         </fieldset>
 
+        {/* CONTROL DE SEGURIDAD LOCAL */}
         <div className="form__captcha-container">
-          <div ref={recaptchaRef}></div>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: 'bold' }}>
+            <span>Seguridad: ¿Cuánto es {captchaChallenge.num1} + {captchaChallenge.num2}? *</span>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <input
+                type="number"
+                value={captchaInput}
+                onChange={(e) => setCaptchaInput(e.target.value)}
+                placeholder="Respuesta"
+                required
+                style={{ width: '120px' }}
+              />
+              <button
+                type="button"
+                onClick={generarCaptchaLocal}
+                className="acceso__link-btn"
+                title="Generar nueva operación"
+                style={{ background: 'none', border: 'none', color: '#1d4ed8', cursor: 'pointer', fontWeight: 600 }}
+              >
+                🔄 Cambiar
+              </button>
+            </div>
+          </label>
         </div>
 
         <button type="submit" className="form__submit-btn">Completar Afiliación</button>

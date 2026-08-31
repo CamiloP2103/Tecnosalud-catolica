@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import './Acceso.css';
-
-const captchaKey = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
 
 const DUMMY_USERS = [
   { id: 1, tipoDoc: 'CC', documento: '72000607', email: 'caenjiro@gmail.com', contrasena: '123456', nombre: 'Carlos Jiménez' },
@@ -76,10 +74,18 @@ function Acceso({ onLoginExitoso, onLogout }) {
   const [intentosClave, setIntentosClave] = useState(0);
   const [alertaRecuperarClave, setAlertaRecuperarClave] = useState('');
 
-  const recaptchaRef = useRef(null);
-  const widgetIdRef = useRef(null);
+  // Captcha local (Sin cookies ni scripts de terceros)
+  const [captchaChallenge, setCaptchaChallenge] = useState({ num1: 0, num2: 0, resultado: 0 });
+  const [captchaInput, setCaptchaInput] = useState('');
 
-  // 1. Cargar sesión activa y/o usuario recordado
+  const generarCaptchaLocal = () => {
+    const num1 = Math.floor(Math.random() * 9) + 1;
+    const num2 = Math.floor(Math.random() * 9) + 1;
+    setCaptchaChallenge({ num1, num2, resultado: num1 + num2 });
+    setCaptchaInput('');
+  };
+
+  // 1. Cargar sesión activa y/o usuario recordado y generar captcha
   useEffect(() => {
     const sesionGuardada = localStorage.getItem('tecnosalud_sesion_activa');
     if (sesionGuardada) {
@@ -90,7 +96,6 @@ function Acceso({ onLoginExitoso, onLogout }) {
       }
     }
 
-    // Cargar usuario guardado si la opción "Recordar usuario" estaba activa
     const usuarioRecordado = localStorage.getItem('tecnosalud_usuario_recordado');
     if (usuarioRecordado) {
       setForm((prev) => ({
@@ -99,36 +104,9 @@ function Acceso({ onLoginExitoso, onLogout }) {
         recordarUsuario: true,
       }));
     }
+
+    generarCaptchaLocal();
   }, []);
-
-  // Inicialización de reCAPTCHA
-  useEffect(() => {
-    if (usuarioLogueado) return;
-
-    const renderRecaptcha = () => {
-      if (window.grecaptcha && window.grecaptcha.render && recaptchaRef.current && widgetIdRef.current === null) {
-        try {
-          widgetIdRef.current = window.grecaptcha.render(recaptchaRef.current, {
-            sitekey: captchaKey,
-          });
-        } catch (error) {
-          console.warn('reCAPTCHA ya cargado:', error);
-        }
-      }
-    };
-
-    if (window.grecaptcha?.render) {
-      renderRecaptcha();
-    } else {
-      const interval = setInterval(() => {
-        if (window.grecaptcha?.render) {
-          renderRecaptcha();
-          clearInterval(interval);
-        }
-      }, 300);
-      return () => clearInterval(interval);
-    }
-  }, [usuarioLogueado]);
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -164,17 +142,10 @@ function Acceso({ onLoginExitoso, onLogout }) {
       return;
     }
 
-    let response = '';
-    if (window.grecaptcha && widgetIdRef.current !== null) {
-      try {
-        response = window.grecaptcha.getResponse(widgetIdRef.current);
-      } catch (err) {
-        console.error('Error captcha:', err);
-      }
-    }
-
-    if (!response) {
-      setErrorMsg('Por favor, completa el captcha para iniciar sesión.');
+    // Validación del captcha local
+    if (parseInt(captchaInput, 10) !== captchaChallenge.resultado) {
+      setErrorMsg('El resultado del captcha es incorrecto. Intenta de nuevo.');
+      generarCaptchaLocal();
       return;
     }
 
@@ -199,16 +170,10 @@ function Acceso({ onLoginExitoso, onLogout }) {
       usuario: prev.recordarUsuario ? prev.usuario : '',
     }));
 
-    if (window.grecaptcha && widgetIdRef.current !== null) {
-      try {
-        window.grecaptcha.reset(widgetIdRef.current);
-      } catch (err) {
-        console.warn('Error al resetear captcha:', err);
-      }
-    }
+    generarCaptchaLocal();
   };
 
-  // 3. Cerrar sesión y notificar a App.jsx para quitar Servicios Clínicos
+  // 3. Cerrar sesión y notificar a App.jsx
   const handleCerrarSesion = () => {
     localStorage.removeItem('tecnosalud_sesion_activa');
     setUsuarioLogueado(null);
@@ -220,7 +185,7 @@ function Acceso({ onLoginExitoso, onLogout }) {
       recordarUsuario: Boolean(usuarioRecordado),
     });
 
-    widgetIdRef.current = null;
+    generarCaptchaLocal();
 
     if (onLogout) {
       onLogout();
@@ -480,8 +445,29 @@ function Acceso({ onLoginExitoso, onLogout }) {
           </div>
         </fieldset>
 
+        {/* Control de Seguridad Local */}
         <div className="form__captcha-container">
-          <div ref={recaptchaRef}></div>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: 'bold' }}>
+            <span>Seguridad: ¿Cuánto es {captchaChallenge.num1} + {captchaChallenge.num2}? *</span>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <input
+                type="number"
+                value={captchaInput}
+                onChange={(e) => setCaptchaInput(e.target.value)}
+                placeholder="Respuesta"
+                required
+                style={{ width: '120px' }}
+              />
+              <button
+                type="button"
+                onClick={generarCaptchaLocal}
+                className="acceso__link-btn"
+                title="Generar nueva operación"
+              >
+                🔄 Cambiar
+              </button>
+            </div>
+          </label>
         </div>
 
         <button type="submit" className="form__submit-btn">Iniciar sesión</button>

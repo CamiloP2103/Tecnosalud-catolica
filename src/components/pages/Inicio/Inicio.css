@@ -72,7 +72,7 @@
   padding: 0.85rem 1.6rem;
   border: none;
   border-radius: 10px;
-  background: var(--tn-blue, #2f6bff);
+  background: var(--tn-blue, #1d4ed8);
   color: #fff;
   font: inherit;
   font-weight: 600;
@@ -81,7 +81,7 @@
 }
 
 .inicio-hero__cta:hover {
-  background: var(--tn-blue-light, #4f8cff);
+  background: var(--tn-blue-light, #1e40af);
   transform: translateY(-1px);
 }
 

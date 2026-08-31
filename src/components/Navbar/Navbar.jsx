@@ -28,7 +28,7 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
   return (
     <nav className="navbar" aria-label="Navegación principal" ref={navRef}>
       <div className="navbar__brand">
-        <img src={IconoTecnosalud} alt="Icono Tecnosalud" className="navbar__icon" />
+        <img src={IconoTecnosalud} alt="Icono Tecnosalud" className="navbar__icon" width="40" height="40"/>
         <div className="navbar__brand-text">
           <h1 className="navbar__logo">
             <span className="navbar__logo-primary">TECNO</span>
