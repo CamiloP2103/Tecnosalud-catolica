@@ -5,9 +5,10 @@ import Inicio from './components/pages/Inicio/Inicio';
 import Nosotros from './components/pages/Nosotros/Nosotros';
 import Afiliados from './components/pages/Afiliados/Afiliados';
 import Acceso from './components/pages/Acceso/Acceso';
+import ServiciosSalud from './components/pages/ServiciosSalud/ServiciosSalud';
 import './styles/global.css';
 
-const navItems = [
+const baseNavItems = [
   { id: 'inicio', label: 'Inicio' },
   { id: 'nosotros', label: 'Nosotros' },
   { id: 'afiliados', label: 'Afiliados' },
@@ -19,16 +20,30 @@ const pages = {
   nosotros: Nosotros,
   afiliados: Afiliados,
   acceso: Acceso,
+  servicios: ServiciosSalud, // 1. Registrada la página de servicios
 };
 
 function App() {
   const [currentPage, setCurrentPage] = useState('inicio');
+  const [sesionActiva, setSesionActiva] = useState(false);
+
   const ActivePage = pages[currentPage] || Inicio;
 
   const handleNavigate = (pageId) => {
     setCurrentPage(pageId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Manejador que se dispara al iniciar sesión exitosamente
+  const handleLoginExitoso = () => {
+    setSesionActiva(true);
+    handleNavigate('servicios');
+  };
+
+  // Si la sesión está activa, agregamos la pestaña de Servicios Clínicos a la barra de navegación
+  const navItems = sesionActiva
+    ? [...baseNavItems, { id: 'servicios', label: 'Servicios Clínicos' }]
+    : baseNavItems;
 
   return (
     <>
@@ -39,7 +54,8 @@ function App() {
         navItems={navItems}
       />
       <Layout>
-        <ActivePage />
+        {/* Pasamos la función onLoginExitoso por props */}
+        <ActivePage onLoginExitoso={handleLoginExitoso} />
       </Layout>
     </>
   );
