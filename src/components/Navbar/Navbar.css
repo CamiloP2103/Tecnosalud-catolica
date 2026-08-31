@@ -6,8 +6,9 @@
   justify-content: space-between;
   gap: 1.5rem;
   padding: 0.75rem 2.5rem;
-  background: var(--tn-navy, #060b16);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: #f8fafc;;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  z-index: 10;
 }
 
 /* ---------- Marca / logo ---------- */
@@ -40,18 +41,18 @@
 }
 
 .navbar__logo-primary {
-  color: var(--tn-text, #f5f7fb);
+  color: #0f172a; /* Azul marino muy oscuro / casi negro */
 }
 
 .navbar__logo-accent {
-  color: var(--tn-blue-light, #4f8cff);
+  color: #1d4ed8; /* Azul corporativo */
 }
 
 .navbar__tagline {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--tn-text-muted, #8b98b3);
+  color: #64748b; /* Gris medio legible */
   white-space: nowrap;
 }
 
@@ -72,9 +73,10 @@
   padding: 0.4rem 0.1rem;
   border: none;
   background: transparent;
-  color: var(--tn-text-muted, #8b98b3);
+  color: #475569; /* Gris oscuro legible */
   font: inherit;
   font-size: 0.95rem;
+  font-weight: 500;
   cursor: pointer;
   transition: color 0.2s ease;
 }
@@ -86,18 +88,19 @@
   right: 0;
   bottom: -2px;
   height: 2px;
-  background: var(--tn-blue-light, #4f8cff);
+  background: #1d4ed8;
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.2s ease;
 }
 
 .navbar__link:hover {
-  color: var(--tn-text, #f5f7fb);
+  color: #1d4ed8;
 }
 
 .navbar__link--active {
-  color: var(--tn-text, #f5f7fb);
+  color: #1d4ed8;
+  font-weight: 600;
 }
 
 .navbar__link--active::after {
@@ -124,25 +127,25 @@
   top: calc(100% + 14px);
   left: 50%;
   transform: translateX(-50%);
-  min-width: 200px;
-  padding: 0.4rem;
-  background: var(--tn-navy-elevated, #101b30);
-  border: 1px solid var(--tn-border-blue, rgba(79, 140, 255, 0.35));
+  min-width: 210px;
+  padding: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.2rem;
   z-index: 20;
 }
 
 .navbar__dropdown-item {
   text-align: left;
-  padding: 0.55rem 0.75rem;
+  padding: 0.6rem 0.85rem;
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: var(--tn-text-muted, #8b98b3);
+  color: #475569;
   font: inherit;
   font-size: 0.9rem;
   cursor: pointer;
@@ -150,13 +153,14 @@
 }
 
 .navbar__dropdown-item:hover {
-  background: rgba(79, 140, 255, 0.12);
-  color: var(--tn-text, #f5f7fb);
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .navbar__dropdown-item--active {
-  background: rgba(79, 140, 255, 0.18);
-  color: var(--tn-text, #f5f7fb);
+  background: #dbeafe;
+  color: #1e40af;
+  font-weight: 600;
 }
 
 /* ---------- Botón Acceso (CTA) ---------- */
@@ -167,20 +171,22 @@
   gap: 0.5rem;
   flex-shrink: 0;
   padding: 0.6rem 1.25rem;
-  border: 1.5px solid var(--tn-blue, #2f6bff);
+  border: 1.5px solid #1d4ed8;
   border-radius: 999px;
   background: transparent;
-  color: var(--tn-text, #f5f7fb);
+  color: #1d4ed8;
   font: inherit;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .navbar__cta:hover,
 .navbar__cta[aria-current='page'] {
-  background: var(--tn-blue, #2f6bff);
+  background: #1d4ed8;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.2);
 }
 
 /* ---------- Responsive ---------- */

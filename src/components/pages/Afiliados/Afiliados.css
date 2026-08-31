@@ -1,18 +1,563 @@
+/* ---------- Estilos Generales para Submódulos de Afiliados ---------- */
+
 .page--afiliados-sub {
-  max-width: 760px;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
 }
 
-.page--afiliados-sub h2 {
-  color: var(--tn-navy, #060b16);
+.afiliados-sub__header {
+  text-align: center;
+  max-width: 780px;
+  margin: 0 auto;
 }
 
-.page--afiliados-sub .afiliados-sub__tag {
+.afiliados-sub__tag {
   display: inline-block;
-  margin-bottom: 0.75rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  background: rgba(47, 107, 255, 0.1);
-  color: var(--tn-blue, #2f6bff);
+  padding: 0.3rem 0.85rem;
+  background-color: #eff6ff;
+  color: #1d4ed8;
   font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 999px;
+  margin-bottom: 0.75rem;
+}
+
+.afiliados-sub__header h2 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 1rem;
+}
+
+.afiliados-sub__lead {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #475569;
+}
+
+/* ---------- Cuadro Informativo ---------- */
+
+.triage-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.75rem 2rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.triage-info-box__icon {
+  font-size: 2.2rem;
+  background: #eff6ff;
+  padding: 0.75rem;
+  border-radius: 10px;
+  line-height: 1;
+}
+
+.triage-info-box h3 {
+  font-size: 1.25rem;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+}
+
+.triage-info-box p {
+  color: #334155;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ---------- Niveles de Triage ---------- */
+
+.triage-levels h3,
+.triage-guide h3 {
+  font-size: 1.5rem;
+  color: #0f172a;
+  margin-bottom: 1.25rem;
+}
+
+.triage-levels__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.triage-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 6px solid #94a3b8;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.triage-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.triage-card__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.triage-card__badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+}
+
+.triage-card__time {
+  font-size: 0.9rem;
+  color: #334155;
+  margin-bottom: 0.5rem;
+}
+
+.triage-card__desc {
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Colores de Triage */
+.triage-card--rojo {
+  border-left-color: #dc2626;
+  background: #fffcfc;
+}
+.triage-card--rojo .triage-card__badge {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.triage-card--naranja {
+  border-left-color: #ea580c;
+  background: #fffdfb;
+}
+.triage-card--naranja .triage-card__badge {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.triage-card--amarillo {
+  border-left-color: #ca8a04;
+  background: #fffffb;
+}
+.triage-card--amarillo .triage-card__badge {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.triage-card--verde {
+  border-left-color: #16a34a;
+  background: #fbfffb;
+}
+.triage-card--verde .triage-card__badge {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.triage-card--azul {
+  border-left-color: #2563eb;
+  background: #fbfdff;
+}
+.triage-card--azul .triage-card__badge {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* ---------- Guía / Recomendaciones ---------- */
+
+.triage-guide__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.triage-guide__item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.25rem;
+}
+
+.triage-guide__icon {
+  font-size: 1.6rem;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.triage-guide__item h4 {
+  font-size: 1rem;
+  color: #0f172a;
+  margin: 0 0 0.4rem;
+}
+
+.triage-guide__item p {
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .triage-info-box {
+    flex-direction: column;
+  }
+
+  .triage-guide__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.muerte-digna-section h3,
+.ruta-proceso h3 {
+  font-size: 1.5rem;
+  color: #0f172a;
+  margin-bottom: 1.25rem;
+}
+
+.muerte-digna-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.muerte-digna-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.muerte-digna-card__icon {
+  font-size: 1.8rem;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.muerte-digna-card h4 {
+  font-size: 1.1rem;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+}
+
+.muerte-digna-card p {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ---------- Tarjeta DVA (Documento Voluntad Anticipada) ---------- */
+
+.dva-card {
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.dva-card__badge {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  background-color: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 6px;
+  margin-bottom: 0.6rem;
+}
+
+.dva-card h3 {
+  font-size: 1.3rem;
+  color: #0f172a;
+  margin: 0 0 0.75rem;
+}
+
+.dva-card p {
+  color: #334155;
+  line-height: 1.6;
+  margin: 0 0 1rem;
+}
+
+.dva-card__list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* ---------- Ruta / Pasos ---------- */
+
+.ruta-proceso__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ruta-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.ruta-step__num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background-color: #1d4ed8;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.1rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ruta-step__info h4 {
+  font-size: 1.05rem;
+  color: #0f172a;
+  margin: 0 0 0.35rem;
+}
+
+.ruta-step__info p {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ---------- Canales de Ayuda ---------- */
+
+.canales-ayuda {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+
+.canales-ayuda__icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.canales-ayuda h4 {
+  font-size: 1.05rem;
+  color: #1e40af;
+  margin: 0 0 0.35rem;
+}
+
+.canales-ayuda p {
+  font-size: 0.9rem;
+  color: #1e3a8a;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .muerte-digna-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dva-card {
+    padding: 1.5rem;
+  }
+}
+/* ---------- Módulo Medicamentos ---------- */
+
+.meds-search-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04);
+}
+
+.meds-search-box__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.meds-search-box__icon {
+  font-size: 2rem;
+}
+
+.meds-search-box h3 {
+  font-size: 1.25rem;
+  color: #0f172a;
+  margin: 0 0 0.25rem;
+}
+
+.meds-search-box p {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.meds-search-input {
+  width: 100%;
+  padding: 0.85rem 1.2rem;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.95rem;
+  color: #0f172a;
+  margin-bottom: 1.5rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.meds-search-input:focus {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+}
+
+/* Tabla de Medicamentos */
+.meds-results {
+  overflow-x: auto;
+}
+
+.meds-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.meds-table th {
+  background-color: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.meds-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+
+.meds-table tr:hover {
+  background-color: #f8fafc;
+}
+
+.med-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 6px;
+}
+
+.med-badge--pbs {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.med-badge--mipres {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.med-status {
+  display: inline-flex;
+  align-items: center;
   font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.med-status--ok {
+  color: #16a34a;
+}
+
+.med-status--pending {
+  color: #ea580c;
+}
+
+.meds-no-results {
+  padding: 1.5rem;
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Grid de Servicios */
+.meds-services h3 {
+  font-size: 1.5rem;
+  color: #0f172a;
+  margin-bottom: 1.25rem;
+}
+
+.meds-services__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.med-service-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.med-service-card__icon {
+  font-size: 1.8rem;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.med-service-card h4 {
+  font-size: 1.05rem;
+  color: #0f172a;
+  margin: 0 0 0.4rem;
+}
+
+.med-service-card p {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .meds-services__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .meds-search-box {
+    padding: 1.25rem;
+  }
 }

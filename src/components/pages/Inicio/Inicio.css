@@ -1,5 +1,4 @@
-/* Rompe el ancho máximo de 700px del Layout SOLO en la página de Inicio,
-   para que el hero y las tarjetas ocupen todo el ancho de la pantalla */
+/* Rompe el ancho máximo del Layout SOLO en Inicio para pantalla completa */
 .layout:has(.page--inicio) {
   padding: 0;
   min-height: auto;
@@ -25,23 +24,23 @@
   min-height: 640px;
   display: flex;
   align-items: center;
-  background-color: var(--tn-navy, #060b16);
-  background-image: linear-gradient(
+  background-color: #ffffff;
+  background-image: 
+    linear-gradient(
       90deg,
-      var(--tn-navy, #060b16) 30%,
-      rgba(6, 11, 22, 0.55) 60%,
-      rgba(6, 11, 22, 0.15) 100%
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(255, 255, 255, 0.85) 45%,
+      rgba(255, 255, 255, 0.2) 100%
     ),
     var(--inicio-hero-image);
   background-size: cover;
-  background-position: center;
+  background-position: center right;
   background-repeat: no-repeat;
 }
 
 .inicio-hero__content {
   max-width: 620px;
   padding: 4rem 2.5rem;
-  color: var(--tn-text, #f5f7fb);
 }
 
 .inicio-hero__title {
@@ -52,17 +51,19 @@
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  color: #0f172a; /* Azul marino profundo / casi negro */
 }
 
 .inicio-hero__title-accent {
-  color: var(--tn-blue-light, #4f8cff);
+  color: #1d4ed8; /* Azul corporativo */
 }
 
 .inicio-hero__text {
   margin: 0 0 2rem;
   max-width: 46ch;
   font-size: 1.05rem;
-  color: var(--tn-text-muted, #8b98b3);
+  line-height: 1.6;
+  color: #334155; /* Gris oscuro legible (WCAG AAA) */
 }
 
 .inicio-hero__cta {
@@ -72,38 +73,50 @@
   padding: 0.85rem 1.6rem;
   border: none;
   border-radius: 10px;
-  background: var(--tn-blue, #1d4ed8);
-  color: #fff;
+  background-color: #1d4ed8;
+  color: #ffffff;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.15s ease;
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
 
 .inicio-hero__cta:hover {
-  background: var(--tn-blue-light, #1e40af);
-  transform: translateY(-1px);
+  background-color: #1e40af;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(29, 78, 216, 0.35);
 }
 
 .inicio-hero__meta {
   margin: 1.25rem 0 0;
-  font-size: 0.75rem;
-  color: var(--tn-text-muted, #8b98b3);
-  opacity: 0.7;
+  font-size: 0.8rem;
+  color: #64748b; /* Gris medio legible */
+  font-weight: 500;
 }
 
-/* ---------- Franja final ---------- */
+/* ---------- Footer de Inicio ---------- */
 
 .inicio-footer {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  padding: 1.5rem;
-  background: var(--tn-navy, #060b16);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  color: var(--tn-blue-light, #4f8cff);
-  font-size: 0.95rem;
+  padding: 1.5rem 2rem;
+  background-color: #f8fafc; /* Gris claro clínico */
+  border-top: 1px solid #e2e8f0; /* Línea divisoria sutil */
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.inicio-footer svg {
+  color: #1d4ed8; /* Azul corporativo para la línea de pulso */
+  flex-shrink: 0;
+}
+
+.inicio-footer span {
+  color: #475569;
 }
 
 /* ---------- Responsive ---------- */
@@ -111,9 +124,27 @@
 @media (max-width: 640px) {
   .inicio-hero {
     min-height: 520px;
+    background-image: 
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(255, 255, 255, 0.75) 100%
+      ),
+      var(--inicio-hero-image);
   }
 
   .inicio-hero__content {
     padding: 3rem 1.5rem;
+  }
+
+  .inicio-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.25rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .inicio-footer svg {
+    display: none; /* Oculta íconos decorativos en móviles */
   }
 }

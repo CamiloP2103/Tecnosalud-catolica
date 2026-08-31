@@ -1,27 +1,203 @@
-.page--nosotros h2 {
-  color: #145da0;
+/* Contenedor General */
+.page--nosotros {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
 }
 
-.visits {
+/* Cabecera */
+.nosotros-header {
+  text-align: center;
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.nosotros-badge {
+  display: inline-block;
+  padding: 0.3rem 0.85rem;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 999px;
+  margin-bottom: 0.75rem;
+}
+
+.nosotros-header h2 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 1rem;
+  line-height: 1.2;
+}
+
+.nosotros-lead {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #475569;
+}
+
+/* Tarjetas Informativas */
+.nosotros-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nosotros-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.nosotros-card--about {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.nosotros-card__icon {
+  font-size: 2.2rem;
+  background: #eff6ff;
+  padding: 0.75rem;
+  border-radius: 10px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.nosotros-card h3 {
+  font-size: 1.35rem;
+  color: #0f172a;
+  margin: 0 0 0.75rem;
+}
+
+.nosotros-card p {
+  color: #334155;
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* Grid Misión y Visión */
+.nosotros-grid {
   display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.nosotros-card--mision .nosotros-card__icon {
+  background: #ecfdf5;
+}
+
+.nosotros-card--vision .nosotros-card__icon {
+  background: #fdf4ff;
+}
+
+/* Pilares */
+.nosotros-pillars {
+  text-align: center;
+}
+
+.nosotros-pillars h3 {
+  font-size: 1.6rem;
+  color: #0f172a;
+  margin-bottom: 1.5rem;
+}
+
+.nosotros-pillars__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.pillar-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.5rem;
+  text-align: left;
+}
+
+.pillar-item__icon {
+  font-size: 1.75rem;
+  display: inline-block;
+  margin-bottom: 0.75rem;
+}
+
+.pillar-item h4 {
+  color: #0f172a;
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+}
+
+.pillar-item p {
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Visitas */
+.visits {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 0.75rem;
-  margin-top: 2rem;
-  padding: 1.25rem;
-  border-left: 4px solid #f2b705;
   background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem 1.5rem;
+  color: #475569;
+  font-size: 0.95rem;
 }
 
 .visits strong {
-  color: #145da0;
-  font-size: 2rem;
+  color: #1d4ed8;
+  font-size: 1.1rem;
 }
 
-.visits button {
-  width: fit-content;
-  padding: 0.65rem 1rem;
-  border: 0;
+.visits__btn {
+  margin-left: 0.5rem;
+  padding: 0.4rem 0.9rem;
+  background-color: #1d4ed8;
+  color: #ffffff;
+  border: none;
   border-radius: 6px;
-  background: #145da0;
-  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.visits__btn:hover {
+  background-color: #1e40af;
+}
+
+/* Responsive */
+@media (max-width: 800px) {
+  .nosotros-grid,
+  .nosotros-pillars__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nosotros-card--about {
+    flex-direction: column;
+  }
+
+  .visits {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .visits__btn {
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
 }
