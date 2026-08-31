@@ -3,16 +3,14 @@ import './Acceso.css';
 
 const captchaKey = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
 
-// Base de datos simulada (datos dummies)
 const DUMMY_USERS = [
-  { id: 1, tipoDoc: 'CC', documento: '72000607', email: 'caenjiro@gmail.com', nombre: 'Carlos Jiménez' },
-  { id: 2, tipoDoc: 'CC', documento: '1020304050', email: 'carlos.jimenez@tecnosalud.com.co', nombre: 'Carlos Admin' },
-  { id: 3, tipoDoc: 'CE', documento: '52148963', email: 'maria.gomez@clinicaejemplo.com', nombre: 'María Gómez' },
-  { id: 4, tipoDoc: 'TI', documento: '80123456', email: 'soporte.tecnosalud@gmail.com', nombre: 'Soporte Técnico' },
-  { id: 5, tipoDoc: 'PA', documento: '19456789', email: 'afiliados.bogota@redsalud.com', nombre: 'Afiliaciones Bogotá' }
+  { id: 1, tipoDoc: 'CC', documento: '72000607', email: 'caenjiro@gmail.com', contrasena: '123456', nombre: 'Carlos Jiménez' },
+  { id: 2, tipoDoc: 'CC', documento: '1020304050', email: 'carlos.jimenez@tecnosalud.com.co', contrasena: 'admin2026', nombre: 'Carlos Admin' },
+  { id: 3, tipoDoc: 'CE', documento: '52148963', email: 'maria.gomez@clinicaejemplo.com', contrasena: 'maria2026', nombre: 'María Gómez' },
+  { id: 4, tipoDoc: 'TI', documento: '80123456', email: 'soporte.tecnosalud@gmail.com', contrasena: 'soporte123', nombre: 'Soporte Técnico' },
+  { id: 5, tipoDoc: 'PA', documento: '19456789', email: 'afiliados.bogota@redsalud.com', contrasena: 'afiliados2026', nombre: 'Afiliaciones Bogotá' }
 ];
 
-// Distractores de correos y documentos
 const CORREOS_DISTRACTORES = [
   'usuario.contacto@gmail.com',
   'clinica.paciente@hotmail.com',
@@ -27,7 +25,6 @@ const DOCUMENTOS_DISTRACTORES = [
   { tipoDoc: 'TI', documento: '1098765432' }
 ];
 
-// Funciones para enmascarar
 const enmascararCorreo = (email) => {
   if (!email || email.length <= 7) return email;
   const inicio = email.slice(0, 2);
@@ -42,13 +39,16 @@ const enmascararDocumento = (doc) => {
   return `${inicio}****${fin}`;
 };
 
-function Acceso({ onLoginExitoso }) {
+function Acceso({ onLoginExitoso, onLogout }) {
   const [form, setForm] = useState({
     usuario: '',
     contrasena: '',
     recordarUsuario: false,
   });
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Estado de sesión
+  const [usuarioLogueado, setUsuarioLogueado] = useState(null);
 
   // Modales
   const [modalRecuperarUsuario, setModalRecuperarUsuario] = useState(false);
@@ -57,7 +57,7 @@ function Acceso({ onLoginExitoso }) {
   const [mensajeExito, setMensajeExito] = useState('');
   const [esLoginExitoso, setEsLoginExitoso] = useState(false);
 
-  // Estados para Recuperación de Usuario
+  // Recuperación de Usuario
   const [pasoUsuario, setPasoUsuario] = useState(1);
   const [tipoDocRecuperar, setTipoDocRecuperar] = useState('');
   const [docRecuperar, setDocRecuperar] = useState('');
@@ -67,7 +67,7 @@ function Acceso({ onLoginExitoso }) {
   const [intentosUsuario, setIntentosUsuario] = useState(0);
   const [alertaRecuperarUser, setAlertaRecuperarUser] = useState('');
 
-  // Estados para Recuperación de Contraseña
+  // Recuperación de Contraseña
   const [pasoClave, setPasoClave] = useState(1);
   const [correoClaveRecuperar, setCorreoClaveRecuperar] = useState('');
   const [usuarioEncontradoClave, setUsuarioEncontradoClave] = useState(null);
@@ -79,13 +79,23 @@ function Acceso({ onLoginExitoso }) {
   const recaptchaRef = useRef(null);
   const widgetIdRef = useRef(null);
 
-  // Cargar usuario recordado
+  // 1. Cargar sesión activa y/o usuario recordado
   useEffect(() => {
-    const usuarioGuardado = localStorage.getItem('tecnosalud_usuario_recordado');
-    if (usuarioGuardado) {
+    const sesionGuardada = localStorage.getItem('tecnosalud_sesion_activa');
+    if (sesionGuardada) {
+      try {
+        setUsuarioLogueado(JSON.parse(sesionGuardada));
+      } catch (e) {
+        localStorage.removeItem('tecnosalud_sesion_activa');
+      }
+    }
+
+    // Cargar usuario guardado si la opción "Recordar usuario" estaba activa
+    const usuarioRecordado = localStorage.getItem('tecnosalud_usuario_recordado');
+    if (usuarioRecordado) {
       setForm((prev) => ({
         ...prev,
-        usuario: usuarioGuardado,
+        usuario: usuarioRecordado,
         recordarUsuario: true,
       }));
     }
@@ -93,6 +103,8 @@ function Acceso({ onLoginExitoso }) {
 
   // Inicialización de reCAPTCHA
   useEffect(() => {
+    if (usuarioLogueado) return;
+
     const renderRecaptcha = () => {
       if (window.grecaptcha && window.grecaptcha.render && recaptchaRef.current && widgetIdRef.current === null) {
         try {
@@ -116,7 +128,7 @@ function Acceso({ onLoginExitoso }) {
       }, 300);
       return () => clearInterval(interval);
     }
-  }, []);
+  }, [usuarioLogueado]);
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -130,8 +142,25 @@ function Acceso({ onLoginExitoso }) {
     event.preventDefault();
     setErrorMsg('');
 
-    if (!form.usuario.trim() || !form.contrasena.trim()) {
+    const correoIngresado = form.usuario.trim().toLowerCase();
+    const claveIngresada = form.contrasena.trim();
+
+    if (!correoIngresado || !claveIngresada) {
       setErrorMsg('Por favor ingresa tu correo y contraseña.');
+      return;
+    }
+
+    const usuarioValido = DUMMY_USERS.find(
+      (u) => u.email.toLowerCase() === correoIngresado
+    );
+
+    if (!usuarioValido) {
+      setErrorMsg('El correo electrónico no se encuentra registrado en el sistema.');
+      return;
+    }
+
+    if (usuarioValido.contrasena !== claveIngresada) {
+      setErrorMsg('La contraseña ingresada es incorrecta.');
       return;
     }
 
@@ -140,7 +169,7 @@ function Acceso({ onLoginExitoso }) {
       try {
         response = window.grecaptcha.getResponse(widgetIdRef.current);
       } catch (err) {
-        console.error('Error al obtener captcha:', err);
+        console.error('Error captcha:', err);
       }
     }
 
@@ -149,13 +178,18 @@ function Acceso({ onLoginExitoso }) {
       return;
     }
 
+    // 2. Manejo de recordar usuario en el equipo
     if (form.recordarUsuario) {
-      localStorage.setItem('tecnosalud_usuario_recordado', form.usuario);
+      localStorage.setItem('tecnosalud_usuario_recordado', form.usuario.trim());
     } else {
       localStorage.removeItem('tecnosalud_usuario_recordado');
     }
 
-    setMensajeExito(`¡Bienvenido de nuevo! Has iniciado sesión correctamente con la cuenta: ${form.usuario}`);
+    // Guardar sesión activa
+    localStorage.setItem('tecnosalud_sesion_activa', JSON.stringify(usuarioValido));
+    setUsuarioLogueado(usuarioValido);
+
+    setMensajeExito(`¡Bienvenido de nuevo, ${usuarioValido.nombre}! Has ingresado correctamente.`);
     setEsLoginExitoso(true);
     setModalAviso(true);
 
@@ -174,7 +208,26 @@ function Acceso({ onLoginExitoso }) {
     }
   };
 
-  // --- MODAL RECUPERAR USUARIO ---
+  // 3. Cerrar sesión y notificar a App.jsx para quitar Servicios Clínicos
+  const handleCerrarSesion = () => {
+    localStorage.removeItem('tecnosalud_sesion_activa');
+    setUsuarioLogueado(null);
+
+    const usuarioRecordado = localStorage.getItem('tecnosalud_usuario_recordado');
+    setForm({
+      usuario: usuarioRecordado || '',
+      contrasena: '',
+      recordarUsuario: Boolean(usuarioRecordado),
+    });
+
+    widgetIdRef.current = null;
+
+    if (onLogout) {
+      onLogout();
+    }
+  };
+
+  // Recuperar Usuario
   const handleAbrirModalUsuario = () => {
     setPasoUsuario(1);
     setTipoDocRecuperar('');
@@ -196,7 +249,7 @@ function Acceso({ onLoginExitoso }) {
     );
 
     if (!userFound) {
-      setAlertaRecuperarUser('No se encontró ningún usuario registrado con el tipo y número de documento ingresados.');
+      setAlertaRecuperarUser('No se encontró ningún usuario con ese tipo y número de documento.');
       return;
     }
 
@@ -219,7 +272,7 @@ function Acceso({ onLoginExitoso }) {
 
     if (correoSeleccionado === usuarioEncontradoUser.email) {
       setModalRecuperarUsuario(false);
-      setMensajeExito(`Validación exitosa. Hemos enviado tu nombre de usuario al correo registrado (${enmascararCorreo(usuarioEncontradoUser.email)}).`);
+      setMensajeExito(`Validación exitosa. Hemos enviado tu usuario a ${enmascararCorreo(usuarioEncontradoUser.email)}.`);
       setEsLoginExitoso(false);
       setModalAviso(true);
     } else {
@@ -228,21 +281,21 @@ function Acceso({ onLoginExitoso }) {
 
       if (nuevosIntentos >= 3) {
         setModalRecuperarUsuario(false);
-        setMensajeExito('Has superado el límite de 3 intentos permitidos. Por motivos de seguridad, el proceso ha sido cancelado y tu cuenta será bloqueada preventivamente si continúas ingresando datos erróneos.');
+        setMensajeExito('Has superado los 3 intentos permitidos. Por seguridad, el proceso fue cancelado.');
         setEsLoginExitoso(false);
         setModalAviso(true);
       } else {
         setAlertaRecuperarUser(
-          `El correo seleccionado no coincide con el registrado. Intento ${nuevosIntentos} de 3. Advertencia: Al tercer intento fallido el proceso se cancelará por seguridad.`
+          `El correo no coincide. Intento ${nuevosIntentos} de 3. Al tercer fallo la cuenta será bloqueada.`
         );
       }
     }
   };
 
-  // --- MODAL RECUPERAR CONTRASEÑA ---
+  // Recuperar Contraseña
   const handleAbrirModalClave = () => {
     setPasoClave(1);
-    setCorreoClaveRecuperar(form.usuario || '');
+    setCorreoClaveRecuperar('');
     setUsuarioEncontradoClave(null);
     setOpcionesDocumentos([]);
     setDocumentoSeleccionado('');
@@ -257,7 +310,7 @@ function Acceso({ onLoginExitoso }) {
 
     const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!regexEmail.test(correoClaveRecuperar.trim())) {
-      setAlertaRecuperarClave('Por favor ingresa un correo electrónico con formato válido (ej. usuario@dominio.com).');
+      setAlertaRecuperarClave('Por favor ingresa un correo electrónico válido.');
       return;
     }
 
@@ -266,7 +319,7 @@ function Acceso({ onLoginExitoso }) {
     );
 
     if (!userFound) {
-      setAlertaRecuperarClave('El correo ingresado no corresponde a ninguna cuenta registrada en Tecnosalud.');
+      setAlertaRecuperarClave('El correo ingresado no se encuentra registrado en el sistema.');
       return;
     }
 
@@ -292,7 +345,7 @@ function Acceso({ onLoginExitoso }) {
 
     if (documentoSeleccionado === usuarioEncontradoClave.documento) {
       setModalRecuperarClave(false);
-      setMensajeExito(`Validación exitosa. Se ha generado una contraseña temporal que fue enviada al correo: ${enmascararCorreo(usuarioEncontradoClave.email)}.`);
+      setMensajeExito(`Validación exitosa. Se ha generado una clave temporal enviada a ${enmascararCorreo(usuarioEncontradoClave.email)}.`);
       setEsLoginExitoso(false);
       setModalAviso(true);
     } else {
@@ -301,18 +354,17 @@ function Acceso({ onLoginExitoso }) {
 
       if (nuevosIntentos >= 3) {
         setModalRecuperarClave(false);
-        setMensajeExito('Has superado el límite de 3 intentos permitidos. Por seguridad, la recuperación de clave ha sido cancelada y la cuenta será bloqueada si se reiteran accesos no autorizados.');
+        setMensajeExito('Has superado los 3 intentos permitidos. Por seguridad, la recuperación fue cancelada.');
         setEsLoginExitoso(false);
         setModalAviso(true);
       } else {
         setAlertaRecuperarClave(
-          `El documento seleccionado no coincide con la cuenta registrada. Intento ${nuevosIntentos} de 3. Advertencia: Si fallas 3 veces tu cuenta será bloqueada.`
+          `El documento no coincide. Intento ${nuevosIntentos} de 3. Al tercer fallo la cuenta será bloqueada.`
         );
       }
     }
   };
 
-  // Cierre de modal y redirección condicional
   const handleCerrarAviso = () => {
     setModalAviso(false);
     if (esLoginExitoso && onLoginExitoso) {
@@ -320,6 +372,43 @@ function Acceso({ onLoginExitoso }) {
     }
   };
 
+  // VISTA: USUARIO LOGUEADO
+  if (usuarioLogueado) {
+    return (
+      <section className="page page--form">
+        <div className="acceso-logueado-card">
+          <div className="acceso-logueado-icon">👤</div>
+          <h2>Sesión Activa</h2>
+          <p>Actualmente ya te encuentras autenticado en el portal de <strong>Tecnosalud</strong>.</p>
+          
+          <div className="acceso-logueado-info">
+            <p><strong>Nombre:</strong> {usuarioLogueado.nombre}</p>
+            <p><strong>Correo:</strong> {usuarioLogueado.email}</p>
+            <p><strong>Documento:</strong> {usuarioLogueado.tipoDoc} {usuarioLogueado.documento}</p>
+          </div>
+
+          <div className="acceso-logueado-actions">
+            <button
+              type="button"
+              className="modal-btn-confirm"
+              onClick={() => onLoginExitoso && onLoginExitoso()}
+            >
+              Ir a Servicios Clínicos
+            </button>
+            <button
+              type="button"
+              className="modal-btn-cancel"
+              onClick={handleCerrarSesion}
+            >
+              Cerrar Sesión
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // VISTA: FORMULARIO DE INGRESO
   return (
     <section className="page page--form">
       <h2>Acceso</h2>
@@ -455,7 +544,7 @@ function Acceso({ onLoginExitoso }) {
                 <p>
                   Documento validado: <strong>{tipoDocRecuperar} {enmascararDocumento(docRecuperar)}</strong>.
                   <br />
-                  Selecciona tu correo electrónico para verificar tu identidad:
+                  Selecciona tu correo electrónico:
                 </p>
 
                 <div className="modal-input-group">
@@ -535,7 +624,7 @@ function Acceso({ onLoginExitoso }) {
                 <p>
                   Correo verificado: <strong>{enmascararCorreo(correoClaveRecuperar)}</strong>.
                   <br />
-                  Selecciona el documento de identidad asociado a esta cuenta:
+                  Selecciona el documento de identidad asociado:
                 </p>
 
                 <div className="modal-input-group">
@@ -571,7 +660,7 @@ function Acceso({ onLoginExitoso }) {
         </div>
       )}
 
-      {/* Modal 3: Aviso / Notificación */}
+      {/* Modal 3: Notificación */}
       {modalAviso && (
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-content">
