@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import logoTecnosalud from './Images/Logo.png';
 import './Inicio.css';
 
 function Inicio() {
@@ -26,6 +27,7 @@ function Inicio() {
       <div className="inicio__brand" aria-label="Tecnosalud">
         <span>TECNOSALUD</span>
         <small>INNOVACIÓN AL SERVICIO DE LA VIDA</small>
+        <img src={logoTecnosalud} alt="Logo Tecnosalud" className="inicio__logo" />
       </div>
     </section>
   );

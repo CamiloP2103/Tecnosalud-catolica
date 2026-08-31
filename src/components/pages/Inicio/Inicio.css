@@ -17,6 +17,15 @@
   text-align: center;
 }
 
+.inicio__logo {
+  width: 400px;          /* Ajusta el ancho que mejor se adapte a tu diseño */
+  max-width: 400%;       /* Evita que se desborde si el contenedor es más pequeño */
+  height: auto;          /* Mantiene la proporción original sin deformar la imagen */
+  object-fit: contain;   /* Asegura que el logo encaje limpio dentro de su espacio */
+  display: block;
+  margin: 10px auto;     /* Opcional: centra la imagen y añade separación */
+}
+
 .inicio__brand span {
   font-size: clamp(2rem, 8vw, 3.5rem);
   font-weight: 800;
