@@ -37,7 +37,7 @@ const enmascararDocumento = (doc) => {
   return `${inicio}****${fin}`;
 };
 
-function Acceso({ onLoginExitoso, onLogout }) {
+function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
   const [form, setForm] = useState({
     usuario: '',
     contrasena: '',
@@ -45,8 +45,18 @@ function Acceso({ onLoginExitoso, onLogout }) {
   });
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Estado de sesión
-  const [usuarioLogueado, setUsuarioLogueado] = useState(null);
+  // Estado del usuario activo
+  const [usuarioLogueado, setUsuarioLogueado] = useState(() => {
+    const sesionGuardada = localStorage.getItem('tecnosalud_sesion_activa');
+    if (sesionGuardada) {
+      try {
+        return JSON.parse(sesionGuardada);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
 
   // Modales
   const [modalRecuperarUsuario, setModalRecuperarUsuario] = useState(false);
@@ -74,7 +84,7 @@ function Acceso({ onLoginExitoso, onLogout }) {
   const [intentosClave, setIntentosClave] = useState(0);
   const [alertaRecuperarClave, setAlertaRecuperarClave] = useState('');
 
-  // Captcha local (Sin cookies ni scripts de terceros)
+  // Captcha local
   const [captchaChallenge, setCaptchaChallenge] = useState({ num1: 0, num2: 0, resultado: 0 });
   const [captchaInput, setCaptchaInput] = useState('');
 
@@ -85,7 +95,6 @@ function Acceso({ onLoginExitoso, onLogout }) {
     setCaptchaInput('');
   };
 
-  // 1. Cargar sesión activa y/o usuario recordado y generar captcha
   useEffect(() => {
     const sesionGuardada = localStorage.getItem('tecnosalud_sesion_activa');
     if (sesionGuardada) {
@@ -93,7 +102,10 @@ function Acceso({ onLoginExitoso, onLogout }) {
         setUsuarioLogueado(JSON.parse(sesionGuardada));
       } catch (e) {
         localStorage.removeItem('tecnosalud_sesion_activa');
+        setUsuarioLogueado(null);
       }
+    } else {
+      setUsuarioLogueado(null);
     }
 
     const usuarioRecordado = localStorage.getItem('tecnosalud_usuario_recordado');
@@ -106,7 +118,7 @@ function Acceso({ onLoginExitoso, onLogout }) {
     }
 
     generarCaptchaLocal();
-  }, []);
+  }, [sesionActiva]);
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -142,24 +154,28 @@ function Acceso({ onLoginExitoso, onLogout }) {
       return;
     }
 
-    // Validación del captcha local
     if (parseInt(captchaInput, 10) !== captchaChallenge.resultado) {
       setErrorMsg('El resultado del captcha es incorrecto. Intenta de nuevo.');
       generarCaptchaLocal();
       return;
     }
 
-    // 2. Manejo de recordar usuario en el equipo
     if (form.recordarUsuario) {
       localStorage.setItem('tecnosalud_usuario_recordado', form.usuario.trim());
     } else {
       localStorage.removeItem('tecnosalud_usuario_recordado');
     }
 
-    // Guardar sesión activa
+    // 1. Guardar en localStorage
     localStorage.setItem('tecnosalud_sesion_activa', JSON.stringify(usuarioValido));
     setUsuarioLogueado(usuarioValido);
 
+    // 2. Notificar inmediatamente a App para activar "Servicios Clínicos" en el Navbar
+    if (onLoginExitoso) {
+      onLoginExitoso();
+    }
+
+    // 3. Mostrar modal de bienvenida
     setMensajeExito(`¡Bienvenido de nuevo, ${usuarioValido.nombre}! Has ingresado correctamente.`);
     setEsLoginExitoso(true);
     setModalAviso(true);
@@ -173,7 +189,6 @@ function Acceso({ onLoginExitoso, onLogout }) {
     generarCaptchaLocal();
   };
 
-  // 3. Cerrar sesión y notificar a App.jsx
   const handleCerrarSesion = () => {
     localStorage.removeItem('tecnosalud_sesion_activa');
     setUsuarioLogueado(null);
@@ -332,13 +347,13 @@ function Acceso({ onLoginExitoso, onLogout }) {
 
   const handleCerrarAviso = () => {
     setModalAviso(false);
-    if (esLoginExitoso && onLoginExitoso) {
-      onLoginExitoso();
+    if (esLoginExitoso && onNavigate) {
+      onNavigate('servicios');
     }
   };
 
-  // VISTA: USUARIO LOGUEADO
-  if (usuarioLogueado) {
+  // VISTA: SESIÓN ACTIVA (Cuando no hay modal abierto)
+  if (sesionActiva && usuarioLogueado && !modalAviso) {
     return (
       <section className="page page--form">
         <div className="acceso-logueado-card">
@@ -356,7 +371,7 @@ function Acceso({ onLoginExitoso, onLogout }) {
             <button
               type="button"
               className="modal-btn-confirm"
-              onClick={() => onLoginExitoso && onLoginExitoso()}
+              onClick={() => onNavigate && onNavigate('servicios')}
             >
               Ir a Servicios Clínicos
             </button>
@@ -373,7 +388,7 @@ function Acceso({ onLoginExitoso, onLogout }) {
     );
   }
 
-  // VISTA: FORMULARIO DE INGRESO
+  // VISTA: FORMULARIO DE ACCESO (O Modal de bienvenida activo)
   return (
     <section className="page page--form">
       <h2>Acceso</h2>
@@ -646,7 +661,7 @@ function Acceso({ onLoginExitoso, onLogout }) {
         </div>
       )}
 
-      {/* Modal 3: Notificación */}
+      {/* Modal 3: Notificación de Bienvenida */}
       {modalAviso && (
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-content">

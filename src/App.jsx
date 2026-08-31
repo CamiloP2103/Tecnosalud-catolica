@@ -1,17 +1,18 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import Navbar from './components/Navbar/Navbar';
 import Layout from './components/Layout/Layout';
-import Inicio from './components/pages/Inicio/Inicio';
-import Nosotros from './components/pages/Nosotros/Nosotros';
-import Registro from './components/pages/Registro/Registro';
-import Acceso from './components/pages/Acceso/Acceso';
-import ServiciosSalud from './components/pages/ServiciosSalud/ServiciosSalud';
-import MuerteDigna from './components/pages/Afiliados/MuerteDigna';
-import Medicamentos from './components/pages/Afiliados/Medicamentos';
-import Triage from './components/pages/Afiliados/Triage';
 import './styles/global.css';
 
-// Enlaces principales del navbar (sin contar el botón Acceso, que va aparte como CTA)
+// Carga perezosa de vistas
+const Inicio = lazy(() => import('./components/pages/Inicio/Inicio'));
+const Nosotros = lazy(() => import('./components/pages/Nosotros/Nosotros'));
+const Registro = lazy(() => import('./components/pages/Registro/Registro'));
+const Acceso = lazy(() => import('./components/pages/Acceso/Acceso'));
+const ServiciosSalud = lazy(() => import('./components/pages/ServiciosSalud/ServiciosSalud'));
+const MuerteDigna = lazy(() => import('./components/pages/Afiliados/MuerteDigna'));
+const Medicamentos = lazy(() => import('./components/pages/Afiliados/Medicamentos'));
+const Triage = lazy(() => import('./components/pages/Afiliados/Triage'));
+
 const baseNavItems = [
   { id: 'inicio', label: 'Inicio' },
   { id: 'registro', label: 'Registro' },
@@ -54,15 +55,15 @@ function App() {
 
   const handleLoginExitoso = () => {
     setSesionActiva(true);
-    handleNavigate('servicios');
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('tecnosalud_sesion_activa');
     setSesionActiva(false);
     handleNavigate('acceso');
   };
 
-  // El botón "Servicios Clínicos" solo se agrega a navItems si sesionActiva es true
+  // Servicios Clínicos se agrega inmediatamente cuando sesionActiva es true
   const navItems = sesionActiva
     ? [...baseNavItems, { id: 'servicios', label: 'Servicios Clínicos' }]
     : baseNavItems;
@@ -76,11 +77,20 @@ function App() {
         ctaItem={accesoItem}
       />
       <Layout>
-        <ActivePage
-          onLoginExitoso={handleLoginExitoso}
-          onLogout={handleLogout}
-          onNavigate={handleNavigate}
-        />
+        <Suspense
+          fallback={
+            <div style={{ padding: '4rem 0', textAlign: 'center', color: '#64748b' }}>
+              <p>Cargando contenido...</p>
+            </div>
+          }
+        >
+          <ActivePage
+            sesionActiva={sesionActiva}
+            onLoginExitoso={handleLoginExitoso}
+            onLogout={handleLogout}
+            onNavigate={handleNavigate}
+          />
+        </Suspense>
       </Layout>
     </>
   );
