@@ -3,7 +3,7 @@ import Navbar from './components/Navbar/Navbar';
 import Layout from './components/Layout/Layout';
 import Inicio from './components/pages/Inicio/Inicio';
 import Nosotros from './components/pages/Nosotros/Nosotros';
-import Afiliados from './components/pages/Afiliados/Afiliados';
+import Registro from './components/pages/Registro/Registro';
 import Acceso from './components/pages/Acceso/Acceso';
 import ServiciosSalud from './components/pages/ServiciosSalud/ServiciosSalud';
 import './styles/global.css';
@@ -11,14 +11,14 @@ import './styles/global.css';
 const baseNavItems = [
   { id: 'inicio', label: 'Inicio' },
   { id: 'nosotros', label: 'Nosotros' },
-  { id: 'afiliados', label: 'Afiliados' },
+  { id: 'registro', label: 'Registro' },
   { id: 'acceso', label: 'Acceso' },
 ];
 
 const pages = {
   inicio: Inicio,
   nosotros: Nosotros,
-  afiliados: Afiliados,
+  registro: Registro,
   acceso: Acceso,
   servicios: ServiciosSalud, // 1. Registrada la página de servicios
 };
