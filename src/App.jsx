@@ -20,12 +20,14 @@ const pages = {
   nosotros: Nosotros,
   registro: Registro,
   acceso: Acceso,
-  servicios: ServiciosSalud, // 1. Registrada la página de servicios
+  servicios: ServiciosSalud,
 };
 
 function App() {
   const [currentPage, setCurrentPage] = useState('inicio');
-  const [sesionActiva, setSesionActiva] = useState(false);
+  const [sesionActiva, setSesionActiva] = useState(() => {
+    return Boolean(localStorage.getItem('tecnosalud_sesion_activa'));
+  });
 
   const ActivePage = pages[currentPage] || Inicio;
 
@@ -34,13 +36,17 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Manejador que se dispara al iniciar sesión exitosamente
   const handleLoginExitoso = () => {
     setSesionActiva(true);
     handleNavigate('servicios');
   };
 
-  // Si la sesión está activa, agregamos la pestaña de Servicios Clínicos a la barra de navegación
+  const handleLogout = () => {
+    setSesionActiva(false);
+    handleNavigate('acceso');
+  };
+
+  // El botón "Servicios Clínicos" solo se agrega a navItems si sesionActiva es true
   const navItems = sesionActiva
     ? [...baseNavItems, { id: 'servicios', label: 'Servicios Clínicos' }]
     : baseNavItems;
@@ -54,8 +60,10 @@ function App() {
         navItems={navItems}
       />
       <Layout>
-        {/* Pasamos la función onLoginExitoso por props */}
-        <ActivePage onLoginExitoso={handleLoginExitoso} />
+        <ActivePage 
+          onLoginExitoso={handleLoginExitoso} 
+          onLogout={handleLogout}
+        />
       </Layout>
     </>
   );

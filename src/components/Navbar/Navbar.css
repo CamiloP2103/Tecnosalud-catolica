@@ -50,3 +50,12 @@
     text-align: center;
   }
 }
+
+.Icono__logo {
+  width: 50px;          /* Ajusta el ancho que mejor se adapte a tu diseño */
+  /*max-width: 50%;       /* Evita que se desborde si el contenedor es más pequeño */
+  height: auto;          /* Mantiene la proporción original sin deformar la imagen */
+  /*object-fit: contain;   /* Asegura que el logo encaje limpio dentro de su espacio */
+  /*display: block;
+  /*margin: 10px auto;     /* Opcional: centra la imagen y añade separación */
+}

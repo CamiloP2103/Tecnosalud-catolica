@@ -1,8 +1,10 @@
 import './Navbar.css';
+import IconoTecnosalud from './Images/Icono.png';
 
 function Navbar({ currentPage, onNavigate, logo, navItems }) {
   return (
     <nav className="navbar" aria-label="Navegación principal">
+      <img src={IconoTecnosalud} alt="Icno Tecnosalud" className="Icono__logo" />
       <h1 className="navbar__logo">{logo}</h1>
       <div className="navbar__buttons">
         {navItems.map((item) => (
