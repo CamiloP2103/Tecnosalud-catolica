@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import './Afiliados.css';
+import './Medicamentos.css';
 
 const MOCK_MEDICAMENTOS = [
   { id: '1', nombre: 'Losartán 50mg', tipo: 'Antihipertensivo', cobertura: 'PBS', estado: 'Disponible', entrega: 'Farmacia Principal / Domicilio' },

@@ -1,4 +1,4 @@
-import './Afiliados.css';
+import './MuerteDigna.css';
 
 const DIMENSIONES_DERECHO = [
   {

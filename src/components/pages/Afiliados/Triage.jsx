@@ -1,4 +1,4 @@
-import './Afiliados.css';
+import './Triage.css';
 
 const NIVELES_TRIAGE = [
   {

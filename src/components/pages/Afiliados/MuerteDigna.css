@@ -1,0 +1,235 @@
+.page--afiliados-sub {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.afiliados-sub__header {
+  text-align: center;
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.afiliados-sub__tag {
+  display: inline-block;
+  padding: 0.3rem 0.85rem;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 999px;
+  margin-bottom: 0.75rem;
+}
+
+.afiliados-sub__header h2 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 1rem;
+}
+
+.afiliados-sub__lead {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.triage-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.75rem 2rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.triage-info-box__icon {
+  font-size: 2.2rem;
+  background: #eff6ff;
+  padding: 0.75rem;
+  border-radius: 10px;
+  line-height: 1;
+}
+
+.triage-info-box h3 {
+  font-size: 1.25rem;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+}
+
+.triage-info-box p {
+  color: #334155;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.muerte-digna-section h3,
+.ruta-proceso h3 {
+  font-size: 1.5rem;
+  color: #0f172a;
+  margin-bottom: 1.25rem;
+}
+
+.muerte-digna-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.muerte-digna-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.muerte-digna-card__icon {
+  font-size: 1.8rem;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.muerte-digna-card h4 {
+  font-size: 1.1rem;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+}
+
+.muerte-digna-card p {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.dva-card {
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.dva-card__badge {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  background-color: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 6px;
+  margin-bottom: 0.6rem;
+}
+
+.dva-card h3 {
+  font-size: 1.3rem;
+  color: #0f172a;
+  margin: 0 0 0.75rem;
+}
+
+.dva-card p {
+  color: #334155;
+  line-height: 1.6;
+  margin: 0 0 1rem;
+}
+
+.dva-card__list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.ruta-proceso__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ruta-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.ruta-step__num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background-color: #1d4ed8;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.1rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ruta-step__info h4 {
+  font-size: 1.05rem;
+  color: #0f172a;
+  margin: 0 0 0.35rem;
+}
+
+.ruta-step__info p {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.canales-ayuda {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+
+.canales-ayuda__icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.canales-ayuda h4 {
+  font-size: 1.05rem;
+  color: #1e40af;
+  margin: 0 0 0.35rem;
+}
+
+.canales-ayuda p {
+  font-size: 0.9rem;
+  color: #1e3a8a;
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .triage-info-box {
+    flex-direction: column;
+  }
+
+  .muerte-digna-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dva-card {
+    padding: 1.5rem;
+  }
+}
