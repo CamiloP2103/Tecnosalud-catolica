@@ -15,6 +15,16 @@ const Triage = lazy(() => import('./components/pages/Afiliados/Triage'));
 
 const baseNavItems = [
   { id: 'inicio', label: 'Inicio' },
+  {
+    id: 'nosotros',
+    label: 'Nosotros',
+    children: [
+      { id: 'historia', label: 'Historia' },
+      { id: 'mision-vision', label: 'Misión y visión' },
+      { id: 'valores', label: 'Valores' },
+      { id: 'trabaja-con-nosotros', label: 'Trabaja con nosotros' },
+    ],
+  },
   { id: 'registro', label: 'Registro' },
   {
     id: 'afiliados',
@@ -31,7 +41,10 @@ const accesoItem = { id: 'acceso', label: 'Acceso' };
 
 const pages = {
   inicio: Inicio,
-  nosotros: Nosotros,
+  historia: Nosotros,
+  'mision-vision': Nosotros,
+  valores: Nosotros,
+  'trabaja-con-nosotros': Nosotros,
   registro: Registro,
   acceso: Acceso,
   servicios: ServiciosSalud,
@@ -89,6 +102,7 @@ function App() {
             onLoginExitoso={handleLoginExitoso}
             onLogout={handleLogout}
             onNavigate={handleNavigate}
+            seccion={currentPage}
           />
         </Suspense>
       </Layout>
