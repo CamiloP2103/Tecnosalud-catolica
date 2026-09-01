@@ -201,3 +201,152 @@
     margin-top: 0.5rem;
   }
 }
+
+/* Trabaja con nosotros */
+.trabajo-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04);
+}
+
+.trabajo-intro p {
+  color: #334155;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.trabajo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.trabajo-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.trabajo-card h3 {
+  font-size: 1.15rem;
+  color: #0f172a;
+  margin: 0;
+}
+
+.trabajo-card > p {
+  color: #334155;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.trabajo-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.trabajo-card__list li {
+  color: #475569;
+  font-size: 0.92rem;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.trabajo-card__list li::before {
+  content: '•';
+  color: #1d4ed8;
+  position: absolute;
+  left: 0;
+}
+
+.trabajo-card__list--dos-columnas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 1rem;
+  row-gap: 0.4rem;
+}
+
+.trabajo-card__meta {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.trabajo-card__meta p {
+  color: #334155;
+  font-size: 0.9rem;
+  margin: 0 0 0.35rem;
+}
+
+.trabajo-card__nota {
+  color: #64748b;
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+.trabajo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.trabajo-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.trabajo-btn--primary {
+  background-color: #1d4ed8;
+  color: #ffffff;
+}
+
+.trabajo-btn--primary:hover {
+  background-color: #1e40af;
+  transform: translateY(-1px);
+}
+
+.trabajo-btn--secondary {
+  background-color: #ffffff;
+  color: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.trabajo-btn--secondary:hover {
+  background-color: #eff6ff;
+  transform: translateY(-1px);
+}
+
+/* Responsive Trabaja con nosotros */
+@media (max-width: 800px) {
+  .trabajo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trabajo-intro {
+    flex-direction: column;
+  }
+
+  .trabajo-card__list--dos-columnas {
+    grid-template-columns: 1fr;
+  }
+}
