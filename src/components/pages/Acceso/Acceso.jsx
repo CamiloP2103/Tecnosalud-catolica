@@ -8,6 +8,7 @@ const DUMMY_USERS = [
   { id: 4, tipoDoc: 'TI', documento: '80123456', email: 'soporte.tecnosalud@gmail.com', contrasena: 'soporte123', nombre: 'Soporte Técnico' },
   { id: 5, tipoDoc: 'PA', documento: '19456789', email: 'afiliados.bogota@redsalud.com', contrasena: 'afiliados2026', nombre: 'Afiliaciones Bogotá' }
 ];
+const API_ACCESO = 'http://localhost:3001/api/usuarios/acceso';
 
 const CORREOS_DISTRACTORES = [
   'usuario.contacto@gmail.com',
@@ -128,7 +129,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setErrorMsg('');
 
@@ -140,23 +141,27 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
       return;
     }
 
-    const usuarioValido = DUMMY_USERS.find(
-      (u) => u.email.toLowerCase() === correoIngresado
-    );
-
-    if (!usuarioValido) {
-      setErrorMsg('El correo electrónico no se encuentra registrado en el sistema.');
-      return;
-    }
-
-    if (usuarioValido.contrasena !== claveIngresada) {
-      setErrorMsg('La contraseña ingresada es incorrecta.');
-      return;
-    }
-
     if (parseInt(captchaInput, 10) !== captchaChallenge.resultado) {
       setErrorMsg('El resultado del captcha es incorrecto. Intenta de nuevo.');
       generarCaptchaLocal();
+      return;
+    }
+
+    let usuarioValido;
+    try {
+      const respuesta = await fetch(API_ACCESO, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario: correoIngresado, contrasena: claveIngresada }),
+      });
+      const datos = await respuesta.json();
+      if (!respuesta.ok) {
+        setErrorMsg(datos.error || 'No se pudo iniciar sesión.');
+        return;
+      }
+      usuarioValido = datos;
+    } catch {
+      setErrorMsg('No se pudo conectar con el backend. Verifica que esté corriendo en el puerto 3001.');
       return;
     }
 

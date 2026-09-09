@@ -19,6 +19,7 @@ const MESES = [
 
 const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: anioActual - 1920 + 1 }, (_, i) => String(anioActual - i));
+const API_REGISTRO = 'http://localhost:3001/api/usuarios/registro';
 
 const MUNICIPIOS_COLOMBIA = [
   { depto: 'Cundinamarca / D.C.', ciudades: ['Bogotá D.C.', 'Soacha', 'Chía', 'Zipaquirá', 'Facatativá', 'Girardot'] },
@@ -156,7 +157,7 @@ function Registro() {
     return null;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setErrorMsg('');
 
@@ -170,11 +171,26 @@ function Registro() {
       return;
     }
 
-    setCorreoEnviado(form.correo);
-    setModalExito(true);
+    try {
+      const respuesta = await fetch(API_REGISTRO, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const datos = await respuesta.json();
 
-    setForm(estadoInicial);
-    generarCaptchaLocal();
+      if (!respuesta.ok) {
+        setErrorMsg(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar el registro.');
+        return;
+      }
+
+      setCorreoEnviado(datos.email || form.correo);
+      setModalExito(true);
+      setForm(estadoInicial);
+      generarCaptchaLocal();
+    } catch {
+      setErrorMsg('No se pudo conectar con el backend. Verifica que esté corriendo en el puerto 3001.');
+    }
   };
 
   const cerrarModal = () => {

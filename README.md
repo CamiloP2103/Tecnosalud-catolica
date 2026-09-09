@@ -14,7 +14,40 @@ Aplicación SPA construida con React y Vite.
 
 ## Ejecución
 
+### Frontend
+
 ```bash
 npm install
 npm run dev
 ```
+
+El frontend se inicia normalmente en `http://localhost:5173`.
+
+### Backend
+
+En otra terminal:
+
+```bash
+cd backend
+npm install
+npm start
+```
+
+El backend queda disponible en `http://localhost:3001`.
+
+### Tests
+
+Desde la raíz del proyecto:
+
+```bash
+npm test
+```
+
+Para ejecutar únicamente los tests del backend:
+
+```bash
+cd backend
+npm test
+```
+
+El backend trabaja actualmente en memoria. Los registros nuevos se pierden al reiniciar el servidor porque todavía no hay una base de datos conectada.
