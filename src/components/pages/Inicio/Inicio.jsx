@@ -48,7 +48,7 @@ function Inicio({ onNavigate }) {
         <svg width="34" height="16" viewBox="0 0 34 16" fill="none" aria-hidden="true">
           <path d="M0 8h9l2-6 4 12 2-10 2 4h15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        <span>Tecnosalud Católica, tecnología que cuida de ti.</span>
+        <span>Tecnosalud Católica, tecnología que cuida de ti para ti</span>
         <svg width="34" height="16" viewBox="0 0 34 16" fill="none" aria-hidden="true">
           <path d="M0 8h9l2-6 4 12 2-10 2 4h15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
