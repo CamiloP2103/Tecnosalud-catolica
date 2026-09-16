@@ -15,4 +15,12 @@ describe('Navegación', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Historia' }));
     expect(await screen.findByRole('heading', { name: /Innovación y Vocación al Servicio de la Vida/i })).toBeInTheDocument();
   });
+
+  it('debe mostrar la vista 404 cuando la URL apunta a una página inexistente', async () => {
+    window.location.hash = '#/pagina-inexistente';
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: /404/i })).toBeInTheDocument();
+    expect(await screen.findByText(/Página no encontrada/i)).toBeInTheDocument();
+  });
 });

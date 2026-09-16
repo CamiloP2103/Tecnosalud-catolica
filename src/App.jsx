@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react';
+import { useState, lazy, Suspense, useEffect } from 'react';
 import Navbar from './components/Navbar/Navbar';
 import Layout from './components/Layout/Layout';
 import './styles/global.css';
@@ -12,6 +12,7 @@ const ServiciosSalud = lazy(() => import('./components/pages/ServiciosSalud/Serv
 const MuerteDigna = lazy(() => import('./components/pages/Afiliados/MuerteDigna'));
 const Medicamentos = lazy(() => import('./components/pages/Afiliados/Medicamentos'));
 const Triage = lazy(() => import('./components/pages/Afiliados/Triage'));
+const NotFound = lazy(() => import('./components/pages/NotFound/NotFound'));
 
 const baseNavItems = [
   { id: 'inicio', label: 'Inicio' },
@@ -53,16 +54,35 @@ const pages = {
   triage: Triage,
 };
 
+const normalizeHashPage = (hashValue) => {
+  const cleaned = (hashValue || '').replace(/^#\/?/, '').trim();
+  return cleaned || 'inicio';
+};
+
 function App() {
-  const [currentPage, setCurrentPage] = useState('inicio');
+  const [currentPage, setCurrentPage] = useState(() => normalizeHashPage(window.location.hash));
   const [sesionActiva, setSesionActiva] = useState(() => {
     return Boolean(localStorage.getItem('tecnosalud_sesion_activa'));
   });
 
-  const ActivePage = pages[currentPage] || Inicio;
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hashPage = normalizeHashPage(window.location.hash);
+      setCurrentPage(pages[hashPage] ? hashPage : '404');
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const ActivePage = pages[currentPage] || NotFound;
 
   const handleNavigate = (pageId) => {
-    setCurrentPage(pageId);
+    const nextPage = pages[pageId] ? pageId : '404';
+    setCurrentPage(nextPage);
+    window.location.hash = nextPage === 'inicio' ? '' : `/${nextPage}`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -81,10 +101,12 @@ function App() {
     ? [...baseNavItems, { id: 'servicios', label: 'Servicios Clínicos' }]
     : baseNavItems;
 
+  const currentPageLabel = pages[currentPage] ? currentPage : '404';
+
   return (
     <>
       <Navbar
-        currentPage={currentPage}
+        currentPage={currentPageLabel}
         onNavigate={handleNavigate}
         navItems={navItems}
         ctaItem={accesoItem}
