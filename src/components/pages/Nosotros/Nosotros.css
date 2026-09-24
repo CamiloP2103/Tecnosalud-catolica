@@ -8,10 +8,6 @@
   gap: 2.5rem;
 }
 
-<<<<<<< HEAD
-=======
-/* Cabecera */
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
 .nosotros-header {
   text-align: center;
   max-width: 780px;
@@ -31,39 +27,33 @@
   margin-bottom: 0.75rem;
 }
 
-.nosotros-header h2 {
-  font-size: 2.2rem;
-  font-weight: 800;
+.nosotros-header h2,
+.nosotros-pillars h3,
+.social-links h3,
+.trabajo-callout h3 {
+  font-size: 1.8rem;
   color: #0f172a;
   margin: 0 0 1rem;
-  line-height: 1.2;
 }
 
 .nosotros-lead {
-  font-size: 1.1rem;
-  line-height: 1.6;
+  font-size: 1.08rem;
+  line-height: 1.7;
   color: #475569;
 }
 
-<<<<<<< HEAD
-=======
-/* Tarjetas Informativas */
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
 .nosotros-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 2rem;
   box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04);
-<<<<<<< HEAD
-=======
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .nosotros-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
 }
 
 .nosotros-card--about {
@@ -73,7 +63,6 @@
 }
 
 .nosotros-card__icon {
-<<<<<<< HEAD
   display: flex;
   align-items: center;
   justify-content: center;
@@ -84,13 +73,6 @@
   background: #eff6ff;
   border-radius: 12px;
   color: #1d4ed8;
-=======
-  font-size: 2.2rem;
-  background: #eff6ff;
-  padding: 0.75rem;
-  border-radius: 10px;
-  line-height: 1;
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
   flex-shrink: 0;
 }
 
@@ -106,10 +88,6 @@
   margin: 0;
 }
 
-<<<<<<< HEAD
-=======
-/* Grid Misión y Visión */
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
 .nosotros-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -124,18 +102,8 @@
   background: #fdf4ff;
 }
 
-<<<<<<< HEAD
-=======
-/* Pilares */
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
 .nosotros-pillars {
   text-align: center;
-}
-
-.nosotros-pillars h3 {
-  font-size: 1.6rem;
-  color: #0f172a;
-  margin-bottom: 1.5rem;
 }
 
 .nosotros-pillars__grid {
@@ -153,7 +121,6 @@
 }
 
 .pillar-item__icon {
-<<<<<<< HEAD
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -163,10 +130,6 @@
   background: #e0f2fe;
   color: #0f172a;
   font-weight: 700;
-=======
-  font-size: 1.75rem;
-  display: inline-block;
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
   margin-bottom: 0.75rem;
 }
 
@@ -183,7 +146,6 @@
   margin: 0;
 }
 
-<<<<<<< HEAD
 .organigrama {
   display: flex;
   flex-direction: column;
@@ -231,11 +193,6 @@
   padding: 1.5rem;
 }
 
-.social-links h3 {
-  margin: 0 0 0.75rem;
-  color: #0f172a;
-}
-
 .social-links__list {
   display: flex;
   flex-wrap: wrap;
@@ -252,9 +209,6 @@
   font-weight: 600;
 }
 
-=======
-/* Visitas */
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
 .visits {
   display: flex;
   align-items: center;
@@ -284,42 +238,13 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-<<<<<<< HEAD
-=======
   transition: background-color 0.15s ease;
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
 }
 
 .visits__btn:hover {
   background-color: #1e40af;
 }
 
-<<<<<<< HEAD
-=======
-/* Responsive */
-@media (max-width: 800px) {
-  .nosotros-grid,
-  .nosotros-pillars__grid {
-    grid-template-columns: 1fr;
-  }
-
-  .nosotros-card--about {
-    flex-direction: column;
-  }
-
-  .visits {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .visits__btn {
-    margin-left: 0;
-    margin-top: 0.5rem;
-  }
-}
-
-/* Trabaja con nosotros */
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
 .trabajo-intro {
   display: flex;
   align-items: flex-start;
@@ -328,16 +253,12 @@
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 2rem;
-<<<<<<< HEAD
 }
 
 .trabajo-intro__body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-=======
-  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04);
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
 }
 
 .trabajo-intro p {
@@ -346,17 +267,11 @@
   margin: 0;
 }
 
-<<<<<<< HEAD
 .trabajo-callout {
   background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
   border: 1px solid #dbeafe;
   border-radius: 14px;
   padding: 1.5rem 1.75rem;
-}
-
-.trabajo-callout h3 {
-  margin: 0 0 0.75rem;
-  color: #0f172a;
 }
 
 .trabajo-callout__list {
@@ -382,8 +297,6 @@
   font-weight: 700;
 }
 
-=======
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
 .trabajo-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -394,11 +307,7 @@
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 1.75rem;
-<<<<<<< HEAD
-=======
-  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04);
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -458,15 +367,12 @@
   margin: 0 0 0.35rem;
 }
 
-<<<<<<< HEAD
 .trabajo-card__meta a {
   color: #1d4ed8;
   text-decoration: none;
   font-weight: 600;
 }
 
-=======
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
 .trabajo-card__nota {
   color: #64748b;
   font-style: italic;
@@ -481,7 +387,6 @@
 }
 
 .trabajo-btn {
-<<<<<<< HEAD
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -490,47 +395,26 @@
   font: inherit;
   font-size: 0.95rem;
   font-weight: 700;
-  cursor: pointer;
-  border: 1px solid transparent;
   text-decoration: none;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .trabajo-btn:hover {
   transform: translateY(-1px);
-=======
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font: inherit;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: background-color 0.15s ease, transform 0.15s ease;
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
 }
 
 .trabajo-btn--primary {
   background-color: #1d4ed8;
   color: #ffffff;
-<<<<<<< HEAD
   box-shadow: 0 10px 20px rgba(29, 78, 216, 0.12);
-=======
-}
-
-.trabajo-btn--primary:hover {
-  background-color: #1e40af;
-  transform: translateY(-1px);
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
 }
 
 .trabajo-btn--secondary {
   background-color: #ffffff;
   color: #1d4ed8;
-  border-color: #1d4ed8;
+  border: 1px solid #1d4ed8;
 }
 
-<<<<<<< HEAD
 @media (max-width: 800px) {
   .nosotros-grid,
   .nosotros-pillars__grid,
@@ -548,24 +432,5 @@
   .visits__btn {
     margin-left: 0;
     margin-top: 0.5rem;
-=======
-.trabajo-btn--secondary:hover {
-  background-color: #eff6ff;
-  transform: translateY(-1px);
-}
-
-/* Responsive Trabaja con nosotros */
-@media (max-width: 800px) {
-  .trabajo-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .trabajo-intro {
-    flex-direction: column;
-  }
-
-  .trabajo-card__list--dos-columnas {
-    grid-template-columns: 1fr;
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
   }
 }

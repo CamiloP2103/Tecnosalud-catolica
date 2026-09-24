@@ -53,12 +53,7 @@ function Triage() {
 
       {/* Qué es el Triage */}
       <div className="triage-info-box">
-<<<<<<< HEAD
-        <div className="triage-info-box__icon" aria-hidden="true">TI</div>
-=======
-        <div className="triage-info-box__icon" aria-hidden="true">⏱️</div>
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
-        <div>
+        <div className="triage-info-box__icon" aria-hidden="true">TI</div>        <div>
           <h3>¿Cómo funciona el Triage en Tecnosalud?</h3>
           <p>
             Al ingresar al servicio de urgencias, el personal de enfermería o medicina valorará tus signos vitales 
@@ -92,30 +87,15 @@ function Triage() {
         <h3>¿Qué debes tener en cuenta al acudir a Urgencias?</h3>
         <div className="triage-guide__grid">
           <div className="triage-guide__item">
-<<<<<<< HEAD
-            <span className="triage-guide__icon" aria-hidden="true">D</span>
-=======
-            <span className="triage-guide__icon" aria-hidden="true">📋</span>
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
-            <h4>Documentación</h4>
+            <span className="triage-guide__icon" aria-hidden="true">D</span>            <h4>Documentación</h4>
             <p>Presenta tu documento de identidad original y carné de afiliación digital desde la app de Tecnosalud.</p>
           </div>
           <div className="triage-guide__item">
-<<<<<<< HEAD
-            <span className="triage-guide__icon" aria-hidden="true">M</span>
-=======
-            <span className="triage-guide__icon" aria-hidden="true">💊</span>
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
-            <h4>Historial y Medicamentos</h4>
+            <span className="triage-guide__icon" aria-hidden="true">M</span>            <h4>Historial y Medicamentos</h4>
             <p>Informa sobre alergias conocidas, tratamientos farmacológicos actuales o antecedentes quirúrgicos.</p>
           </div>
           <div className="triage-guide__item">
-<<<<<<< HEAD
-            <span className="triage-guide__icon" aria-hidden="true">R</span>
-=======
-            <span className="triage-guide__icon" aria-hidden="true">🔄</span>
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
-            <h4>Reclasificación</h4>
+            <span className="triage-guide__icon" aria-hidden="true">R</span>            <h4>Reclasificación</h4>
             <p>Si durante la espera en sala sientes que tus síntomas empeoran, notifica de inmediato al personal del módulo de Triage.</p>
           </div>
         </div>

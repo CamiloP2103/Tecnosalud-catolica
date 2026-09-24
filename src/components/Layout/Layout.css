@@ -1,18 +1,9 @@
 .layout {
   min-height: calc(100vh - 80px);
-<<<<<<< HEAD
   padding: 2.5rem 1.5rem 1rem;
   background: linear-gradient(180deg, #f8fbff 0%, #f4f7fb 100%);
 }
 
 .layout__container {
-  width: min(1100px, 100%);
-=======
-  padding: 3rem 1.5rem;
-}
-
-.layout__container {
-  width: min(700px, 100%);
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
-  margin: 0 auto;
+  width: min(1100px, 100%);  margin: 0 auto;
 }

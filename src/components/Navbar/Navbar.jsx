@@ -4,61 +4,65 @@ import IconoTecnosalud from './Images/Icono.png';
 
 function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
   const [openDropdown, setOpenDropdown] = useState(null);
-<<<<<<< HEAD
   const [menuOpen, setMenuOpen] = useState(false);
-=======
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
   const navRef = useRef(null);
-
-  // Cierra el desplegable si se hace clic fuera del navbar
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (navRef.current && !navRef.current.contains(event.target)) {
-        setOpenDropdown(null);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const handleNavigate = (pageId) => {
     onNavigate(pageId);
+    setMenuOpen(false);
     setOpenDropdown(null);
   };
 
   const isChildActive = (item) =>
-    item.children?.some((child) => child.id === currentPage);
+    Array.isArray(item.children) &&
+    item.children.some((child) => child.id === currentPage);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (navRef.current && !navRef.current.contains(event.target)) {
+        setMenuOpen(false);
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
-    <nav className="navbar" aria-label="Navegación principal" ref={navRef}>
-      <div className="navbar__brand">
-        <img src={IconoTecnosalud} alt="Icono Tecnosalud" className="navbar__icon" width="40" height="40"/>
+    <nav className={`navbar ${menuOpen ? 'navbar--open' : ''}`} ref={navRef} aria-label="Navegación principal">
+      <div
+        className="navbar__brand"
+        role="button"
+        tabIndex={0}
+        onClick={() => handleNavigate('inicio')}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            handleNavigate('inicio');
+          }
+        }}
+      >
+        <img src={IconoTecnosalud} alt="Logo Tecnosalud" className="navbar__logo" />
         <div className="navbar__brand-text">
-          <h1 className="navbar__logo">
-            <span className="navbar__logo-primary">TECNO</span>
-            <span className="navbar__logo-accent">SALUD</span>
-          </h1>
-          <span className="navbar__tagline">Católica · innovación al servicio de tu salud</span>
+          <span className="navbar__brand-name">Tecnosalud</span>
+          <span className="navbar__brand-subtitle">Católica</span>
         </div>
       </div>
 
-<<<<<<< HEAD
       <button
         type="button"
-        className="navbar__menu-toggle"
-        aria-label="Abrir menú"
+        className="navbar__toggle"
+        aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
         aria-expanded={menuOpen}
-        onClick={() => setMenuOpen((value) => !value)}
+        onClick={() => setMenuOpen((current) => !current)}
       >
         <span />
         <span />
         <span />
       </button>
 
-      <div className={`navbar__links ${menuOpen ? 'navbar__links--open' : ''}`}>
-=======
-      <div className="navbar__links">
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
+      <div className={`navbar__menu ${menuOpen ? 'navbar__menu--open' : ''}`}>
         {navItems.map((item) =>
           item.children ? (
             <div className="navbar__dropdown" key={item.id}>
@@ -85,6 +89,7 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
                   <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
+
               {openDropdown === item.id && (
                 <div className="navbar__dropdown-menu" role="menu">
                   {item.children.map((child) => (
@@ -93,14 +98,10 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
                       role="menuitem"
                       type="button"
                       className={`navbar__dropdown-item ${currentPage === child.id ? 'navbar__dropdown-item--active' : ''}`}
-<<<<<<< HEAD
                       onClick={() => {
                         handleNavigate(child.id);
                         setMenuOpen(false);
                       }}
-=======
-                      onClick={() => handleNavigate(child.id)}
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
                     >
                       {child.label}
                     </button>
@@ -113,14 +114,10 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
               key={item.id}
               type="button"
               className={`navbar__link ${currentPage === item.id ? 'navbar__link--active' : ''}`}
-<<<<<<< HEAD
               onClick={() => {
                 handleNavigate(item.id);
                 setMenuOpen(false);
               }}
-=======
-              onClick={() => handleNavigate(item.id)}
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
               aria-current={currentPage === item.id ? 'page' : undefined}
             >
               {item.label}

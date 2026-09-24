@@ -23,7 +23,6 @@ describe('Navegación', () => {
     expect(await screen.findByRole('heading', { name: /404/i })).toBeInTheDocument();
     expect(await screen.findByText(/Página no encontrada/i)).toBeInTheDocument();
   });
-<<<<<<< HEAD
 
   it('debe mostrar las migas de pan y el pie de página con contacto', async () => {
     render(<App />);
@@ -33,6 +32,4 @@ describe('Navegación', () => {
     expect(screen.getByText(/contacto@tecnosalud.com/i)).toBeInTheDocument();
     expect(screen.getByText(/© 2026 Tecnosalud/i)).toBeInTheDocument();
   });
-=======
->>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
 });
