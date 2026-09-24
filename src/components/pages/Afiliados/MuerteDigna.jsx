@@ -3,25 +3,41 @@ import './MuerteDigna.css';
 const DIMENSIONES_DERECHO = [
   {
     id: 'cuidados-paliativos',
+<<<<<<< HEAD
     icon: 'CP',
+=======
+    icon: '🕊️',
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
     titulo: 'Cuidados Paliativos (Ley 1733 de 2014)',
     descripcion: 'Atención integral orientada a aliviar el dolor, el sufrimiento físico, psicológico y espiritual en pacientes con enfermedades terminales, crónicas, degenerativas e irreversibles.'
   },
   {
     id: 'desistimiento-tratamiento',
+<<<<<<< HEAD
     icon: 'AT',
+=======
+    icon: '✋',
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
     titulo: 'Adecuación / Retiro de Esfuerzo Terapéutico',
     descripcion: 'Derecho del paciente a rechazar o suspender tratamientos médicos, procedimientos desproporcionados o medidas de soporte vital que prolonguen la agonía (distanasia).'
   },
   {
     id: 'eutanasia-medica',
+<<<<<<< HEAD
     icon: 'EA',
+=======
+    icon: '⚖️',
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
     titulo: 'Eutanasia Activa (Res. 971 de 2021)',
     descripcion: 'Procedimiento médico que causa la muerte de manera deliberada, indolora y digna, previa solicitud voluntaria, informada e inequívoca del paciente que padezca un intenso sufrimiento derivado de una lesión corporal o enfermedad grave e incurable (Sentencia C-233 de 2021).'
   },
   {
     id: 'suicidio-asistido',
+<<<<<<< HEAD
     icon: 'SMA',
+=======
+    icon: '🤝',
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
     titulo: 'Suicidio Médicamente Asistido (SMA)',
     descripcion: 'Despenalizado mediante la Sentencia C-164 de 2022. El médico proporciona los medios o la sustancia letal para que el propio paciente sea quien la ingiera o administre bajo supervisión médica.'
   }
@@ -65,7 +81,11 @@ function MuerteDigna() {
 
       {/* Nota legal / resumen normativo */}
       <div className="triage-info-box">
+<<<<<<< HEAD
         <div className="triage-info-box__icon" aria-hidden="true">MC</div>
+=======
+        <div className="triage-info-box__icon" aria-hidden="true">🏛️</div>
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
         <div>
           <h3>Marco Constitucional en Colombia</h3>
           <p>
@@ -127,7 +147,11 @@ function MuerteDigna() {
 
       {/* Canales de orientación */}
       <div className="canales-ayuda">
+<<<<<<< HEAD
         <div className="canales-ayuda__icon" aria-hidden="true">C</div>
+=======
+        <div className="canales-ayuda__icon" aria-hidden="true">📞</div>
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
         <div>
           <h4>Comité de Bioética y Asesoría Legal</h4>
           <p>

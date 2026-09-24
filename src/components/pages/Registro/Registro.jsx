@@ -497,7 +497,11 @@ function Registro() {
                 title="Generar nueva operación"
                 style={{ background: 'none', border: 'none', color: '#1d4ed8', cursor: 'pointer', fontWeight: 600 }}
               >
+<<<<<<< HEAD
                 Cambiar
+=======
+                🔄 Cambiar
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
               </button>
             </div>
           </label>
@@ -509,7 +513,11 @@ function Registro() {
       {modalExito && (
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-content">
+<<<<<<< HEAD
             <div className="modal-icon">E</div>
+=======
+            <div className="modal-icon">✉️</div>
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
             <h3>¡Registro Exitoso!</h3>
             <p>Hemos procesado tu afiliación a <strong>Tecnosalud</strong>.</p>
             <div className="modal-info-box">

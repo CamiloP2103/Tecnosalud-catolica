@@ -4,7 +4,10 @@ import IconoTecnosalud from './Images/Icono.png';
 
 function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
   const [openDropdown, setOpenDropdown] = useState(null);
+<<<<<<< HEAD
   const [menuOpen, setMenuOpen] = useState(false);
+=======
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
   const navRef = useRef(null);
 
   // Cierra el desplegable si se hace clic fuera del navbar
@@ -39,6 +42,7 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
         </div>
       </div>
 
+<<<<<<< HEAD
       <button
         type="button"
         className="navbar__menu-toggle"
@@ -52,6 +56,9 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
       </button>
 
       <div className={`navbar__links ${menuOpen ? 'navbar__links--open' : ''}`}>
+=======
+      <div className="navbar__links">
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
         {navItems.map((item) =>
           item.children ? (
             <div className="navbar__dropdown" key={item.id}>
@@ -86,10 +93,14 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
                       role="menuitem"
                       type="button"
                       className={`navbar__dropdown-item ${currentPage === child.id ? 'navbar__dropdown-item--active' : ''}`}
+<<<<<<< HEAD
                       onClick={() => {
                         handleNavigate(child.id);
                         setMenuOpen(false);
                       }}
+=======
+                      onClick={() => handleNavigate(child.id)}
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
                     >
                       {child.label}
                     </button>
@@ -102,10 +113,14 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
               key={item.id}
               type="button"
               className={`navbar__link ${currentPage === item.id ? 'navbar__link--active' : ''}`}
+<<<<<<< HEAD
               onClick={() => {
                 handleNavigate(item.id);
                 setMenuOpen(false);
               }}
+=======
+              onClick={() => handleNavigate(item.id)}
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
               aria-current={currentPage === item.id ? 'page' : undefined}
             >
               {item.label}

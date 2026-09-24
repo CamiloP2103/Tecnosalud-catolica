@@ -12,22 +12,38 @@ const MOCK_MEDICAMENTOS = [
 
 const MODALIDADES_ENTREGA = [
   {
+<<<<<<< HEAD
     icon: 'PD',
+=======
+    icon: '🏪',
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
     titulo: 'Puntos de Dispensación',
     descripcion: 'Red de farmacias aliadas a nivel nacional para el reclamo presencial con tu fórmula médica digital y documento de identidad.'
   },
   {
+<<<<<<< HEAD
     icon: 'ED',
+=======
+    icon: '🛵',
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
     titulo: 'Entrega a Domicilio',
     descripcion: 'Disponible para pacientes mayores de 60 años, personas con movilidad reducida o afiliados con patologías crónicas priorizadas.'
   },
   {
+<<<<<<< HEAD
     icon: 'AM',
+=======
+    icon: '📑',
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
     titulo: 'Autorizaciones MIPRES',
     descripcion: 'Gestión y seguimiento en línea de medicamentos no incluidos en el PBS formulados por tu médico especialista.'
   },
   {
+<<<<<<< HEAD
     icon: 'FR',
+=======
+    icon: '🔄',
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
     titulo: 'Fórmula Recurrente',
     descripcion: 'Renovación automática y recordatorio mensual para tratamientos de control y enfermedades crónicas.'
   }
@@ -56,7 +72,11 @@ function Medicamentos() {
       {/* Buscador de medicamentos / consulta rápida */}
       <div className="meds-search-box">
         <div className="meds-search-box__header">
+<<<<<<< HEAD
           <span className="meds-search-box__icon" aria-hidden="true">CR</span>
+=======
+          <span className="meds-search-box__icon" aria-hidden="true">🔍</span>
+>>>>>>> 53552554eb647337d7076193bfa5a2c89a304d99
           <div>
             <h3>Consulta Rápida de Disponibilidad</h3>
             <p>Busca por nombre del principio activo o categoría médica:</p>
