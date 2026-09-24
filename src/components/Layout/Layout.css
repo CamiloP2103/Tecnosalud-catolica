@@ -1,0 +1,10 @@
+.layout {
+  min-height: calc(100vh - 80px);
+  padding: 2.5rem 1.5rem 1rem;
+  background: linear-gradient(180deg, #f8fbff 0%, #f4f7fb 100%);
+}
+
+.layout__container {
+  width: min(1100px, 100%);
+  margin: 0 auto;
+}

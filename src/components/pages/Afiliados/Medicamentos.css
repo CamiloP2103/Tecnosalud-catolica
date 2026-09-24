@@ -1,0 +1,247 @@
+.page--afiliados-sub {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.afiliados-sub__header {
+  text-align: center;
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.afiliados-sub__tag {
+  display: inline-block;
+  padding: 0.3rem 0.85rem;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 999px;
+  margin-bottom: 0.75rem;
+}
+
+.afiliados-sub__header h2 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 1rem;
+}
+
+.afiliados-sub__lead {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.meds-search-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04);
+}
+
+.meds-search-box__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.meds-search-box__icon {
+  font-size: 2rem;
+}
+
+.meds-search-box h3 {
+  font-size: 1.25rem;
+  color: #0f172a;
+  margin: 0 0 0.25rem;
+}
+
+.meds-search-box p {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.meds-search-input {
+  width: 100%;
+  padding: 0.85rem 1.2rem;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.95rem;
+  color: #0f172a;
+  margin-bottom: 1.5rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.meds-search-input:focus {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+}
+
+.meds-results {
+  overflow-x: auto;
+}
+
+.meds-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.meds-table th {
+  background-color: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.meds-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+
+.meds-table tr:hover {
+  background-color: #f8fafc;
+}
+
+.med-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 6px;
+}
+
+.med-badge--pbs {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.med-badge--mipres {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.med-status {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.med-status--ok {
+  color: #16a34a;
+}
+
+.med-status--pending {
+  color: #ea580c;
+}
+
+.meds-no-results {
+  padding: 1.5rem;
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+  margin: 0;
+}
+
+.meds-services h3 {
+  font-size: 1.5rem;
+  color: #0f172a;
+  margin-bottom: 1.25rem;
+}
+
+.meds-services__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.med-service-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.med-service-card__icon {
+  font-size: 1.8rem;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.med-service-card h4 {
+  font-size: 1.05rem;
+  color: #0f172a;
+  margin: 0 0 0.4rem;
+}
+
+.med-service-card p {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.dva-card {
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.dva-card__badge {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  background-color: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 6px;
+  margin-bottom: 0.6rem;
+}
+
+.dva-card h3 {
+  font-size: 1.3rem;
+  color: #0f172a;
+  margin: 0 0 0.75rem;
+}
+
+.dva-card p {
+  color: #334155;
+  line-height: 1.6;
+  margin: 0 0 1rem;
+}
+
+.dva-card__list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .meds-services__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .meds-search-box {
+    padding: 1.25rem;
+  }
+}
