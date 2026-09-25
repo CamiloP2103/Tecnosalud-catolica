@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "SPA de Tecnosalud Católica construida con React",
   "type": "module",
+  
   "scripts": {
     "dev": "vite",
     "build": "vite build",

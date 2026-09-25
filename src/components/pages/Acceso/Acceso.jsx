@@ -1,14 +1,8 @@
 import { useEffect, useState } from 'react';
 import './Acceso.css';
 
-const DUMMY_USERS = [
-  { id: 1, tipoDoc: 'CC', documento: '72000607', email: 'caenjiro@gmail.com', contrasena: '123456', nombre: 'Carlos Jiménez' },
-  { id: 2, tipoDoc: 'CC', documento: '1020304050', email: 'carlos.jimenez@tecnosalud.com.co', contrasena: 'admin2026', nombre: 'Carlos Admin' },
-  { id: 3, tipoDoc: 'CE', documento: '52148963', email: 'maria.gomez@clinicaejemplo.com', contrasena: 'maria2026', nombre: 'María Gómez' },
-  { id: 4, tipoDoc: 'TI', documento: '80123456', email: 'soporte.tecnosalud@gmail.com', contrasena: 'soporte123', nombre: 'Soporte Técnico' },
-  { id: 5, tipoDoc: 'PA', documento: '19456789', email: 'afiliados.bogota@redsalud.com', contrasena: 'afiliados2026', nombre: 'Afiliaciones Bogotá' }
-];
-const API_ACCESO = 'http://localhost:3001/api/usuarios/acceso';
+// URL del Microservicio de Autenticación (/api/auth según diagrama)
+const API_AUTH = import.meta.env.VITE_API_AUTH_URL || 'http://localhost:3002/api/auth';
 
 const CORREOS_DISTRACTORES = [
   'usuario.contacto@gmail.com',
@@ -45,6 +39,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     recordarUsuario: false,
   });
   const [errorMsg, setErrorMsg] = useState('');
+  const [cargando, setCargando] = useState(false);
 
   // Estado del usuario activo
   const [usuarioLogueado, setUsuarioLogueado] = useState(() => {
@@ -70,7 +65,6 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
   const [pasoUsuario, setPasoUsuario] = useState(1);
   const [tipoDocRecuperar, setTipoDocRecuperar] = useState('');
   const [docRecuperar, setDocRecuperar] = useState('');
-  const [usuarioEncontradoUser, setUsuarioEncontradoUser] = useState(null);
   const [opcionesCorreos, setOpcionesCorreos] = useState([]);
   const [correoSeleccionado, setCorreoSeleccionado] = useState('');
   const [intentosUsuario, setIntentosUsuario] = useState(0);
@@ -79,7 +73,6 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
   // Recuperación de Contraseña
   const [pasoClave, setPasoClave] = useState(1);
   const [correoClaveRecuperar, setCorreoClaveRecuperar] = useState('');
-  const [usuarioEncontradoClave, setUsuarioEncontradoClave] = useState(null);
   const [opcionesDocumentos, setOpcionesDocumentos] = useState([]);
   const [documentoSeleccionado, setDocumentoSeleccionado] = useState('');
   const [intentosClave, setIntentosClave] = useState(0);
@@ -142,60 +135,64 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     }
 
     if (parseInt(captchaInput, 10) !== captchaChallenge.resultado) {
-      setErrorMsg('El resultado del captcha es incorrecto. Intenta de nuevo.');
+      setErrorMsg('El resultado del control de seguridad es incorrecto.');
       generarCaptchaLocal();
       return;
     }
 
-    let usuarioValido;
+    setCargando(true);
     try {
-      const respuesta = await fetch(API_ACCESO, {
+      // Petición al Microservicio de Autenticación
+      const respuesta = await fetch(`${API_AUTH}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ usuario: correoIngresado, contrasena: claveIngresada }),
       });
+
       const datos = await respuesta.json();
+
       if (!respuesta.ok) {
-        setErrorMsg(datos.error || 'No se pudo iniciar sesión.');
+        setErrorMsg(datos.error || 'Credenciales inválidas.');
+        setCargando(false);
+        generarCaptchaLocal();
         return;
       }
-      usuarioValido = datos;
+
+      // Persistencia segura: Token JWT y datos del usuario
+      localStorage.setItem('tecnosalud_token', datos.token);
+      localStorage.setItem('tecnosalud_sesion_activa', JSON.stringify(datos.usuario));
+      setUsuarioLogueado(datos.usuario);
+
+      if (form.recordarUsuario) {
+        localStorage.setItem('tecnosalud_usuario_recordado', form.usuario.trim());
+      } else {
+        localStorage.removeItem('tecnosalud_usuario_recordado');
+      }
+
+      if (onLoginExitoso) {
+        onLoginExitoso();
+      }
+
+      setMensajeExito(`¡Bienvenido de nuevo, ${datos.usuario.nombre}! Has ingresado correctamente.`);
+      setEsLoginExitoso(true);
+      setModalAviso(true);
+
+      setForm((prev) => ({
+        ...prev,
+        contrasena: '',
+        usuario: prev.recordarUsuario ? prev.usuario : '',
+      }));
     } catch {
-      setErrorMsg('No se pudo conectar con el backend. Verifica que esté corriendo en el puerto 3001.');
-      return;
+      setErrorMsg('No se pudo conectar con el microservicio de autenticación. Verifica la conexión con el servidor.');
+    } finally {
+      setCargando(false);
+      generarCaptchaLocal();
     }
-
-    if (form.recordarUsuario) {
-      localStorage.setItem('tecnosalud_usuario_recordado', form.usuario.trim());
-    } else {
-      localStorage.removeItem('tecnosalud_usuario_recordado');
-    }
-
-    // 1. Guardar en localStorage
-    localStorage.setItem('tecnosalud_sesion_activa', JSON.stringify(usuarioValido));
-    setUsuarioLogueado(usuarioValido);
-
-    // 2. Notificar inmediatamente a App para activar "Servicios Clínicos" en el Navbar
-    if (onLoginExitoso) {
-      onLoginExitoso();
-    }
-
-    // 3. Mostrar modal de bienvenida
-    setMensajeExito(`¡Bienvenido de nuevo, ${usuarioValido.nombre}! Has ingresado correctamente.`);
-    setEsLoginExitoso(true);
-    setModalAviso(true);
-
-    setForm((prev) => ({
-      ...prev,
-      contrasena: '',
-      usuario: prev.recordarUsuario ? prev.usuario : '',
-    }));
-
-    generarCaptchaLocal();
   };
 
   const handleCerrarSesion = () => {
     localStorage.removeItem('tecnosalud_sesion_activa');
+    localStorage.removeItem('tecnosalud_token');
     setUsuarioLogueado(null);
 
     const usuarioRecordado = localStorage.getItem('tecnosalud_usuario_recordado');
@@ -217,7 +214,6 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     setPasoUsuario(1);
     setTipoDocRecuperar('');
     setDocRecuperar('');
-    setUsuarioEncontradoUser(null);
     setOpcionesCorreos([]);
     setCorreoSeleccionado('');
     setAlertaRecuperarUser('');
@@ -225,28 +221,29 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     setModalRecuperarUsuario(true);
   };
 
-  const handleConsultarDocumentoUsuario = (e) => {
+  const handleConsultarDocumentoUsuario = async (e) => {
     e.preventDefault();
     setAlertaRecuperarUser('');
 
-    const userFound = DUMMY_USERS.find(
-      (u) => u.tipoDoc === tipoDocRecuperar && u.documento === docRecuperar.trim()
-    );
-
-    if (!userFound) {
-      setAlertaRecuperarUser('No se encontró ningún usuario con ese tipo y número de documento.');
-      return;
+    try {
+      const res = await fetch(`${API_AUTH}/recuperar-usuario/consultar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipoDoc: tipoDocRecuperar, documento: docRecuperar.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAlertaRecuperarUser(data.error || 'No se encontró el usuario registrado.');
+        return;
+      }
+      setOpcionesCorreos(data.opciones);
+      setPasoUsuario(2);
+    } catch {
+      setAlertaRecuperarUser('Error conectando con el servicio de autenticación.');
     }
-
-    const distractores = [...CORREOS_DISTRACTORES].sort(() => 0.5 - Math.random()).slice(0, 2);
-    const listaMezclada = [userFound.email, ...distractores].sort(() => 0.5 - Math.random());
-
-    setUsuarioEncontradoUser(userFound);
-    setOpcionesCorreos(listaMezclada);
-    setPasoUsuario(2);
   };
 
-  const handleValidarCorreoUsuario = (e) => {
+  const handleValidarCorreoUsuario = async (e) => {
     e.preventDefault();
     setAlertaRecuperarUser('');
 
@@ -255,25 +252,38 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
       return;
     }
 
-    if (correoSeleccionado === usuarioEncontradoUser.email) {
-      setModalRecuperarUsuario(false);
-      setMensajeExito(`Validación exitosa. Hemos enviado tu usuario a ${enmascararCorreo(usuarioEncontradoUser.email)}.`);
-      setEsLoginExitoso(false);
-      setModalAviso(true);
-    } else {
-      const nuevosIntentos = intentosUsuario + 1;
-      setIntentosUsuario(nuevosIntentos);
+    try {
+      const res = await fetch(`${API_AUTH}/recuperar-usuario/verificar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipoDoc: tipoDocRecuperar,
+          documento: docRecuperar.trim(),
+          correoSeleccionado
+        }),
+      });
 
-      if (nuevosIntentos >= 3) {
+      const data = await res.json();
+
+      if (res.ok && data.valido) {
         setModalRecuperarUsuario(false);
-        setMensajeExito('Has superado los 3 intentos permitidos. Por seguridad, el proceso fue cancelado.');
+        setMensajeExito(`Validación exitosa. Hemos enviado tu usuario a ${enmascararCorreo(data.email)}.`);
         setEsLoginExitoso(false);
         setModalAviso(true);
       } else {
-        setAlertaRecuperarUser(
-          `El correo no coincide. Intento ${nuevosIntentos} de 3. Al tercer fallo la cuenta será bloqueada.`
-        );
+        const nuevosIntentos = intentosUsuario + 1;
+        setIntentosUsuario(nuevosIntentos);
+        if (nuevosIntentos >= 3) {
+          setModalRecuperarUsuario(false);
+          setMensajeExito('Has superado los 3 intentos permitidos. Por seguridad, el proceso fue cancelado.');
+          setEsLoginExitoso(false);
+          setModalAviso(true);
+        } else {
+          setAlertaRecuperarUser(`El correo no coincide. Intento ${nuevosIntentos} de 3.`);
+        }
       }
+    } catch {
+      setAlertaRecuperarUser('Error al verificar la información.');
     }
   };
 
@@ -281,7 +291,6 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
   const handleAbrirModalClave = () => {
     setPasoClave(1);
     setCorreoClaveRecuperar('');
-    setUsuarioEncontradoClave(null);
     setOpcionesDocumentos([]);
     setDocumentoSeleccionado('');
     setAlertaRecuperarClave('');
@@ -289,36 +298,47 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     setModalRecuperarClave(true);
   };
 
-  const handleConsultarCorreoClave = (e) => {
+// En src/components/pages/Acceso/Acceso.jsx
+
+  const handleConsultarCorreoClave = async (e) => {
     e.preventDefault();
     setAlertaRecuperarClave('');
 
     const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!regexEmail.test(correoClaveRecuperar.trim())) {
+    const correoLimpio = correoClaveRecuperar.trim();
+
+    if (!regexEmail.test(correoLimpio)) {
       setAlertaRecuperarClave('Por favor ingresa un correo electrónico válido.');
       return;
     }
 
-    const userFound = DUMMY_USERS.find(
-      (u) => u.email.toLowerCase() === correoClaveRecuperar.trim().toLowerCase()
-    );
+    setCargando(true);
+    try {
+      const res = await fetch(`${API_AUTH}/recuperar-clave/solicitar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: correoLimpio }),
+      });
 
-    if (!userFound) {
-      setAlertaRecuperarClave('El correo ingresado no se encuentra registrado en el sistema.');
-      return;
+      const data = await res.json();
+
+      if (!res.ok) {
+        setAlertaRecuperarClave(data.error || 'No se pudo enviar el correo.');
+        setCargando(false);
+        return;
+      }
+
+      setModalRecuperarClave(false);
+      setMensajeExito(`Hemos enviado un enlace seguro a ${enmascararCorreo(correoLimpio)}. Revisa tu bandeja de entrada o spam para restablecer tu contraseña.`);
+      setEsLoginExitoso(false);
+      setModalAviso(true);
+    } catch {
+      setAlertaRecuperarClave('Error de conexión con el microservicio de autenticación.');
+    } finally {
+      setCargando(false);
     }
-
-    const distractores = [...DOCUMENTOS_DISTRACTORES].sort(() => 0.5 - Math.random()).slice(0, 2);
-    const listaMezclada = [
-      { tipoDoc: userFound.tipoDoc, documento: userFound.documento, esReal: true },
-      ...distractores.map((d) => ({ ...d, esReal: false }))
-    ].sort(() => 0.5 - Math.random());
-
-    setUsuarioEncontradoClave(userFound);
-    setOpcionesDocumentos(listaMezclada);
-    setPasoClave(2);
   };
-
+  
   const handleValidarDocumentoClave = (e) => {
     e.preventDefault();
     setAlertaRecuperarClave('');
@@ -328,26 +348,10 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
       return;
     }
 
-    if (documentoSeleccionado === usuarioEncontradoClave.documento) {
-      setModalRecuperarClave(false);
-      setMensajeExito(`Validación exitosa. Se ha generado una clave temporal enviada a ${enmascararCorreo(usuarioEncontradoClave.email)}.`);
-      setEsLoginExitoso(false);
-      setModalAviso(true);
-    } else {
-      const nuevosIntentos = intentosClave + 1;
-      setIntentosClave(nuevosIntentos);
-
-      if (nuevosIntentos >= 3) {
-        setModalRecuperarClave(false);
-        setMensajeExito('Has superado los 3 intentos permitidos. Por seguridad, la recuperación fue cancelada.');
-        setEsLoginExitoso(false);
-        setModalAviso(true);
-      } else {
-        setAlertaRecuperarClave(
-          `El documento no coincide. Intento ${nuevosIntentos} de 3. Al tercer fallo la cuenta será bloqueada.`
-        );
-      }
-    }
+    setModalRecuperarClave(false);
+    setMensajeExito(`Validación procesada. Se ha generado un enlace de restablecimiento a ${enmascararCorreo(correoClaveRecuperar)}.`);
+    setEsLoginExitoso(false);
+    setModalAviso(true);
   };
 
   const handleCerrarAviso = () => {
@@ -357,7 +361,6 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     }
   };
 
-  // VISTA: SESIÓN ACTIVA (Cuando no hay modal abierto)
   if (sesionActiva && usuarioLogueado && !modalAviso) {
     return (
       <section className="page page--form">
@@ -370,6 +373,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
             <p><strong>Nombre:</strong> {usuarioLogueado.nombre}</p>
             <p><strong>Correo:</strong> {usuarioLogueado.email}</p>
             <p><strong>Documento:</strong> {usuarioLogueado.tipoDoc} {usuarioLogueado.documento}</p>
+            <p><strong>Rol:</strong> {usuarioLogueado.rol}</p>
           </div>
 
           <div className="acceso-logueado-actions">
@@ -393,7 +397,6 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     );
   }
 
-  // VISTA: FORMULARIO DE ACCESO (O Modal de bienvenida activo)
   return (
     <section className="page page--form">
       <h2>Acceso</h2>
@@ -418,6 +421,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
                 onChange={handleChange}
                 placeholder="ejemplo@correo.com"
                 required
+                disabled={cargando}
               />
             </label>
 
@@ -430,6 +434,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
                 onChange={handleChange}
                 placeholder="••••••••"
                 required
+                disabled={cargando}
               />
             </label>
 
@@ -465,7 +470,6 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
           </div>
         </fieldset>
 
-        {/* Control de Seguridad Local */}
         <div className="form__captcha-container">
           <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: 'bold' }}>
             <span>Seguridad: ¿Cuánto es {captchaChallenge.num1} + {captchaChallenge.num2}? *</span>
@@ -477,12 +481,14 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
                 placeholder="Respuesta"
                 required
                 style={{ width: '120px' }}
+                disabled={cargando}
               />
               <button
                 type="button"
                 onClick={generarCaptchaLocal}
                 className="acceso__link-btn"
                 title="Generar nueva operación"
+                disabled={cargando}
               >
                 Cambiar
               </button>
@@ -490,7 +496,9 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
           </label>
         </div>
 
-        <button type="submit" className="form__submit-btn">Iniciar sesión</button>
+        <button type="submit" className="form__submit-btn" disabled={cargando}>
+          {cargando ? 'Validando credenciales...' : 'Iniciar sesión'}
+        </button>
       </form>
 
       {/* Modal 1: Recuperar Usuario */}
@@ -550,7 +558,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
                 <p>
                   Documento validado: <strong>{tipoDocRecuperar} {enmascararDocumento(docRecuperar)}</strong>.
                   <br />
-                  Selecciona tu correo electrónico:
+                  Selecciona tu correo electrónico registrado:
                 </p>
 
                 <div className="modal-input-group">
@@ -630,7 +638,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
                 <p>
                   Correo verificado: <strong>{enmascararCorreo(correoClaveRecuperar)}</strong>.
                   <br />
-                  Selecciona el documento de identidad asociado:
+                  Confirma tu documento de identidad:
                 </p>
 
                 <div className="modal-input-group">
@@ -688,4 +696,5 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     </section>
   );
 }
+
 export default Acceso;

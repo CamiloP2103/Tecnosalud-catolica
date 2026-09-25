@@ -3,6 +3,7 @@ import Navbar from './components/Navbar/Navbar';
 import Layout from './components/Layout/Layout';
 import Footer from './components/Footer/Footer';
 import Breadcrumbs from './components/Breadcrumbs/Breadcrumbs';
+import RutaProtegida from './components/RutaProtegida/RutaProtegida';
 import './styles/global.css';
 
 // Carga perezosa de vistas
@@ -15,6 +16,7 @@ const MuerteDigna = lazy(() => import('./components/pages/Afiliados/MuerteDigna'
 const Medicamentos = lazy(() => import('./components/pages/Afiliados/Medicamentos'));
 const Triage = lazy(() => import('./components/pages/Afiliados/Triage'));
 const NotFound = lazy(() => import('./components/pages/NotFound/NotFound'));
+const RestablecerClave = lazy(() => import('./components/pages/Acceso/RestablecerClave'));
 
 const baseNavItems = [
   { id: 'inicio', label: 'Inicio' },
@@ -43,6 +45,7 @@ const baseNavItems = [
 
 const accesoItem = { id: 'acceso', label: 'Acceso' };
 
+// Mapeo único y global de páginas
 const pages = {
   inicio: Inicio,
   historia: Nosotros,
@@ -56,17 +59,23 @@ const pages = {
   'muerte-digna': MuerteDigna,
   medicamentos: Medicamentos,
   triage: Triage,
+  'restablecer-clave': RestablecerClave, // <- Ruta registrada
 };
 
+// Función limpia para extraer solo la ruta y descartar el '?token=...'
 const normalizeHashPage = (hashValue) => {
-  const cleaned = (hashValue || '').replace(/^#\/?/, '').trim();
-  return cleaned || 'inicio';
+  const sinPrefijo = (hashValue || '').replace(/^#\/?/, '').trim();
+  const rutaLimpia = sinPrefijo.split('?')[0].trim();
+  return rutaLimpia || 'inicio';
 };
 
 function App() {
   const [currentPage, setCurrentPage] = useState(() => normalizeHashPage(window.location.hash));
   const [sesionActiva, setSesionActiva] = useState(() => {
-    return Boolean(localStorage.getItem('tecnosalud_sesion_activa'));
+    return Boolean(
+      localStorage.getItem('tecnosalud_sesion_activa') &&
+      localStorage.getItem('tecnosalud_token')
+    );
   });
 
   useEffect(() => {
@@ -96,16 +105,40 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('tecnosalud_sesion_activa');
+    localStorage.removeItem('tecnosalud_token');
     setSesionActiva(false);
     handleNavigate('acceso');
   };
 
-  // Servicios Clínicos se agrega inmediatamente cuando sesionActiva es true
+  // Servicios Clínicos visible si la sesión está autenticada
   const navItems = sesionActiva
     ? [...baseNavItems, { id: 'servicios', label: 'Servicios Clínicos' }]
     : baseNavItems;
 
   const currentPageLabel = pages[currentPage] ? currentPage : '404';
+
+  // Renderiza el componente activo y aplica el guardián de ruta a "servicios"
+  const renderContenido = () => {
+    const contenido = (
+      <ActivePage
+        sesionActiva={sesionActiva}
+        onLoginExitoso={handleLoginExitoso}
+        onLogout={handleLogout}
+        onNavigate={handleNavigate}
+        seccion={currentPage}
+      />
+    );
+
+    if (currentPage === 'servicios') {
+      return (
+        <RutaProtegida onNavigate={handleNavigate}>
+          {contenido}
+        </RutaProtegida>
+      );
+    }
+
+    return contenido;
+  };
 
   return (
     <>
@@ -124,13 +157,7 @@ function App() {
             </div>
           }
         >
-          <ActivePage
-            sesionActiva={sesionActiva}
-            onLoginExitoso={handleLoginExitoso}
-            onLogout={handleLogout}
-            onNavigate={handleNavigate}
-            seccion={currentPage}
-          />
+          {renderContenido()}
         </Suspense>
       </Layout>
       <Footer />
