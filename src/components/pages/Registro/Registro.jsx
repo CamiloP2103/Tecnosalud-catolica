@@ -19,7 +19,7 @@ const MESES = [
 
 const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: anioActual - 1920 + 1 }, (_, i) => String(anioActual - i));
-const API_REGISTRO = 'http://localhost:3001/api/usuarios/registro';
+const API_REGISTRO = 'http://localhost:3003/api/registro';
 
 const MUNICIPIOS_COLOMBIA = [
   { depto: 'Cundinamarca / D.C.', ciudades: ['Bogotá D.C.', 'Soacha', 'Chía', 'Zipaquirá', 'Facatativá', 'Girardot'] },
@@ -189,7 +189,7 @@ function Registro() {
       setForm(estadoInicial);
       generarCaptchaLocal();
     } catch {
-      setErrorMsg('No se pudo conectar con el backend. Verifica que esté corriendo en el puerto 3001.');
+      setErrorMsg('No se pudo conectar con el servicio de registro. Verifica que esté corriendo en el puerto 3003.');
     }
   };
 

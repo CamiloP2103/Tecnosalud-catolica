@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 
 -- 3. Tabla de Logs de Autenticación
 CREATE TABLE IF NOT EXISTS bitacora_acceso (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,usuarios
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
   usuario_id INT NULL,
   email_ingresado VARCHAR(120) NOT NULL,
   ip_origen VARCHAR(45) NULL,
@@ -65,7 +65,7 @@ INSERT INTO usuarios (tipo_doc, documento, email, contrasena_hash, nombre, rol_i
   ('PA', '19456789', 'afiliados.bogota@redsalud.com', '$2a$10$qK1k7k2pM4y7l2a1S1Yj4MflVf0XF6xT394eQ/eL9o6QpZ0i8Nq0.', 'Afiliaciones Bogotá', 1, TRUE)
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 
-select * from usuarios 
+select * from usuarios;
 
 
 USE db_auth;
@@ -80,4 +80,4 @@ CREATE TABLE IF NOT EXISTS tokens_recuperacion (
   CONSTRAINT fk_token_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-select * from db_auth.tokens_recuperacion
+select * from db_auth.tokens_recuperacion;
