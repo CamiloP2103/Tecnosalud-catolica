@@ -30,8 +30,8 @@ function RestablecerClave({ onNavigate }) {
       return;
     }
 
-    if (nuevaClave.length < 6) {
-      setErrorMsg('La contraseña debe tener al menos 6 caracteres.');
+    if (nuevaClave.length < 8) {
+      setErrorMsg('La contraseña debe tener al menos 8 caracteres.');
       return;
     }
 
@@ -95,7 +95,7 @@ function RestablecerClave({ onNavigate }) {
                   type="password"
                   value={nuevaClave}
                   onChange={(e) => setNuevaClave(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                   required
                   disabled={cargando}
                 />

@@ -329,7 +329,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
       }
 
       setModalRecuperarClave(false);
-      setMensajeExito(`Hemos enviado un enlace seguro a ${enmascararCorreo(correoLimpio)}. Revisa tu bandeja de entrada o spam para restablecer tu contraseña.`);
+      setMensajeExito(data.mensaje || `Si ${enmascararCorreo(correoLimpio)} está registrado, recibirás un enlace seguro. Revisa tu bandeja de entrada o spam para restablecer tu contraseña.`);
       setEsLoginExitoso(false);
       setModalAviso(true);
     } catch {
