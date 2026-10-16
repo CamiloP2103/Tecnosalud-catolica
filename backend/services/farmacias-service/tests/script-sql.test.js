@@ -17,8 +17,8 @@ const farmacias = [...script.matchAll(/\('(FAR-\d{2})', '([^']+)', '([^']+)', '(
   .map((m) => ({ codigo: m[1], nombre: m[2], cadena: m[3], direccion: m[4], municipio: m[6] }));
 
 describe('script SQL de db_farmacias', () => {
-  it('crea las cinco tablas del servicio', () => {
-    for (const tabla of ['medicamentos', 'farmacias', 'inventario', 'solicitudes', 'solicitud_items']) {
+  it('crea las seis tablas del servicio', () => {
+    for (const tabla of ['medicamentos', 'farmacias', 'inventario', 'solicitudes', 'solicitud_items', 'reabastecimientos']) {
       expect(script).toContain(`CREATE TABLE IF NOT EXISTS ${tabla}`);
     }
   });

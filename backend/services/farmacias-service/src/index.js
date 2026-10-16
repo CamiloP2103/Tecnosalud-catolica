@@ -2,6 +2,7 @@ require('dotenv').config();
 const pool = require('./config/db');
 const { crearRepositorio } = require('./repositorio');
 const { crearApp } = require('./app');
+const { crearReabastecedor } = require('./reabastecimiento');
 
 const PORT = process.env.PORT || 3004;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -24,8 +25,13 @@ async function notificar({ to, subject, html }) {
   if (!respuesta.ok) throw new Error(`notification-service respondió ${respuesta.status}`);
 }
 
+// Reabastecimiento semanal: cada lunes (hora de Bogotá) rellena el inventario hasta el objetivo
+const reabastecedor = crearReabastecedor({ pool, objetivo: Number(process.env.REABASTECIMIENTO_OBJETIVO) || 60 });
+if (process.env.REABASTECIMIENTO_AUTOMATICO !== 'false') reabastecedor.iniciarProgramacion();
+
 const app = crearApp({
   repo: crearRepositorio(pool),
+  reabastecedor,
   jwtSecret: JWT_SECRET,
   frontendUrl: FRONTEND_URL,
   notificar,

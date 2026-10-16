@@ -96,6 +96,18 @@ CREATE TABLE IF NOT EXISTS solicitud_items (
   CONSTRAINT chk_item_cantidad CHECK (cantidad > 0)
 ) ENGINE=InnoDB;
 
+-- 6. Historial de reabastecimientos semanales (solo los lunes, uno por semana ISO)
+CREATE TABLE IF NOT EXISTS reabastecimientos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  semana CHAR(8) NOT NULL UNIQUE,            -- semana ISO, ej. 2026-W43: impide reabastecer dos veces
+  fecha DATE NOT NULL,                        -- lunes en que se hizo (hora de Bogotá)
+  origen ENUM('AUTOMATICO', 'MANUAL') NOT NULL,
+  objetivo INT NOT NULL,                      -- unidades a las que se rellena cada producto
+  filas_actualizadas INT NOT NULL DEFAULT 0,
+  unidades_agregadas INT NOT NULL DEFAULT 0,
+  creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 -- Poblamiento: medicamentos (codigo, nombre, concentracion, forma, presentacion, categoria,
 -- requiere_formula, control_especial, precio_referencia, descripcion)
 INSERT INTO medicamentos

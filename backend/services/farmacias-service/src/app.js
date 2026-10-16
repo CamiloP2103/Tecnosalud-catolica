@@ -17,7 +17,8 @@ const idValido = (v) => {
 };
 
 // `repo`: ver repositorio.js. `notificar({ to, subject, html })` delega el correo al notification-service.
-function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto }) {
+// `reabastecedor` (opcional, ver reabastecimiento.js) expone el estado del reabastecimiento semanal
+function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reabastecedor = null }) {
   const app = express();
 
   app.use(cors({ origin: frontendUrl }));
@@ -92,6 +93,12 @@ function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto }) {
     const medicamento = id ? await repo.obtenerMedicamento(id) : null;
     if (!medicamento) return res.status(404).json({ error: 'El medicamento no existe.' });
     return res.json(medicamento);
+  }));
+
+  // ---- Reabastecimiento semanal (público, solo lectura) ----
+  router.get('/reabastecimiento', manejar(async (req, res) => {
+    if (!reabastecedor) return res.status(503).json({ error: 'El reabastecimiento no está configurado.' });
+    return res.json(await reabastecedor.estado());
   }));
 
   // ---- Farmacias e inventario (público) ----

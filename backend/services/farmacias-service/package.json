@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "inventario:reabastecer": "node scripts/reabastecer.js"
   },
   "dependencies": {
     "cors": "^2.8.6",

@@ -212,3 +212,8 @@ cd backend && npm test # pruebas de los cinco microservicios (sin MySQL ni SMTP)
    - **Bloqueo por cuenta:** se guarda en `intentos_fallidos` y `bloqueado_hasta`. Tras 5 contraseñas incorrectas seguidas, la cuenta queda bloqueada 15 minutos aunque se reinicie el servicio o se intente desde otra IP. Un login exitoso o restablecer la contraseña la desbloquean.
    - Se mantiene además el límite en memoria por IP y correo.
    - Se agregaron 5 pruebas y se verificó el SQL contra Azure.
+26. **Reabastecimiento semanal del inventario de farmacias, solo los lunes.**
+   - Cada lunes (hora de Bogotá), `farmacias-service` rellena hasta 60 unidades todo producto que tenga menos. Lo hace solo: revisa al arrancar y cada hora.
+   - También se puede lanzar ese día con `cd backend/services/farmacias-service && npm run inventario:reabastecer`. Otro día se niega y dice cuándo es el próximo.
+   - La nueva tabla `reabastecimientos` usa la semana ISO como clave única, así que solo puede pasar una vez por semana, y registra el origen, los productos actualizados y las unidades agregadas.
+   - `GET /api/farmacias/reabastecimiento` informa el estado. Se agregaron 10 pruebas (incluidos los cambios de día con la hora de Bogotá) y la tabla ya está creada en Azure.
