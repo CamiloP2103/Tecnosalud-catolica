@@ -61,7 +61,8 @@ Tecnosalud-catolica/
     └── services/
         ├── auth-service/         # src/app.js, plantillas.js, limitador.js, index.js, tests/
         ├── notification-service/ # src/app.js, index.js, tests/
-        └── registro-service/     # src/app.js, validators.js, index.js, database/, tests/
+        ├── registro-service/     # src/app.js, validators.js, index.js, database/, tests/
+        └── farmacias-service/    # src/app.js, repositorio.js, validators.js, autenticacion.js, database/, tests/
 ```
 
 Cada microservicio tiene un `.env.example`. El `.env` real no se versiona.
@@ -156,6 +157,7 @@ Es una vista adicional que aparece en la navegación cuando el usuario ha inicia
 
 - **auth-service**: `POST /api/auth/login`, `POST /api/auth/recuperar-clave/solicitar` y `POST /api/auth/recuperar-clave/restablecer`. Las contraseñas se guardan con bcrypt. Los errores de login son genéricos ("Credenciales inválidas.") y la recuperación responde igual exista o no el correo. Tiene límite de intentos en memoria y CORS restringido a `FRONTEND_URL`.
 - **registro-service**: `POST /api/registro` valida el formulario (`validators.js`) y lo guarda en `db_registro.afiliados`; `GET /api/registro/health`.
+- **farmacias-service** (puerto 3004, `db_farmacias`): catálogo de 100 medicamentos (venta libre, con fórmula o de control especial), 8 farmacias de Bogotá, Chía, Cajicá y Soacha con su inventario, y solicitudes de medicamentos con sesión (valida el JWT de `auth-service`). Exige fórmula vigente (30 días) cuando el medicamento la requiere, no permite pedir en línea los de control especial y descuenta las existencias en una transacción. Detalle en `backend/services/farmacias-service/LEEME.md`.
 - **notification-service**: `POST /api/notifications/email` exige la cabecera `x-api-key` igual a `NOTIFICATION_API_KEY`, compartida con los otros dos servicios. No acepta peticiones del navegador. `GET /health`.
 
 Las pruebas de cada servicio simulan MySQL y SMTP, así que se pueden correr sin infraestructura.

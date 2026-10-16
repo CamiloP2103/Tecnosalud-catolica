@@ -1,6 +1,6 @@
 # Tecnosalud Católica
 
-Portal web de salud: un frontend SPA en React + Vite y tres microservicios en Node.js + Express.
+Portal web de salud: un frontend SPA en React + Vite y cuatro microservicios en Node.js + Express.
 
 ## Arquitectura
 
@@ -9,14 +9,18 @@ Portal web de salud: un frontend SPA en React + Vite y tres microservicios en No
 | Frontend (React 18 + Vite) | 5173 | `src/` | Portal: inicio, nosotros, registro, afiliados, acceso y servicios clínicos |
 | `auth-service` | 3002 | `backend/services/auth-service` | Login con JWT, recuperación y restablecimiento de contraseña (MySQL `db_auth`) |
 | `registro-service` | 3003 | `backend/services/registro-service` | Guarda las solicitudes de afiliación (MySQL `db_registro`) |
+| `farmacias-service` | 3004 | `backend/services/farmacias-service` | Catálogo de 100 medicamentos, 8 farmacias con inventario y solicitudes de medicamentos (MySQL `db_farmacias`) |
 | `notification-service` | 3005 | `backend/services/notification-service` | Envía correos por SMTP; solo lo llaman los otros servicios, con `x-api-key` |
 
 ```
-Navegador ──► auth-service ────┐
-         └──► registro-service ┴──► notification-service ──► SMTP (Gmail)
-                 │                       ▲
-                 └──── MySQL ────────────┘ (auth y registro)
+Navegador ──► auth-service ──────┐
+         ├──► registro-service ──┼──► notification-service ──► SMTP (Gmail)
+         └──► farmacias-service ─┘
+                     │
+                     └──► MySQL (db_auth, db_registro, db_farmacias)
 ```
+
+`farmacias-service` valida el JWT que emite `auth-service`, por eso los dos comparten `JWT_SECRET`.
 
 ## Estructura
 
@@ -24,7 +28,8 @@ Navegador ──► auth-service ────┐
 - `src/components/`: `Navbar`, `Layout`, `Footer`, `Breadcrumbs` y `RutaProtegida` (protege Servicios Clínicos validando el JWT).
 - `src/components/pages/`: `Inicio`, `Nosotros`, `Registro`, `Afiliados` (Muerte digna, Medicamentos, Triage), `Acceso` (+ `RestablecerClave`), `ServiciosSalud` y `NotFound`.
 - `src/__tests__/`: pruebas del frontend (Vitest + Testing Library).
-- `backend/Database/` y `backend/services/registro-service/database/`: scripts SQL para crear las bases de datos.
+- `backend/Database/`, `backend/services/registro-service/database/` y `backend/services/farmacias-service/database/`: scripts SQL para crear las bases de datos.
+- `backend/scripts/db-init.js`: crea todas las bases con `npm run db:init`.
 - `backend/services/*/src/app.js`: rutas del servicio. `src/index.js` solo carga el `.env` y arranca el servidor.
 - `backend/services/*/tests/`: pruebas de cada microservicio.
 
@@ -36,19 +41,19 @@ Navegador ──► auth-service ────┐
 ## Configuración
 
 1. **Variables de entorno.** En cada servicio copia `.env.example` como `.env` y completa los valores:
-   - `JWT_SECRET` en `auth-service` (obligatorio, el servicio no arranca sin él).
-   - `NOTIFICATION_API_KEY`: **el mismo valor** en los tres servicios.
+   - `JWT_SECRET` en `auth-service` y `farmacias-service`: obligatorio y **el mismo valor** en ambos.
+   - `NOTIFICATION_API_KEY`: **el mismo valor** en `auth-service`, `registro-service`, `farmacias-service` y `notification-service`.
    - `SMTP_USER` y `SMTP_PASS` en `notification-service` (contraseña de aplicación de Gmail).
-   - Datos de MySQL en `auth-service` y `registro-service`.
+   - Datos de MySQL en `auth-service`, `registro-service` y `farmacias-service`.
 
    Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL` y `VITE_API_REGISTRO_URL`, que son opcionales.
-2. **Bases de datos.** Con los `.env` listos, crea `db_auth` y `db_registro` con un comando:
+2. **Bases de datos.** Con los `.env` listos, crea `db_auth`, `db_registro` y `db_farmacias` con un comando:
    ```bash
    cd backend
    npm run install:all   # solo la primera vez
    npm run db:init
    ```
-   El comando crea las tablas y los usuarios de prueba. Si también tienes un cliente de MySQL, puedes ejecutar a mano `backend/Database/Script_Creacion_BasededatosAutenticacion.sql` y `backend/services/registro-service/database/Script_Creacion_BasedeDatosRegistro.sql`.
+   El comando crea las tablas, los usuarios de prueba, el catálogo de medicamentos, las farmacias y su inventario. Si también tienes un cliente de MySQL, puedes ejecutar los scripts `.sql` a mano.
 
 ### Usuarios de prueba
 
@@ -70,14 +75,14 @@ Son claves de demostración: cámbialas o elimina estos usuarios en un entorno r
 - Usuario administrador, por ejemplo `tecnoadmin` (Azure no permite `root`), con una contraseña fuerte y nueva.
 - **Redes**: *Acceso público* y *Agregar la dirección IP del cliente actual*. Cada integrante del equipo debe agregar su IP. No abras el rango `0.0.0.0 – 255.255.255.255`.
 
-**2. Configurar los `.env`** de `auth-service` y `registro-service`:
+**2. Configurar los `.env`** de `auth-service`, `registro-service` y `farmacias-service`:
 
 ```env
 DB_HOST=tecnosalud-mysql.mysql.database.azure.com
 DB_PORT=3306
 DB_USER=tecnoadmin
 DB_PASSWORD=tu-contraseña
-DB_NAME=db_auth          # en registro-service: db_registro
+DB_NAME=db_auth          # registro-service: db_registro · farmacias-service: db_farmacias
 DB_SSL=true              # Azure exige conexión cifrada
 ```
 
@@ -85,7 +90,7 @@ No hace falta descargar certificados: Node ya confía en las autoridades que usa
 
 **3. Crear las bases:** `cd backend && npm run db:init`.
 
-**4. Reiniciar** `auth-service` y `registro-service`, y entrar con un usuario de prueba.
+**4. Reiniciar** `auth-service`, `registro-service` y `farmacias-service`, y entrar con un usuario de prueba.
 
 **Si algo falla**, `db:init` y la pantalla de acceso muestran la causa:
 
@@ -102,12 +107,13 @@ No hace falta descargar certificados: Node ya confía en las autoridades que usa
 ```bash
 # Instalar todo
 npm install                       # frontend
-cd backend && npm run install:all # los tres microservicios
+cd backend && npm run install:all # los cuatro microservicios
 
 # Levantar (una terminal por servicio)
 cd backend/services/notification-service && npm run dev
 cd backend/services/auth-service && npm run dev
 cd backend/services/registro-service && npm run dev
+cd backend/services/farmacias-service && npm run dev
 npm run dev                       # frontend en http://localhost:5173
 ```
 
@@ -117,13 +123,14 @@ npm run dev                       # frontend en http://localhost:5173
 npm test               # frontend (Vitest + Testing Library)
 npm run lint           # ESLint del frontend
 npm run build          # build de producción en dist/
-cd backend && npm test # pruebas de los tres microservicios (sin MySQL ni SMTP)
+cd backend && npm test # pruebas de los cuatro microservicios (sin MySQL ni SMTP)
 ```
 
 ## Pendientes conocidos
 
 - `Acceso.jsx` llama a `/api/auth/recuperar-usuario/consultar` y `/verificar`, pero esos endpoints **no existen** en `auth-service`, así que "Recuperar usuario" no funciona todavía.
 - El límite de intentos de login se guarda en memoria: se reinicia al reiniciar `auth-service` y no se comparte entre varias instancias.
+- El frontend todavía no usa `farmacias-service`: la página Afiliados → Medicamentos sigue siendo informativa.
 - Las credenciales que estuvieron en git (SMTP, MySQL, `JWT_SECRET`) deben rotarse, porque siguen en el historial de `main`.
 
 ## Registro de cambios (rama `juan/limpieza-env`)
@@ -162,3 +169,4 @@ cd backend && npm test # pruebas de los tres microservicios (sin MySQL ni SMTP)
    - Tablas: `medicamentos`, `farmacias`, `inventario`, `solicitudes` y `solicitud_items`.
    - Las direcciones de las farmacias se tomaron de los directorios públicos de cada cadena (octubre de 2026). Los precios son referencias aproximadas y el inventario es ficticio.
    - 40 pruebas. Detalle de endpoints y reglas en `backend/services/farmacias-service/LEEME.md`.
+18. **`farmacias-service` integrado al proyecto.** `npm run db:init` crea también `db_farmacias` (o solo esa base con `npm run db:init -- farmacias`). `backend/package.json` instala y prueba los cuatro servicios, y este README documenta su puerto, sus variables (`JWT_SECRET` compartido con `auth-service`) y cómo arrancarlo.
