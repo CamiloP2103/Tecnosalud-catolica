@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import './Acceso.css';
+import { llamarServicio, mensajeDeError, SERVICIO_AUTH } from '../../../utils/servicios';
 
 // URL del Microservicio de Autenticación (/api/auth según diagrama)
 const API_AUTH = import.meta.env.VITE_API_AUTH_URL || 'http://localhost:3002/api/auth';
-
 
 const enmascararCorreo = (email) => {
   if (!email || email.length <= 7) return email;
@@ -129,15 +129,13 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     setCargando(true);
     try {
       // Petición al Microservicio de Autenticación
-      const respuesta = await fetch(`${API_AUTH}/login`, {
+      const { ok, datos } = await llamarServicio(`${API_AUTH}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ usuario: correoIngresado, contrasena: claveIngresada }),
-      });
+      }, SERVICIO_AUTH);
 
-      const datos = await respuesta.json();
-
-      if (!respuesta.ok) {
+      if (!ok) {
         setErrorMsg(datos.error || 'Credenciales inválidas.');
         setCargando(false);
         generarCaptchaLocal();
@@ -168,8 +166,8 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
         contrasena: '',
         usuario: prev.recordarUsuario ? prev.usuario : '',
       }));
-    } catch {
-      setErrorMsg('No se pudo conectar con el microservicio de autenticación. Verifica la conexión con el servidor.');
+    } catch (error) {
+      setErrorMsg(mensajeDeError(error, SERVICIO_AUTH));
     } finally {
       setCargando(false);
       generarCaptchaLocal();
@@ -212,20 +210,19 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     setAlertaRecuperarUser('');
 
     try {
-      const res = await fetch(`${API_AUTH}/recuperar-usuario/consultar`, {
+      const { ok, datos: data } = await llamarServicio(`${API_AUTH}/recuperar-usuario/consultar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tipoDoc: tipoDocRecuperar, documento: docRecuperar.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
+      }, SERVICIO_AUTH);
+      if (!ok) {
         setAlertaRecuperarUser(data.error || 'No se encontró el usuario registrado.');
         return;
       }
       setOpcionesCorreos(data.opciones);
       setPasoUsuario(2);
-    } catch {
-      setAlertaRecuperarUser('Error conectando con el servicio de autenticación.');
+    } catch (error) {
+      setAlertaRecuperarUser(mensajeDeError(error, SERVICIO_AUTH));
     }
   };
 
@@ -239,7 +236,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     }
 
     try {
-      const res = await fetch(`${API_AUTH}/recuperar-usuario/verificar`, {
+      const { ok, datos: data } = await llamarServicio(`${API_AUTH}/recuperar-usuario/verificar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -247,11 +244,9 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
           documento: docRecuperar.trim(),
           correoSeleccionado
         }),
-      });
+      }, SERVICIO_AUTH);
 
-      const data = await res.json();
-
-      if (res.ok && data.valido) {
+      if (ok && data.valido) {
         setModalRecuperarUsuario(false);
         setMensajeExito(`Validación exitosa. Hemos enviado tu usuario a ${enmascararCorreo(data.email)}.`);
         setEsLoginExitoso(false);
@@ -268,8 +263,8 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
           setAlertaRecuperarUser(`El correo no coincide. Intento ${nuevosIntentos} de 3.`);
         }
       }
-    } catch {
-      setAlertaRecuperarUser('Error al verificar la información.');
+    } catch (error) {
+      setAlertaRecuperarUser(mensajeDeError(error, SERVICIO_AUTH));
     }
   };
 
@@ -299,15 +294,13 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
 
     setCargando(true);
     try {
-      const res = await fetch(`${API_AUTH}/recuperar-clave/solicitar`, {
+      const { ok, datos: data } = await llamarServicio(`${API_AUTH}/recuperar-clave/solicitar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: correoLimpio }),
-      });
+      }, SERVICIO_AUTH);
 
-      const data = await res.json();
-
-      if (!res.ok) {
+      if (!ok) {
         setAlertaRecuperarClave(data.error || 'No se pudo enviar el correo.');
         setCargando(false);
         return;
@@ -317,8 +310,8 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
       setMensajeExito(data.mensaje || `Si ${enmascararCorreo(correoLimpio)} está registrado, recibirás un enlace seguro. Revisa tu bandeja de entrada o spam para restablecer tu contraseña.`);
       setEsLoginExitoso(false);
       setModalAviso(true);
-    } catch {
-      setAlertaRecuperarClave('Error de conexión con el microservicio de autenticación.');
+    } catch (error) {
+      setAlertaRecuperarClave(mensajeDeError(error, SERVICIO_AUTH));
     } finally {
       setCargando(false);
     }

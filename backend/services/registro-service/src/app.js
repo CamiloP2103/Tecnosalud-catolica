@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { validarRegistro } = require('./validators');
+const { errorBaseDatos } = require('./errores');
 
 const escaparHtml = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -65,6 +66,11 @@ function crearApp({ pool, frontendUrl, notificar, puerto }) {
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY') {
         return res.status(409).json({ error: 'El correo o el documento ya está registrado.' });
+      }
+      const mensajeBD = errorBaseDatos(error);
+      if (mensajeBD) {
+        console.error('[registro-service] Base de datos no disponible:', error.code);
+        return res.status(503).json({ error: mensajeBD });
       }
       console.error('[registro-service] Error en POST /api/registro:', error);
       return res.status(500).json({ error: 'Error interno en el servidor.' });

@@ -78,6 +78,14 @@ describe('POST /api/registro', () => {
     expect(notificar.mock.calls[0][0].html).toContain('&lt;b&gt;Ana&lt;/b&gt;');
   });
 
+  it('responde 503 con la causa si MySQL no está corriendo', async () => {
+    const caido = Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' });
+    const { app } = crear(vi.fn().mockRejectedValue(caido));
+    const res = await request(app).post('/api/registro').send(formularioValido);
+    expect(res.status).toBe(503);
+    expect(res.body.error).toContain('MySQL no está corriendo');
+  });
+
   it('responde 409 si el correo o documento ya existe', async () => {
     const duplicado = Object.assign(new Error('dup'), { code: 'ER_DUP_ENTRY' });
     const { app } = crear(vi.fn().mockRejectedValue(duplicado));

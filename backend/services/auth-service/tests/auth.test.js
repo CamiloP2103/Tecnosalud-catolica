@@ -173,6 +173,27 @@ describe('POST /api/auth/recuperar-clave/restablecer', () => {
   });
 });
 
+describe('base de datos no disponible', () => {
+  it.each([
+    ['ECONNREFUSED', 'MySQL no está corriendo'],
+    ['ER_ACCESS_DENIED_ERROR', 'DB_USER/DB_PASSWORD'],
+    ['ER_NO_SUCH_TABLE', 'Faltan tablas'],
+  ])('responde 503 con la causa cuando MySQL falla con %s', async (code, causa) => {
+    const pool = { query: vi.fn().mockRejectedValue(Object.assign(new Error('fallo'), { code })) };
+    const app = crearApp({ pool, jwtSecret: JWT_SECRET, frontendUrl: 'http://localhost:5173', notificar: vi.fn() });
+    const res = await request(app).post('/api/auth/login').send({ usuario: usuarioBase.email, contrasena: CLAVE });
+    expect(res.status).toBe(503);
+    expect(res.body.error).toContain(causa);
+  });
+
+  it('mantiene 500 para errores que no son de conexión', async () => {
+    const pool = { query: vi.fn().mockRejectedValue(new Error('otro')) };
+    const app = crearApp({ pool, jwtSecret: JWT_SECRET, frontendUrl: 'http://localhost:5173', notificar: vi.fn() });
+    const res = await request(app).post('/api/auth/login').send({ usuario: usuarioBase.email, contrasena: CLAVE });
+    expect(res.status).toBe(500);
+  });
+});
+
 describe('plantillas de correo', () => {
   it('escapan el nombre del usuario', () => {
     const html = plantillaAlertaLogin({

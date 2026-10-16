@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { plantillaAlertaLogin, plantillaRecuperacion } = require('./plantillas');
 const { crearLimitador } = require('./limitador');
+const { errorBaseDatos } = require('./errores');
 
 const LARGO_MINIMO_CLAVE = 8;
 const QUINCE_MINUTOS = 15 * 60 * 1000;
@@ -121,6 +122,11 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
         },
       });
     } catch (error) {
+      const mensajeBD = errorBaseDatos(error);
+      if (mensajeBD) {
+        console.error('[auth-service] Base de datos no disponible:', error.code);
+        return res.status(503).json({ error: mensajeBD });
+      }
       console.error('Error en /login:', error);
       return res.status(500).json({ error: 'Error interno en el servidor.' });
     }
@@ -180,6 +186,11 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
 
       return res.json({ mensaje: MENSAJE_RECUPERACION });
     } catch (error) {
+      const mensajeBD = errorBaseDatos(error);
+      if (mensajeBD) {
+        console.error('[auth-service] Base de datos no disponible:', error.code);
+        return res.status(503).json({ error: mensajeBD });
+      }
       console.error('Error general en /recuperar-clave/solicitar:', error);
       return res.status(500).json({ error: 'Error interno en el servidor.' });
     }
@@ -232,6 +243,11 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
 
       return res.json({ mensaje: 'Contraseña actualizada correctamente.' });
     } catch (error) {
+      const mensajeBD = errorBaseDatos(error);
+      if (mensajeBD) {
+        console.error('[auth-service] Base de datos no disponible:', error.code);
+        return res.status(503).json({ error: mensajeBD });
+      }
       console.error('Error al restablecer contraseña:', error);
       return res.status(500).json({ error: 'Error interno al actualizar contraseña.' });
     }
