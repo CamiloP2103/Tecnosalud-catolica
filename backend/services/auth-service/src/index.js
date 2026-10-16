@@ -16,6 +16,7 @@ if (!JWT_SECRET) {
 }
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3005';
+const NOTIFICATION_API_KEY = process.env.NOTIFICATION_API_KEY || '';
 
 app.use(cors({ origin: '*' }));
 app.use(express.json());
@@ -81,7 +82,7 @@ async function notificarSeguridadLogin({ destinatario, nombreUsuario, exito, ipC
     console.log(`[auth-service] Notificando evento de seguridad (${exito ? 'Acceso Exitoso' : 'Fallo de Clave'}) a: ${destinatario}`);
     const resNotif = await fetch(`${NOTIFICATION_SERVICE_URL}/api/notifications/email`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': NOTIFICATION_API_KEY },
       body: JSON.stringify({
         to: destinatario,
         subject: asunto,
@@ -230,7 +231,7 @@ router.post('/recuperar-clave/solicitar', async (req, res) => {
     try {
       const respuestaNotificacion = await fetch(`${NOTIFICATION_SERVICE_URL}/api/notifications/email`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': NOTIFICATION_API_KEY },
         body: JSON.stringify({
           to: usuario.email,
           subject: 'Recuperación de Contraseña - Tecnosalud Católica',

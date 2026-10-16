@@ -8,6 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3003;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3005';
+const NOTIFICATION_API_KEY = process.env.NOTIFICATION_API_KEY || '';
 
 app.use(cors({ origin: FRONTEND_URL }));
 app.use(express.json({ limit: '100kb' }));
@@ -28,7 +29,7 @@ async function enviarConfirmacion({ correo, nombres }) {
   try {
     const r = await fetch(`${NOTIFICATION_SERVICE_URL}/api/notifications/email`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': NOTIFICATION_API_KEY },
       body: JSON.stringify({ to: correo, subject: 'Recibimos tu solicitud de afiliación - Tecnosalud Católica', html }),
     });
     if (!r.ok) console.warn(`[registro-service] notification-service respondió ${r.status}`);
