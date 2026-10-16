@@ -6,10 +6,13 @@
   
   "scripts": {
     "dev": "vite",
+    "dev:all": "concurrently --names frontend,backend,auth,citas,notifications --prefix-colors blue,green,magenta,yellow,cyan \"npm run dev\" \"npm --prefix backend start\" \"npm --prefix backend/services/auth-service start\" \"npm --prefix backend/services/citas-service start\" \"npm --prefix backend/services/notification-service start\"",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext .js,.jsx",
-    "test": "vitest run"
+    "test:frontend": "vitest run",
+    "test:backend": "npm --prefix backend test",
+    "test": "npm run test:frontend && npm run test:backend"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -17,6 +20,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",
+    "concurrently": "^9.2.5",
     "vite": "^5.0.0",
     "eslint": "^8.0.0",
     "eslint-plugin-react": "^7.32.0",

@@ -214,25 +214,34 @@ La interfaz usa una identidad visual con:
 
 ## 10. Cómo ejecutar el proyecto
 
-Desde la raíz del proyecto:
+Desde la raíz del proyecto, instala las dependencias de cada servicio una sola vez:
 
 ```bash
 npm install
-npm run dev
+npm install --prefix backend
+npm install --prefix backend/services/auth-service
+npm install --prefix backend/services/citas-service
+npm install --prefix backend/services/notification-service
 ```
 
-### Scripts disponibles
+Configura `backend/services/auth-service/.env` con las credenciales de MySQL y asegúrate de que MySQL esté activo. Inicia el frontend y todos los servicios con:
 
-En `package.json` se definen estos comandos:
-
-```json
-"scripts": {
-  "dev": "vite",
-  "build": "vite build",
-  "preview": "vite preview",
-  "lint": "eslint src --ext .js,.jsx"
-}
+```bash
+npm run dev:all
 ```
+
+El comando inicia el frontend en `http://localhost:5173` y los servicios en los puertos `3001` (registro), `3002` (autenticación), `3003` (citas) y `3005` (notificaciones). Detén cualquier instancia iniciada por separado antes de ejecutarlo para evitar conflictos de puertos. Mantén abierta la terminal mientras trabajas y presiona `Ctrl+C` para detener todos los procesos. El envío de correo requiere credenciales SMTP en `backend/services/notification-service/.env`.
+
+Para instalar las dependencias de pruebas y ejecutarlas desde la raíz:
+
+```bash
+npm ci
+npm ci --prefix backend
+npm ci --prefix backend/services/citas-service
+npm test
+```
+
+`npm test` ejecuta las pruebas del frontend, del backend de registro y del servicio de citas.
 
 ## 11. Estado actual del proyecto
 

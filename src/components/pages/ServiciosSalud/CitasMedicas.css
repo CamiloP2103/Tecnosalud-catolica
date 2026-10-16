@@ -1,0 +1,219 @@
+.citas-medicas {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.citas-medicas__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #dce3eb;
+}
+
+.citas-medicas__eyebrow {
+  color: #147d72;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.citas-medicas__header h3,
+.citas-medicas__section-heading h3 {
+  margin: 0.15rem 0 0.25rem;
+  color: #17324d;
+  font-size: 1.25rem;
+}
+
+.citas-medicas__header p,
+.citas-medicas__section-heading p {
+  margin: 0;
+  color: #627386;
+  font-size: 0.9rem;
+}
+
+.citas-medicas__patient {
+  color: #31566e;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.citas-medicas__booking,
+.citas-medicas__appointments {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid #dce3eb;
+}
+
+.citas-medicas__section-heading {
+  margin-bottom: 1rem;
+}
+
+.citas-medicas__availability {
+  min-width: 0;
+  margin: 0;
+  padding: 0.9rem 0 1rem;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.citas-medicas__availability legend {
+  padding: 0 0.45rem 0 0;
+  color: #374151;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.citas-medicas__availability p {
+  margin: 0;
+  color: #627386;
+  font-size: 0.9rem;
+}
+
+.citas-medicas__slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+  gap: 0.5rem;
+}
+
+.citas-medicas__slot {
+  min-height: 42px;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #b7c8d4;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #21465a;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.citas-medicas__slot:hover:not(:disabled),
+.citas-medicas__slot--selected {
+  border-color: #147d72;
+  background: #e7f4f1;
+  color: #105f57;
+}
+
+.citas-medicas__slot:disabled {
+  border-color: #e2e8f0;
+  background: #f1f4f6;
+  color: #9aa7b2;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.citas-medicas__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.citas-medicas__appointment {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.citas-medicas__appointment-info h4 {
+  margin: 0 0 0.25rem;
+  color: #17324d;
+}
+
+.citas-medicas__appointment-info p {
+  margin: 0 0 0.4rem;
+  color: #526578;
+}
+
+.citas-medicas__status {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  background: #e6f4ef;
+  color: #17664c;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.citas-medicas__status--cancelada {
+  background: #f2eeee;
+  color: #725b5b;
+}
+
+.citas-medicas__actions,
+.citas-medicas__confirm-cancel,
+.citas-medicas__reschedule-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.citas-medicas__confirm-cancel {
+  justify-content: flex-end;
+}
+
+.citas-medicas__reschedule {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f5f8f9;
+  border-left: 3px solid #147d72;
+}
+
+.citas-medicas__reschedule label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: #374151;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.citas-medicas__reschedule input,
+.citas-medicas__reschedule select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.citas-medicas__reschedule .citas-medicas__slots,
+.citas-medicas__reschedule-actions {
+  grid-column: 1 / -1;
+}
+
+.citas-medicas__empty {
+  margin: 0;
+  padding: 1rem 0;
+  color: #627386;
+}
+
+@media (max-width: 640px) {
+  .citas-medicas__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .citas-medicas__appointment {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .citas-medicas__actions {
+    justify-content: flex-start;
+  }
+
+  .citas-medicas__confirm-cancel {
+    justify-content: flex-start;
+  }
+
+  .citas-medicas__reschedule {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
