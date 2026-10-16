@@ -101,7 +101,7 @@ function Medicamentos() {
             </table>
           ) : (
             <p className="meds-no-results">
-              No se encontraron coincidencias para "{busqueda}". Consulta con tu médico tratante o comunícate con la línea de farmacia.
+              No se encontraron coincidencias para &ldquo;{busqueda}&rdquo;. Consulta con tu médico tratante o comunícate con la línea de farmacia.
             </p>
           )}
         </div>

@@ -401,7 +401,7 @@ function ServiciosSalud() {
                   <h4>{img.tipo}</h4>
                   <p><strong>Fecha:</strong> {img.fecha}</p>
                   <p><strong>Médico:</strong> {img.medico}</p>
-                  <p className="salud-card-item__informe"><em>"{img.informe}"</em></p>
+                  <p className="salud-card-item__informe"><em>&ldquo;{img.informe}&rdquo;</em></p>
                   <div className="salud-card-item__actions">
                     <button type="button" className="salud-btn-secondary" onClick={() => setImagenModal(img)}>
                       Visualizar

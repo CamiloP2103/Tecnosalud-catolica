@@ -4,19 +4,6 @@ import './Acceso.css';
 // URL del Microservicio de Autenticación (/api/auth según diagrama)
 const API_AUTH = import.meta.env.VITE_API_AUTH_URL || 'http://localhost:3002/api/auth';
 
-const CORREOS_DISTRACTORES = [
-  'usuario.contacto@gmail.com',
-  'clinica.paciente@hotmail.com',
-  'c.rodriguez@outlook.com',
-  'salud.consulta@yahoo.es'
-];
-
-const DOCUMENTOS_DISTRACTORES = [
-  { tipoDoc: 'CC', documento: '1018456789' },
-  { tipoDoc: 'CC', documento: '79654123' },
-  { tipoDoc: 'CE', documento: '43219876' },
-  { tipoDoc: 'TI', documento: '1098765432' }
-];
 
 const enmascararCorreo = (email) => {
   if (!email || email.length <= 7) return email;
@@ -75,7 +62,6 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
   const [correoClaveRecuperar, setCorreoClaveRecuperar] = useState('');
   const [opcionesDocumentos, setOpcionesDocumentos] = useState([]);
   const [documentoSeleccionado, setDocumentoSeleccionado] = useState('');
-  const [intentosClave, setIntentosClave] = useState(0);
   const [alertaRecuperarClave, setAlertaRecuperarClave] = useState('');
 
   // Captcha local
@@ -294,7 +280,6 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     setOpcionesDocumentos([]);
     setDocumentoSeleccionado('');
     setAlertaRecuperarClave('');
-    setIntentosClave(0);
     setModalRecuperarClave(true);
   };
 

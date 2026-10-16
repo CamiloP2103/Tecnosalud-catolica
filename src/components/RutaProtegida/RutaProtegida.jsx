@@ -1,5 +1,3 @@
-import React from 'react';
-
 // Decodificador seguro del payload de un JWT sin librerías externas
 const decodificarJWT = (token) => {
   try {
