@@ -52,7 +52,7 @@ Las cinco bases de datos, sus tablas y cómo se relacionan entre servicios está
    - `SMTP_USER` y `SMTP_PASS` en `notification-service` (contraseña de aplicación de Gmail).
    - Datos de MySQL en los cinco servicios (cada uno con su `DB_NAME`).
 
-   Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL`, `VITE_API_REGISTRO_URL`, `VITE_API_FARMACIAS_URL` y `VITE_API_DOCUMENTOS_URL`, que son opcionales.
+   Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL`, `VITE_API_REGISTRO_URL`, `VITE_API_FARMACIAS_URL`, `VITE_API_DOCUMENTOS_URL` y `VITE_API_CITAS_URL`, que son opcionales.
 2. **Bases de datos.** Con los `.env` listos, crea las seis bases (`db_auth`, `db_registro`, `db_farmacias`, `db_documentos`, `db_notificaciones` y `db_citas`) con un comando:
    ```bash
    cd backend
@@ -233,3 +233,9 @@ cd backend && npm test # pruebas de los seis microservicios (sin MySQL ni SMTP)
    - Un índice único sobre una columna generada impide reservar dos veces el mismo horario aunque dos personas lo intenten al mismo tiempo; si la cita se cancela, el horario se libera.
    - Correo de confirmación al reservar y endpoints de administración (resumen semanal, agenda y cambio de estado) solo para `ADMIN`.
    - 22 pruebas. Verificado contra Azure: reserva, rechazo de la doble reserva, cancelación y nueva reserva del horario liberado.
+30. **Servicios Clínicos agenda citas reales con `citas-service`.**
+   - **Agendar Cita:** se elige especialidad (con cuántos médicos tiene) y sede opcional. La página muestra los horarios libres de los próximos 7 días agrupados por día, con médico y sede; al confirmar, la cita queda en `db_citas` y llega el correo.
+   - **Si otra persona tomó el horario**, se muestra el aviso y se recargan los horarios.
+   - **Consultar Citas** lista las citas guardadas con su estado (Programada, Atendida, No asistió o Cancelada) y permite cancelar las programadas, lo que libera el horario.
+   - Se quitaron las citas de ejemplo que vivían solo en el navegador. La sección de imágenes diagnósticas sigue igual.
+   - 3 pruebas en `src/__tests__/citas.test.jsx`.

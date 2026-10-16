@@ -1,27 +1,31 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import './ServiciosSalud.css';
+import { llamarServicio, mensajeDeError, SERVICIO_CITAS } from '../../../utils/servicios';
 
-// 1. Datos iniciales simulados para citas
-const CITAS_INICIALES = [
-  {
-    id: 1,
-    especialidad: 'Medicina General',
-    medico: 'Dr. Alejandro Morales',
-    fecha: '2026-09-10',
-    hora: '08:30 AM',
-    sede: 'Sede Principal - Bogotá',
-    estado: 'Confirmada'
-  },
-  {
-    id: 2,
-    especialidad: 'Cardiología',
-    medico: 'Dra. Sandra Martínez',
-    fecha: '2026-09-18',
-    hora: '10:00 AM',
-    sede: 'Sede Norte - Bogotá',
-    estado: 'Confirmada'
-  }
-];
+// URL del Microservicio de Citas
+const API_CITAS = import.meta.env.VITE_API_CITAS_URL || 'http://localhost:3007/api/citas';
+
+const ETIQUETAS_ESTADO_CITA = {
+  PROGRAMADA: 'Programada',
+  ATENDIDA: 'Atendida',
+  NO_ASISTIO: 'No asistió',
+  CANCELADA: 'Cancelada',
+};
+
+function encabezadosSesion() {
+  const token = localStorage.getItem('tecnosalud_token');
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
+// "2026-10-19" -> "lunes 19 de octubre"
+const fechaLegible = (fecha) =>
+  new Date(`${fecha}T12:00:00`).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+
+// "13:30" -> "1:30 p. m."
+const horaLegible = (hora) => {
+  const [h, m] = hora.split(':').map(Number);
+  return new Date(2000, 0, 1, h, m).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+};
 
 // 2. Datos iniciales simulados para imágenes diagnósticas
 const IMAGENES_INICIALES = [
@@ -45,35 +49,20 @@ const IMAGENES_INICIALES = [
   }
 ];
 
-const ESPECIALIDADES = [
-  'Medicina General',
-  'Cardiología',
-  'Dermatología',
-  'Ortopedia y Traumatología',
-  'Pediatría',
-  'Oftalmología',
-  'Radiología e Imágenes'
-];
-
-const SEDES = [
-  'Sede Principal - Chapinero',
-  'Sede Norte - Calle 127',
-  'Sede Occidente - Salitre',
-  'Sede Sur - Restrepo'
-];
-
 function ServiciosSalud() {
   const [seccionActiva, setSeccionActiva] = useState('agendar'); // 'agendar' | 'consultar' | 'imagenes'
 
-  // Estados para Citas
-  const [citas, setCitas] = useState(CITAS_INICIALES);
-  const [formCita, setFormCita] = useState({
-    especialidad: '',
-    medico: '',
-    fecha: '',
-    hora: '',
-    sede: '',
-  });
+  // Estados para Citas (citas-service)
+  const [especialidades, setEspecialidades] = useState([]);
+  const [sedes, setSedes] = useState([]);
+  const [filtroCita, setFiltroCita] = useState({ especialidadId: '', sedeId: '' });
+  const [franjas, setFranjas] = useState([]);
+  const [franjaElegida, setFranjaElegida] = useState(null);
+  const [motivo, setMotivo] = useState('');
+  const [cargandoFranjas, setCargandoFranjas] = useState(false);
+  const [citas, setCitas] = useState([]);
+  const [cargandoCitas, setCargandoCitas] = useState(false);
+  const [enviandoCita, setEnviandoCita] = useState(false);
 
   // Estados para Imágenes Diagnósticas
   const [imagenes, setImagenes] = useState(IMAGENES_INICIALES);
@@ -100,36 +89,117 @@ function ServiciosSalud() {
   // Estados para alertas y notificaciones
   const [mensajeAlerta, setMensajeAlerta] = useState({ tipo: '', texto: '' });
 
-  // Manejador formulario de citas
-  const handleCitaChange = (e) => {
-    const { name, value } = e.target;
-    setFormCita((prev) => ({ ...prev, [name]: value }));
-  };
+  // Especialidades y sedes reales al abrir la página
+  useEffect(() => {
+    (async () => {
+      try {
+        const [e, s] = await Promise.all([
+          llamarServicio(`${API_CITAS}/especialidades`, {}, SERVICIO_CITAS),
+          llamarServicio(`${API_CITAS}/sedes`, {}, SERVICIO_CITAS),
+        ]);
+        if (e.ok) setEspecialidades(e.datos.especialidades);
+        if (s.ok) setSedes(s.datos.sedes);
+      } catch (error) {
+        setMensajeAlerta({ tipo: 'error', texto: mensajeDeError(error, SERVICIO_CITAS) });
+      }
+    })();
+  }, []);
 
-  const handleAgendarCita = (e) => {
-    e.preventDefault();
-    if (!formCita.especialidad || !formCita.fecha || !formCita.hora || !formCita.sede) {
-      setMensajeAlerta({ tipo: 'error', texto: 'Por favor completa todos los datos de la cita médica.' });
+  // Franjas libres de los próximos 7 días para la especialidad y sede elegidas
+  useEffect(() => {
+    setFranjaElegida(null);
+    if (!filtroCita.especialidadId) {
+      setFranjas([]);
       return;
     }
+    (async () => {
+      setCargandoFranjas(true);
+      try {
+        const parametros = new URLSearchParams({ especialidadId: filtroCita.especialidadId, dias: '7' });
+        if (filtroCita.sedeId) parametros.set('sedeId', filtroCita.sedeId);
+        const { ok, datos } = await llamarServicio(`${API_CITAS}/disponibilidad?${parametros}`, {}, SERVICIO_CITAS);
+        if (!ok) throw new Error(datos.error);
+        setFranjas(datos.franjas);
+      } catch (error) {
+        setFranjas([]);
+        setMensajeAlerta({ tipo: 'error', texto: error.message || mensajeDeError(error, SERVICIO_CITAS) });
+      } finally {
+        setCargandoFranjas(false);
+      }
+    })();
+  }, [filtroCita]);
 
-    const nuevaCita = {
-      id: Date.now(),
-      ...formCita,
-      medico: formCita.medico || 'Médico Asignado en Turno',
-      estado: 'Confirmada'
-    };
+  const cargarCitas = useCallback(async () => {
+    setCargandoCitas(true);
+    try {
+      const { ok, datos } = await llamarServicio(`${API_CITAS}/citas`, { headers: encabezadosSesion() }, SERVICIO_CITAS);
+      if (!ok) throw new Error(datos.error);
+      setCitas(datos.citas);
+    } catch (error) {
+      setMensajeAlerta({ tipo: 'error', texto: error.message || mensajeDeError(error, SERVICIO_CITAS) });
+    } finally {
+      setCargandoCitas(false);
+    }
+  }, []);
 
-    setCitas([nuevaCita, ...citas]);
-    setFormCita({ especialidad: '', medico: '', fecha: '', hora: '', sede: '' });
-    setMensajeAlerta({ tipo: 'exito', texto: '¡Cita médica programada exitosamente!' });
-    setSeccionActiva('consultar');
+  useEffect(() => {
+    cargarCitas();
+  }, [cargarCitas]);
+
+  const citasProgramadas = citas.filter((c) => c.estado === 'PROGRAMADA');
+
+  // Franjas agrupadas por día para mostrarlas como agenda
+  const franjasPorDia = franjas.reduce((dias, f) => {
+    (dias[f.fecha] = dias[f.fecha] || []).push(f);
+    return dias;
+  }, {});
+
+  const handleAgendarCita = async (e) => {
+    e.preventDefault();
+    if (!franjaElegida) {
+      setMensajeAlerta({ tipo: 'error', texto: 'Elige la especialidad y luego un horario disponible.' });
+      return;
+    }
+    setEnviandoCita(true);
+    try {
+      const { ok, datos } = await llamarServicio(`${API_CITAS}/citas`, {
+        method: 'POST',
+        headers: encabezadosSesion(),
+        body: JSON.stringify({ medicoId: franjaElegida.medico.id, fecha: franjaElegida.fecha, hora: franjaElegida.hora, motivo }),
+      }, SERVICIO_CITAS);
+      if (!ok) {
+        setMensajeAlerta({ tipo: 'error', texto: datos.error || 'No se pudo reservar la cita.' });
+        // El horario pudo ser tomado por otra persona: se recarga la disponibilidad
+        setFiltroCita((f) => ({ ...f }));
+        return;
+      }
+      setMotivo('');
+      setFiltroCita({ especialidadId: '', sedeId: '' });
+      await cargarCitas();
+      setMensajeAlerta({
+        tipo: 'exito',
+        texto: `Cita programada: ${datos.especialidad} con ${datos.medico}, ${fechaLegible(datos.fecha)} a las ${horaLegible(datos.hora)} en ${datos.sede}. Te enviamos la confirmación por correo.`,
+      });
+      setSeccionActiva('consultar');
+    } catch (error) {
+      setMensajeAlerta({ tipo: 'error', texto: mensajeDeError(error, SERVICIO_CITAS) });
+    } finally {
+      setEnviandoCita(false);
+    }
   };
 
-  const handleCancelarCita = (id) => {
-    if (window.confirm('¿Estás seguro de cancelar esta cita médica?')) {
-      setCitas(citas.filter((c) => c.id !== id));
-      setMensajeAlerta({ tipo: 'exito', texto: 'Cita cancelada correctamente.' });
+  const handleCancelarCita = async (id) => {
+    if (!window.confirm('¿Estás seguro de cancelar esta cita médica?')) return;
+    try {
+      const { ok, datos } = await llamarServicio(`${API_CITAS}/citas/${id}/cancelar`, { method: 'PATCH', headers: encabezadosSesion() }, SERVICIO_CITAS);
+      if (!ok) {
+        setMensajeAlerta({ tipo: 'error', texto: datos.error || 'No se pudo cancelar la cita.' });
+        return;
+      }
+      await cargarCitas();
+      setMensajeAlerta({ tipo: 'exito', texto: 'Cita cancelada. El horario quedó libre para otros pacientes.' });
+    } catch (error) {
+      setMensajeAlerta({ tipo: 'error', texto: mensajeDeError(error, SERVICIO_CITAS) });
     }
   };
 
@@ -196,7 +266,7 @@ function ServiciosSalud() {
           className={`salud-nav__btn ${seccionActiva === 'consultar' ? 'salud-nav__btn--active' : ''}`}
           onClick={() => { setSeccionActiva('consultar'); setMensajeAlerta({ tipo: '', texto: '' }); }}
         >
-          CC Consultar Citas ({citas.length})
+          CC Consultar Citas ({citasProgramadas.length})
         </button>
 
         <button
@@ -219,69 +289,90 @@ function ServiciosSalud() {
       {seccionActiva === 'agendar' && (
         <div className="salud-card">
           <h3>Agendamiento de Nueva Cita Médica</h3>
-          <p>Selecciona la especialidad, la fecha deseada y la sede de atención.</p>
+          <p>Elige la especialidad y, si quieres, la sede. Te mostramos los horarios libres de los próximos 7 días.</p>
 
           <form onSubmit={handleAgendarCita} className="salud-form">
             <div className="salud-grid">
               <label>
                 Especialidad Médica *
-                <select name="especialidad" value={formCita.especialidad} onChange={handleCitaChange} required>
-                  <option value="">Selecciona especialidad...</option>
-                  {ESPECIALIDADES.map((esp) => (
-                    <option key={esp} value={esp}>{esp}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                Sede de Atención *
-                <select name="sede" value={formCita.sede} onChange={handleCitaChange} required>
-                  <option value="">Selecciona la sede...</option>
-                  {SEDES.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                Fecha de la cita *
-                <input
-                  type="date"
-                  name="fecha"
-                  value={formCita.fecha}
-                  onChange={handleCitaChange}
-                  min={new Date().toISOString().split('T')[0]}
+                <select
+                  value={filtroCita.especialidadId}
+                  onChange={(e) => setFiltroCita((f) => ({ ...f, especialidadId: e.target.value }))}
                   required
-                />
-              </label>
-
-              <label>
-                Horario disponible *
-                <select name="hora" value={formCita.hora} onChange={handleCitaChange} required>
-                  <option value="">Selecciona horario...</option>
-                  <option value="07:00 AM">07:00 AM</option>
-                  <option value="08:30 AM">08:30 AM</option>
-                  <option value="10:00 AM">10:00 AM</option>
-                  <option value="11:30 AM">11:30 AM</option>
-                  <option value="02:00 PM">02:00 PM</option>
-                  <option value="03:30 PM">03:30 PM</option>
-                  <option value="05:00 PM">05:00 PM</option>
+                >
+                  <option value="">Selecciona especialidad...</option>
+                  {especialidades.map((esp) => (
+                    <option key={esp.id} value={esp.id}>{esp.nombre} ({esp.medicos} {esp.medicos === 1 ? 'médico' : 'médicos'})</option>
+                  ))}
                 </select>
               </label>
 
-              <label className="salud-col-full">
-                Profesional de preferencia (Opcional)
-                <input
-                  type="text"
-                  name="medico"
-                  value={formCita.medico}
-                  onChange={handleCitaChange}
-                  placeholder="Ej. Dr. Andrés Restrepo (o dejar en blanco)"
-                />
+              <label>
+                Sede de Atención
+                <select value={filtroCita.sedeId} onChange={(e) => setFiltroCita((f) => ({ ...f, sedeId: e.target.value }))}>
+                  <option value="">Todas las sedes</option>
+                  {sedes.map((s) => (
+                    <option key={s.id} value={s.id}>{s.nombre}</option>
+                  ))}
+                </select>
               </label>
             </div>
 
-            <button type="submit" className="salud-btn-primary">Confirmar Agendamiento</button>
+            {filtroCita.especialidadId && (
+              <div className="salud-agenda" aria-live="polite">
+                {cargandoFranjas && <p className="salud-agenda__vacio">Buscando horarios disponibles...</p>}
+                {!cargandoFranjas && franjas.length === 0 && (
+                  <p className="salud-agenda__vacio">No hay horarios libres en los próximos 7 días para esta selección. Prueba otra sede.</p>
+                )}
+                {!cargandoFranjas && Object.entries(franjasPorDia).map(([fecha, lista]) => (
+                  <div key={fecha} className="salud-agenda__dia">
+                    <h4>{fechaLegible(fecha)}</h4>
+                    <div className="salud-agenda__franjas">
+                      {lista.map((f) => {
+                        const elegida = franjaElegida && franjaElegida.fecha === f.fecha && franjaElegida.hora === f.hora && franjaElegida.medico.id === f.medico.id;
+                        return (
+                          <button
+                            key={`${f.medico.id}-${f.hora}`}
+                            type="button"
+                            className={`salud-franja ${elegida ? 'salud-franja--elegida' : ''}`}
+                            aria-pressed={Boolean(elegida)}
+                            onClick={() => setFranjaElegida(f)}
+                            title={`${f.medico.nombre} · ${f.sede.nombre}`}
+                          >
+                            <strong>{horaLegible(f.hora)}</strong>
+                            <span>{f.medico.nombre}</span>
+                            <span>{f.sede.nombre}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {franjaElegida && (
+              <div className="salud-resumen-cita">
+                <p>
+                  <strong>Tu cita:</strong> {franjaElegida.especialidad} con {franjaElegida.medico.nombre},{' '}
+                  {fechaLegible(franjaElegida.fecha)} a las {horaLegible(franjaElegida.hora)} en {franjaElegida.sede.nombre}.
+                </p>
+                <label className="salud-col-full">
+                  Motivo de la consulta (opcional)
+                  <input
+                    type="text"
+                    maxLength={300}
+                    value={motivo}
+                    onChange={(e) => setMotivo(e.target.value)}
+                    placeholder="Ej. Control de presión arterial"
+                  />
+                </label>
+              </div>
+            )}
+
+            <button type="submit" className="salud-btn-primary" disabled={!franjaElegida || enviandoCita}>
+              {enviandoCita ? 'Reservando...' : 'Confirmar Agendamiento'}
+            </button>
           </form>
         </div>
       )}
@@ -289,12 +380,13 @@ function ServiciosSalud() {
       {/* 2. SECCIÓN: CONSULTAR CITAS */}
       {seccionActiva === 'consultar' && (
         <div className="salud-card">
-          <h3>Tus Citas Médicas Programadas</h3>
-          <p>Revisa el estado de tus citas activas o cancela aquellas que no puedas atender.</p>
+          <h3>Tus Citas Médicas</h3>
+          <p>Revisa el estado de tus citas o cancela las que no puedas atender para liberar el horario.</p>
 
-          {citas.length === 0 ? (
+          {cargandoCitas && <p>Cargando tus citas...</p>}
+          {!cargandoCitas && citas.length === 0 ? (
             <div className="salud-vacio">
-              <p>No tienes citas médicas activas en este momento.</p>
+              <p>No tienes citas médicas registradas.</p>
               <button type="button" className="salud-btn-link" onClick={() => setSeccionActiva('agendar')}>
                 Haz clic aquí para agendar tu primera cita.
               </button>
@@ -317,17 +409,15 @@ function ServiciosSalud() {
                     <tr key={c.id}>
                       <td><strong>{c.especialidad}</strong></td>
                       <td>{c.medico}</td>
-                      <td>{c.fecha} - <span className="badge-hora">{c.hora}</span></td>
+                      <td>{fechaLegible(c.fecha)} - <span className="badge-hora">{horaLegible(c.hora)}</span></td>
                       <td>{c.sede}</td>
-                      <td><span className="badge-estado">{c.estado}</span></td>
+                      <td><span className={`badge-estado badge-estado--${c.estado.toLowerCase()}`}>{ETIQUETAS_ESTADO_CITA[c.estado] || c.estado}</span></td>
                       <td>
-                        <button
-                          type="button"
-                          className="salud-btn-danger"
-                          onClick={() => handleCancelarCita(c.id)}
-                        >
-                          Cancelar
-                        </button>
+                        {c.estado === 'PROGRAMADA' && (
+                          <button type="button" className="salud-btn-danger" onClick={() => handleCancelarCita(c.id)}>
+                            Cancelar
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
