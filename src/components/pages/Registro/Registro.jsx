@@ -19,7 +19,7 @@ const MESES = [
 
 const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: anioActual - 1920 + 1 }, (_, i) => String(anioActual - i));
-const API_REGISTRO = 'http://localhost:3003/api/registro';
+const API_REGISTRO = import.meta.env.VITE_API_REGISTRO_URL || 'http://localhost:3003/api/registro';
 
 const MUNICIPIOS_COLOMBIA = [
   { depto: 'Cundinamarca / D.C.', ciudades: ['Bogotá D.C.', 'Soacha', 'Chía', 'Zipaquirá', 'Facatativá', 'Girardot'] },
