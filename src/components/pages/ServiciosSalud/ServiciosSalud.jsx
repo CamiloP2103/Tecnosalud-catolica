@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './ServiciosSalud.css';
 
 // 1. Datos iniciales simulados para citas
@@ -87,6 +87,16 @@ function ServiciosSalud() {
   const [previewUrl, setPreviewUrl] = useState('');
   const [imagenModal, setImagenModal] = useState(null);
 
+  // URLs temporales (blob:) creadas para las vistas previas; se liberan al salir de la página
+  const urlsTemporales = useRef(new Set());
+  useEffect(() => {
+    const urls = urlsTemporales.current;
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+      urls.clear();
+    };
+  }, []);
+
   // Estados para alertas y notificaciones
   const [mensajeAlerta, setMensajeAlerta] = useState({ tipo: '', texto: '' });
 
@@ -128,8 +138,14 @@ function ServiciosSalud() {
     const file = e.target.files[0];
     if (file) {
       setArchivoSeleccionado(file);
+      // Liberar la vista previa anterior si el usuario cambió de archivo sin guardarla
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        urlsTemporales.current.delete(previewUrl);
+      }
       // Generar URL temporal de vista previa en memoria
       const localUrl = URL.createObjectURL(file);
+      urlsTemporales.current.add(localUrl);
       setPreviewUrl(localUrl);
     }
   };
