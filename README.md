@@ -1,6 +1,6 @@
 # Tecnosalud Católica
 
-Portal web de salud: un frontend SPA en React + Vite y cuatro microservicios en Node.js + Express.
+Portal web de salud: un frontend SPA en React + Vite y cinco microservicios en Node.js + Express.
 
 ## Arquitectura
 
@@ -10,17 +10,19 @@ Portal web de salud: un frontend SPA en React + Vite y cuatro microservicios en 
 | `auth-service` | 3002 | `backend/services/auth-service` | Login con JWT, recuperación y restablecimiento de contraseña (MySQL `db_auth`) |
 | `registro-service` | 3003 | `backend/services/registro-service` | Guarda las solicitudes de afiliación (MySQL `db_registro`) |
 | `farmacias-service` | 3004 | `backend/services/farmacias-service` | Catálogo de 100 medicamentos, 8 farmacias con inventario y solicitudes de medicamentos (MySQL `db_farmacias`) |
+| `documentos-service` | 3006 | `backend/services/documentos-service` | Documentos clínicos cifrados: carga, generación y descarga con bitácora (MySQL `db_documentos`) |
 | `notification-service` | 3005 | `backend/services/notification-service` | Envía correos por SMTP; solo lo llaman los otros servicios, con `x-api-key` |
 
 ```
 Navegador ──► auth-service ──────┐
          ├──► registro-service ──┼──► notification-service ──► SMTP (Gmail)
-         └──► farmacias-service ─┘
+         ├──► farmacias-service ─┘
+         └──► documentos-service ──► archivos cifrados (storage/)
                      │
-                     └──► MySQL (db_auth, db_registro, db_farmacias)
+                     └──► MySQL (db_auth, db_registro, db_farmacias, db_documentos)
 ```
 
-`farmacias-service` valida el JWT que emite `auth-service`, por eso los dos comparten `JWT_SECRET`.
+`farmacias-service` y `documentos-service` validan el JWT que emite `auth-service`, por eso los tres comparten `JWT_SECRET`.
 
 ## Estructura
 
@@ -41,13 +43,14 @@ Navegador ──► auth-service ──────┐
 ## Configuración
 
 1. **Variables de entorno.** En cada servicio copia `.env.example` como `.env` y completa los valores:
-   - `JWT_SECRET` en `auth-service` y `farmacias-service`: obligatorio y **el mismo valor** en ambos.
+   - `JWT_SECRET` en `auth-service`, `farmacias-service` y `documentos-service`: obligatorio y **el mismo valor** en los tres.
+   - `DOCUMENTOS_ENCRYPTION_KEY` en `documentos-service`: clave aleatoria de 64 caracteres hexadecimales. **Guárdala bien**: sin ella no se pueden descifrar los documentos guardados.
    - `NOTIFICATION_API_KEY`: **el mismo valor** en `auth-service`, `registro-service`, `farmacias-service` y `notification-service`.
    - `SMTP_USER` y `SMTP_PASS` en `notification-service` (contraseña de aplicación de Gmail).
-   - Datos de MySQL en `auth-service`, `registro-service` y `farmacias-service`.
+   - Datos de MySQL en `auth-service`, `registro-service`, `farmacias-service` y `documentos-service`.
 
    Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL`, `VITE_API_REGISTRO_URL` y `VITE_API_FARMACIAS_URL`, que son opcionales.
-2. **Bases de datos.** Con los `.env` listos, crea `db_auth`, `db_registro` y `db_farmacias` con un comando:
+2. **Bases de datos.** Con los `.env` listos, crea `db_auth`, `db_registro`, `db_farmacias` y `db_documentos` con un comando:
    ```bash
    cd backend
    npm run install:all   # solo la primera vez
@@ -75,14 +78,14 @@ Son claves de demostración: cámbialas o elimina estos usuarios en un entorno r
 - Usuario administrador, por ejemplo `tecnoadmin` (Azure no permite `root`), con una contraseña fuerte y nueva.
 - **Redes**: *Acceso público* y *Agregar la dirección IP del cliente actual*. Cada integrante del equipo debe agregar su IP. No abras el rango `0.0.0.0 – 255.255.255.255`.
 
-**2. Configurar los `.env`** de `auth-service`, `registro-service` y `farmacias-service`:
+**2. Configurar los `.env`** de `auth-service`, `registro-service`, `farmacias-service` y `documentos-service`:
 
 ```env
 DB_HOST=tecnosalud-mysql.mysql.database.azure.com
 DB_PORT=3306
 DB_USER=tecnoadmin
 DB_PASSWORD=tu-contraseña
-DB_NAME=db_auth          # registro-service: db_registro · farmacias-service: db_farmacias
+DB_NAME=db_auth          # registro: db_registro · farmacias: db_farmacias · documentos: db_documentos
 DB_SSL=true              # Azure exige conexión cifrada
 ```
 
@@ -90,7 +93,7 @@ No hace falta descargar certificados: Node ya confía en las autoridades que usa
 
 **3. Crear las bases:** `cd backend && npm run db:init`.
 
-**4. Reiniciar** `auth-service`, `registro-service` y `farmacias-service`, y entrar con un usuario de prueba.
+**4. Reiniciar** `auth-service`, `registro-service`, `farmacias-service` y `documentos-service`, y entrar con un usuario de prueba.
 
 **Si algo falla**, `db:init` y la pantalla de acceso muestran la causa:
 
@@ -107,13 +110,14 @@ No hace falta descargar certificados: Node ya confía en las autoridades que usa
 ```bash
 # Instalar todo
 npm install                       # frontend
-cd backend && npm run install:all # los cuatro microservicios
+cd backend && npm run install:all # los cinco microservicios
 
 # Levantar (una terminal por servicio)
 cd backend/services/notification-service && npm run dev
 cd backend/services/auth-service && npm run dev
 cd backend/services/registro-service && npm run dev
 cd backend/services/farmacias-service && npm run dev
+cd backend/services/documentos-service && npm run dev
 npm run dev                       # frontend en http://localhost:5173
 ```
 
@@ -123,7 +127,7 @@ npm run dev                       # frontend en http://localhost:5173
 npm test               # frontend (Vitest + Testing Library)
 npm run lint           # ESLint del frontend
 npm run build          # build de producción en dist/
-cd backend && npm test # pruebas de los cuatro microservicios (sin MySQL ni SMTP)
+cd backend && npm test # pruebas de los cinco microservicios (sin MySQL ni SMTP)
 ```
 
 ## Pendientes conocidos
@@ -180,3 +184,4 @@ cd backend && npm test # pruebas de los cuatro microservicios (sin MySQL ni SMTP
    - Se verifica la firma real de los PDF, PNG y JPG, y cada descarga exige confirmar la identificación y queda registrada.
    - Cambios respecto a la versión original: puerto 3006 en lugar de 3004 (que ya usa `farmacias-service`), respuestas 503 con la causa cuando falla MySQL, carpeta `storage/` resuelta siempre dentro del servicio, `node --watch` en lugar de `nodemon`, pruebas pasadas de `node --test` a Vitest (10 pruebas, incluida una nueva para el 503) y `.env.example` documentado.
    - Detalle en `backend/services/documentos-service/LEEME.md`.
+21. **`documentos-service` integrado.** `npm run db:init` crea también `db_documentos` (o solo esa con `npm run db:init -- documentos`). `backend/package.json` instala y prueba los cinco servicios, y este README documenta su puerto, `JWT_SECRET` compartido y `DOCUMENTOS_ENCRYPTION_KEY`.

@@ -2,8 +2,8 @@
 // Usa los datos de conexión de cada .env (sirve para MySQL local o Azure Database for MySQL).
 //
 //   cd backend
-//   npm run db:init              -> db_auth, db_registro y db_farmacias
-//   npm run db:init -- auth      -> solo db_auth (también: registro, farmacias)
+//   npm run db:init              -> db_auth, db_registro, db_farmacias y db_documentos
+//   npm run db:init -- auth      -> solo db_auth (también: registro, farmacias, documentos)
 
 const fs = require('fs');
 const path = require('path');
@@ -38,6 +38,14 @@ const BASES = {
                           (SELECT COUNT(*) FROM db_farmacias.farmacias), ' farmacias y ',
                           (SELECT COUNT(*) FROM db_farmacias.inventario)) AS total`,
     descripcion: 'registros de inventario',
+  },
+  documentos: {
+    servicio: 'documentos-service',
+    env: path.join(RAIZ, 'services/documentos-service/.env'),
+    script: path.join(RAIZ, 'services/documentos-service/database/Script_Creacion_BasedeDatosDocumentos.sql'),
+    base: 'db_documentos',
+    verificacion: 'SELECT COUNT(*) AS total FROM db_documentos.documentos',
+    descripcion: 'documentos guardados',
   },
 };
 
@@ -126,7 +134,7 @@ async function main() {
     console.error(`\n${fallos} base(s) no se pudieron crear. Corrige el error y vuelve a ejecutar: el script es seguro de repetir.`);
     process.exit(1);
   }
-  console.log('\nBases de datos listas. Reinicia auth-service, registro-service y farmacias-service.');
+  console.log('\nBases de datos listas. Reinicia auth-service, registro-service, farmacias-service y documentos-service.');
 }
 
 main();
