@@ -2,8 +2,8 @@
 // Usa los datos de conexión de cada .env (sirve para MySQL local o Azure Database for MySQL).
 //
 //   cd backend
-//   npm run db:init              -> db_auth, db_registro, db_farmacias, db_documentos y db_notificaciones
-//   npm run db:init -- auth      -> solo db_auth (también: registro, farmacias, documentos, notificaciones)
+//   npm run db:init              -> db_auth, db_registro, db_farmacias, db_documentos, db_notificaciones y db_citas
+//   npm run db:init -- auth      -> solo db_auth (también: registro, farmacias, documentos, notificaciones, citas)
 
 const fs = require('fs');
 const path = require('path');
@@ -54,6 +54,17 @@ const BASES = {
     base: 'db_notificaciones',
     verificacion: 'SELECT COUNT(*) AS total FROM db_notificaciones.notificaciones',
     descripcion: 'correos registrados',
+  },
+  citas: {
+    servicio: 'citas-service',
+    env: path.join(RAIZ, 'services/citas-service/.env'),
+    script: path.join(RAIZ, 'services/citas-service/database/Script_Creacion_BasedeDatosCitas.sql'),
+    base: 'db_citas',
+    verificacion: `SELECT CONCAT((SELECT COUNT(*) FROM db_citas.especialidades), ' especialidades, ',
+                          (SELECT COUNT(*) FROM db_citas.medicos), ' médicos, ',
+                          (SELECT COUNT(*) FROM db_citas.horarios), ' horarios y ',
+                          (SELECT COUNT(*) FROM db_citas.citas)) AS total`,
+    descripcion: 'citas',
   },
 };
 

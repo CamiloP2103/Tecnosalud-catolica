@@ -1,6 +1,6 @@
 # Tecnosalud Católica
 
-Portal web de salud: un frontend SPA en React + Vite y cinco microservicios en Node.js + Express.
+Portal web de salud: un frontend SPA en React + Vite y seis microservicios en Node.js + Express.
 
 ## Arquitectura
 
@@ -11,6 +11,7 @@ Portal web de salud: un frontend SPA en React + Vite y cinco microservicios en N
 | `registro-service` | 3003 | `backend/services/registro-service` | Guarda las solicitudes de afiliación (MySQL `db_registro`) |
 | `farmacias-service` | 3004 | `backend/services/farmacias-service` | Catálogo de 100 medicamentos, 8 farmacias con inventario y solicitudes de medicamentos (MySQL `db_farmacias`) |
 | `documentos-service` | 3006 | `backend/services/documentos-service` | Documentos clínicos cifrados: carga, generación y descarga con bitácora (MySQL `db_documentos`) |
+| `citas-service` | 3007 | `backend/services/citas-service` | Especialidades, médicos, horarios, disponibilidad y reserva de citas (MySQL `db_citas`) |
 | `notification-service` | 3005 | `backend/services/notification-service` | Envía correos por SMTP y guarda su historial; solo lo llaman los otros servicios, con `x-api-key` (MySQL `db_notificaciones`) |
 
 ```
@@ -19,7 +20,7 @@ Navegador ──► auth-service ──────┐
          ├──► farmacias-service ─┘
          └──► documentos-service ──► archivos cifrados (storage/)
                      │
-                     └──► MySQL (db_auth, db_registro, db_farmacias, db_documentos, db_notificaciones)
+                     └──► MySQL (db_auth, db_registro, db_farmacias, db_documentos, db_notificaciones, db_citas)
 ```
 
 `farmacias-service` y `documentos-service` validan el JWT que emite `auth-service`, por eso los tres comparten `JWT_SECRET`.
@@ -52,7 +53,7 @@ Las cinco bases de datos, sus tablas y cómo se relacionan entre servicios está
    - Datos de MySQL en los cinco servicios (cada uno con su `DB_NAME`).
 
    Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL`, `VITE_API_REGISTRO_URL`, `VITE_API_FARMACIAS_URL` y `VITE_API_DOCUMENTOS_URL`, que son opcionales.
-2. **Bases de datos.** Con los `.env` listos, crea las cinco bases (`db_auth`, `db_registro`, `db_farmacias`, `db_documentos` y `db_notificaciones`) con un comando:
+2. **Bases de datos.** Con los `.env` listos, crea las seis bases (`db_auth`, `db_registro`, `db_farmacias`, `db_documentos`, `db_notificaciones` y `db_citas`) con un comando:
    ```bash
    cd backend
    npm run install:all   # solo la primera vez
@@ -101,7 +102,7 @@ DB_HOST=tecnosalud-mysql.mysql.database.azure.com
 DB_PORT=3306
 DB_USER=tecnoadmin
 DB_PASSWORD=tu-contraseña
-DB_NAME=db_auth          # registro: db_registro · farmacias: db_farmacias · documentos: db_documentos · notification: db_notificaciones
+DB_NAME=db_auth          # registro: db_registro · farmacias: db_farmacias · documentos: db_documentos · notification: db_notificaciones · citas: db_citas
 DB_SSL=true              # Azure exige conexión cifrada
 ```
 
@@ -126,7 +127,7 @@ No hace falta descargar certificados: Node ya confía en las autoridades que usa
 ```bash
 # Instalar todo
 npm install                       # frontend
-cd backend && npm run install:all # los cinco microservicios
+cd backend && npm run install:all # los seis microservicios
 
 # Levantar (una terminal por servicio)
 cd backend/services/notification-service && npm run dev
@@ -134,6 +135,7 @@ cd backend/services/auth-service && npm run dev
 cd backend/services/registro-service && npm run dev
 cd backend/services/farmacias-service && npm run dev
 cd backend/services/documentos-service && npm run dev
+cd backend/services/citas-service && npm run dev
 npm run dev                       # frontend en http://localhost:5173
 ```
 
@@ -143,7 +145,7 @@ npm run dev                       # frontend en http://localhost:5173
 npm test               # frontend (Vitest + Testing Library)
 npm run lint           # ESLint del frontend
 npm run build          # build de producción en dist/
-cd backend && npm test # pruebas de los cinco microservicios (sin MySQL ni SMTP)
+cd backend && npm test # pruebas de los seis microservicios (sin MySQL ni SMTP)
 ```
 
 ## Pendientes conocidos
@@ -225,3 +227,9 @@ cd backend && npm test # pruebas de los cinco microservicios (sin MySQL ni SMTP)
    - **Reabastecimiento:** un aviso muestra la fecha del próximo.
    - 1 prueba nueva. Flujo verificado contra Azure: un pedido real bajó el inventario de 48 a 47, el correo quedó como `ENVIADA` en `db_notificaciones` y al cancelar volvió a 48.
 28. **Documento de arquitectura de datos** en [docs/ARQUITECTURA_DATOS.md](docs/ARQUITECTURA_DATOS.md). Explica el principio de una base de datos por microservicio, las tablas de las cinco bases (diagramas entidad-relación en Mermaid, que GitHub dibuja), cómo se relacionan los datos entre servicios (el JWT lleva `id`, `email`, `doc` y `rol`), los flujos de login, pedido, documentos y recuperación de contraseña, y las medidas de seguridad.
+29. **Nuevo microservicio `citas-service` (puerto 3007)** con base de datos propia `db_citas`. Antes las citas de Servicios Clínicos eran datos de ejemplo que vivían solo en el navegador y se perdían al recargar.
+   - Tablas `especialidades`, `sedes`, `medicos`, `horarios` y `citas`, con 7 especialidades, 4 sedes y 14 médicos ficticios con sus horarios.
+   - La disponibilidad se calcula con los horarios menos las citas programadas, en hora de Bogotá.
+   - Un índice único sobre una columna generada impide reservar dos veces el mismo horario aunque dos personas lo intenten al mismo tiempo; si la cita se cancela, el horario se libera.
+   - Correo de confirmación al reservar y endpoints de administración (resumen semanal, agenda y cambio de estado) solo para `ADMIN`.
+   - 22 pruebas. Verificado contra Azure: reserva, rechazo de la doble reserva, cancelación y nueva reserva del horario liberado.

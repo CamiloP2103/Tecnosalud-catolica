@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "description": "Atajos para instalar, probar e inicializar las bases de datos de los microservicios",
   "scripts": {
-    "install:all": "npm install && npm --prefix services/auth-service install && npm --prefix services/notification-service install && npm --prefix services/registro-service install && npm --prefix services/farmacias-service install && npm --prefix services/documentos-service install",
-    "test": "npm --prefix services/auth-service test && npm --prefix services/notification-service test && npm --prefix services/registro-service test && npm --prefix services/farmacias-service test && npm --prefix services/documentos-service test",
+    "install:all": "npm install && npm --prefix services/auth-service install && npm --prefix services/notification-service install && npm --prefix services/registro-service install && npm --prefix services/farmacias-service install && npm --prefix services/documentos-service install && npm --prefix services/citas-service install",
+    "test": "npm --prefix services/auth-service test && npm --prefix services/notification-service test && npm --prefix services/registro-service test && npm --prefix services/farmacias-service test && npm --prefix services/documentos-service test && npm --prefix services/citas-service test",
     "db:init": "node scripts/db-init.js",
     "usuario:crear": "node scripts/crear-usuario.js"
   },
