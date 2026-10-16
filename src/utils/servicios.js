@@ -2,6 +2,7 @@
 
 export const SERVICIO_AUTH = { nombre: 'el servicio de autenticación', carpeta: 'auth-service' };
 export const SERVICIO_REGISTRO = { nombre: 'el servicio de registro', carpeta: 'registro-service' };
+export const SERVICIO_FARMACIAS = { nombre: 'el servicio de farmacias', carpeta: 'farmacias-service' };
 
 export class ErrorServicio extends Error {
   constructor(mensaje, tipo) {

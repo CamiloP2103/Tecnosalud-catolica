@@ -6,7 +6,7 @@ Portal web de salud: un frontend SPA en React + Vite y cuatro microservicios en 
 
 | Componente | Puerto | Carpeta | Qué hace |
 |---|---|---|---|
-| Frontend (React 18 + Vite) | 5173 | `src/` | Portal: inicio, nosotros, registro, afiliados, acceso y servicios clínicos |
+| Frontend (React 18 + Vite) | 5173 | `src/` | Portal: inicio, nosotros, registro, afiliados, acceso y, con sesión, servicios clínicos y farmacias |
 | `auth-service` | 3002 | `backend/services/auth-service` | Login con JWT, recuperación y restablecimiento de contraseña (MySQL `db_auth`) |
 | `registro-service` | 3003 | `backend/services/registro-service` | Guarda las solicitudes de afiliación (MySQL `db_registro`) |
 | `farmacias-service` | 3004 | `backend/services/farmacias-service` | Catálogo de 100 medicamentos, 8 farmacias con inventario y solicitudes de medicamentos (MySQL `db_farmacias`) |
@@ -25,8 +25,8 @@ Navegador ──► auth-service ──────┐
 ## Estructura
 
 - `src/App.jsx`: navegación por hash (`#registro`, `#acceso`...), carga perezosa de páginas y sesión.
-- `src/components/`: `Navbar`, `Layout`, `Footer`, `Breadcrumbs` y `RutaProtegida` (protege Servicios Clínicos validando el JWT).
-- `src/components/pages/`: `Inicio`, `Nosotros`, `Registro`, `Afiliados` (Muerte digna, Medicamentos, Triage), `Acceso` (+ `RestablecerClave`), `ServiciosSalud` y `NotFound`.
+- `src/components/`: `Navbar`, `Layout`, `Footer`, `Breadcrumbs` y `RutaProtegida` (protege Servicios Clínicos y Farmacias validando el JWT).
+- `src/components/pages/`: `Inicio`, `Nosotros`, `Registro`, `Afiliados` (Muerte digna, Medicamentos, Triage), `Acceso` (+ `RestablecerClave`), `ServiciosSalud`, `Farmacias` y `NotFound`.
 - `src/__tests__/`: pruebas del frontend (Vitest + Testing Library).
 - `backend/Database/`, `backend/services/registro-service/database/` y `backend/services/farmacias-service/database/`: scripts SQL para crear las bases de datos.
 - `backend/scripts/db-init.js`: crea todas las bases con `npm run db:init`.
@@ -46,7 +46,7 @@ Navegador ──► auth-service ──────┐
    - `SMTP_USER` y `SMTP_PASS` en `notification-service` (contraseña de aplicación de Gmail).
    - Datos de MySQL en `auth-service`, `registro-service` y `farmacias-service`.
 
-   Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL` y `VITE_API_REGISTRO_URL`, que son opcionales.
+   Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL`, `VITE_API_REGISTRO_URL` y `VITE_API_FARMACIAS_URL`, que son opcionales.
 2. **Bases de datos.** Con los `.env` listos, crea `db_auth`, `db_registro` y `db_farmacias` con un comando:
    ```bash
    cd backend
@@ -130,7 +130,6 @@ cd backend && npm test # pruebas de los cuatro microservicios (sin MySQL ni SMTP
 
 - `Acceso.jsx` llama a `/api/auth/recuperar-usuario/consultar` y `/verificar`, pero esos endpoints **no existen** en `auth-service`, así que "Recuperar usuario" no funciona todavía.
 - El límite de intentos de login se guarda en memoria: se reinicia al reiniciar `auth-service` y no se comparte entre varias instancias.
-- El frontend todavía no usa `farmacias-service`: la página Afiliados → Medicamentos sigue siendo informativa.
 - Las credenciales que estuvieron en git (SMTP, MySQL, `JWT_SECRET`) deben rotarse, porque siguen en el historial de `main`.
 
 ## Registro de cambios (rama `juan/limpieza-env`)
@@ -170,3 +169,9 @@ cd backend && npm test # pruebas de los cuatro microservicios (sin MySQL ni SMTP
    - Las direcciones de las farmacias se tomaron de los directorios públicos de cada cadena (octubre de 2026). Los precios son referencias aproximadas y el inventario es ficticio.
    - 40 pruebas. Detalle de endpoints y reglas en `backend/services/farmacias-service/LEEME.md`.
 18. **`farmacias-service` integrado al proyecto.** `npm run db:init` crea también `db_farmacias` (o solo esa base con `npm run db:init -- farmacias`). `backend/package.json` instala y prueba los cuatro servicios, y este README documenta su puerto, sus variables (`JWT_SECRET` compartido con `auth-service`) y cómo arrancarlo.
+19. **Nueva opción "Farmacias" en el menú**, visible solo con sesión iniciada y protegida con `RutaProtegida`, igual que Servicios Clínicos. La página `src/components/pages/Farmacias/` usa `farmacias-service` y tiene cuatro pestañas:
+   - **Catálogo**: buscador y filtros por categoría y tipo de venta. Cada medicamento muestra la etiqueta *Venta libre*, *Requiere fórmula* o *Control especial*, un precio de referencia y en cuántas farmacias está disponible. Los de control especial no se pueden agregar.
+   - **Farmacias**: las 8 sedes con dirección, horario e indicador de 24 horas; permite elegir dónde reclamar.
+   - **Mi pedido**: cantidades, disponibilidad y precio en la farmacia elegida, total estimado y, si hace falta, el formulario de la fórmula médica. Si falta alguna existencia, marca qué medicamento.
+   - **Mis solicitudes**: historial con estado y opción de cancelar las pendientes.
+   - Se agregaron `VITE_API_FARMACIAS_URL` al `.env.example` y 7 pruebas en `src/__tests__/farmacias.test.jsx`.

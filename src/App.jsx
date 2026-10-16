@@ -12,6 +12,7 @@ const Nosotros = lazy(() => import('./components/pages/Nosotros/Nosotros'));
 const Registro = lazy(() => import('./components/pages/Registro/Registro'));
 const Acceso = lazy(() => import('./components/pages/Acceso/Acceso'));
 const ServiciosSalud = lazy(() => import('./components/pages/ServiciosSalud/ServiciosSalud'));
+const Farmacias = lazy(() => import('./components/pages/Farmacias/Farmacias'));
 const MuerteDigna = lazy(() => import('./components/pages/Afiliados/MuerteDigna'));
 const Medicamentos = lazy(() => import('./components/pages/Afiliados/Medicamentos'));
 const Triage = lazy(() => import('./components/pages/Afiliados/Triage'));
@@ -45,6 +46,9 @@ const baseNavItems = [
 
 const accesoItem = { id: 'acceso', label: 'Acceso' };
 
+// Páginas que exigen sesión iniciada (RutaProtegida valida el JWT)
+const PAGINAS_PROTEGIDAS = ['servicios', 'farmacias'];
+
 // Mapeo único y global de páginas
 const pages = {
   inicio: Inicio,
@@ -56,6 +60,7 @@ const pages = {
   registro: Registro,
   acceso: Acceso,
   servicios: ServiciosSalud,
+  farmacias: Farmacias,
   'muerte-digna': MuerteDigna,
   medicamentos: Medicamentos,
   triage: Triage,
@@ -110,14 +115,14 @@ function App() {
     handleNavigate('acceso');
   };
 
-  // Servicios Clínicos visible si la sesión está autenticada
+  // Servicios Clínicos y Farmacias visibles si la sesión está autenticada
   const navItems = sesionActiva
-    ? [...baseNavItems, { id: 'servicios', label: 'Servicios Clínicos' }]
+    ? [...baseNavItems, { id: 'servicios', label: 'Servicios Clínicos' }, { id: 'farmacias', label: 'Farmacias' }]
     : baseNavItems;
 
   const currentPageLabel = pages[currentPage] ? currentPage : '404';
 
-  // Renderiza el componente activo y aplica el guardián de ruta a "servicios"
+  // Renderiza el componente activo y aplica el guardián de ruta a las páginas con sesión
   const renderContenido = () => {
     const contenido = (
       <ActivePage
@@ -129,7 +134,7 @@ function App() {
       />
     );
 
-    if (currentPage === 'servicios') {
+    if (PAGINAS_PROTEGIDAS.includes(currentPage)) {
       return (
         <RutaProtegida onNavigate={handleNavigate}>
           {contenido}
