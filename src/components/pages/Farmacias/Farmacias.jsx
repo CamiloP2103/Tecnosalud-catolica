@@ -64,6 +64,11 @@ function Farmacias() {
   const [errorPedido, setErrorPedido] = useState('');
   const [faltantes, setFaltantes] = useState([]);
 
+  // Disponibilidad por farmacia de cada medicamento ({ [id]: { cargando, error, filas } })
+  const [disponibilidad, setDisponibilidad] = useState({});
+  const [abiertos, setAbiertos] = useState({});
+  const [reabastecimiento, setReabastecimiento] = useState(null);
+
   // Mis solicitudes
   const [solicitudes, setSolicitudes] = useState([]);
   const [cargandoSolicitudes, setCargandoSolicitudes] = useState(false);
@@ -95,12 +100,14 @@ function Farmacias() {
   useEffect(() => {
     (async () => {
       try {
-        const [respCategorias, respFarmacias] = await Promise.all([
+        const [respCategorias, respFarmacias, respReabastecimiento] = await Promise.all([
           llamarServicio(`${API_FARMACIAS}/medicamentos/categorias`, {}, SERVICIO_FARMACIAS),
           llamarServicio(`${API_FARMACIAS}/sedes`, {}, SERVICIO_FARMACIAS),
+          llamarServicio(`${API_FARMACIAS}/reabastecimiento`, {}, SERVICIO_FARMACIAS).catch(() => ({ ok: false })),
         ]);
         if (respCategorias.ok) setCategorias(respCategorias.datos.categorias);
         if (respFarmacias.ok) setFarmacias(respFarmacias.datos.farmacias);
+        if (respReabastecimiento.ok) setReabastecimiento(respReabastecimiento.datos);
       } catch (error) {
         setErrorFarmacias(mensajeDeError(error, SERVICIO_FARMACIAS));
       }
@@ -172,7 +179,29 @@ function Farmacias() {
         )
         : [...actual, { ...medicamento, cantidad: 1 }]
     );
-    setAviso({ tipo: 'exito', texto: `${medicamento.nombre} ${medicamento.concentracion} se agregó a tu pedido.` });
+    setAviso({ tipo: 'exito', texto: `${medicamento.nombre} ${medicamento.concentracion} se agregó al carrito.` });
+  };
+
+  // Muestra u oculta en qué farmacias hay el medicamento (dirección, horario, unidades y precio)
+  const alternarDisponibilidad = async (medicamento) => {
+    const abierto = !abiertos[medicamento.id];
+    setAbiertos((actual) => ({ ...actual, [medicamento.id]: abierto }));
+    if (!abierto || disponibilidad[medicamento.id]?.filas) return;
+
+    setDisponibilidad((actual) => ({ ...actual, [medicamento.id]: { cargando: true } }));
+    try {
+      const { ok, datos } = await llamarServicio(`${API_FARMACIAS}/medicamentos/${medicamento.id}`, {}, SERVICIO_FARMACIAS);
+      if (!ok) throw new Error(datos.error || 'No se pudo consultar la disponibilidad.');
+      setDisponibilidad((actual) => ({ ...actual, [medicamento.id]: { filas: datos.disponibilidad } }));
+    } catch (error) {
+      setDisponibilidad((actual) => ({ ...actual, [medicamento.id]: { error: error.message || mensajeDeError(error, SERVICIO_FARMACIAS) } }));
+    }
+  };
+
+  // Agrega al carrito y deja elegida esa farmacia para el pedido
+  const agregarDesdeFarmacia = (medicamento, farmacia) => {
+    setFarmaciaId(String(farmacia.id));
+    agregarAlPedido(medicamento);
   };
 
   const cambiarCantidad = (id, delta) => {
@@ -197,7 +226,7 @@ function Farmacias() {
     setFaltantes([]);
 
     if (pedido.length === 0) {
-      setErrorPedido('Agrega al menos un medicamento desde el catálogo.');
+      setErrorPedido('Tu carrito está vacío: agrega al menos un medicamento desde el catálogo.');
       return;
     }
     if (!farmaciaId) {
@@ -230,12 +259,14 @@ function Farmacias() {
       }
 
       setPedido([]);
+      setDisponibilidad({});
+      cargarCatalogo();
       setFormula(FORMULA_VACIA);
       setObservaciones('');
       setPestana('solicitudes');
       setAviso({
         tipo: 'exito',
-        texto: `Solicitud #${datos.id} enviada a ${datos.farmacia.nombre} por ${pesos(datos.total)}. Te enviamos la confirmación a tu correo.`,
+        texto: `Pedido #${datos.id} enviado a ${datos.farmacia.nombre} por ${pesos(datos.total)}. Te enviamos la confirmación a tu correo y descontamos las unidades del inventario.`,
       });
     } catch (error) {
       setErrorPedido(mensajeDeError(error, SERVICIO_FARMACIAS));
@@ -265,7 +296,7 @@ function Farmacias() {
   const pestanas = [
     { id: 'catalogo', label: 'Catálogo' },
     { id: 'farmacias', label: 'Farmacias' },
-    { id: 'pedido', label: `Mi pedido${unidadesPedido ? ` (${unidadesPedido})` : ''}` },
+    { id: 'pedido', label: `Carrito${unidadesPedido ? ` (${unidadesPedido})` : ''}` },
     { id: 'solicitudes', label: 'Mis solicitudes' },
   ];
 
@@ -334,6 +365,14 @@ function Farmacias() {
             <button type="submit" className="farm-btn farm-btn--primary">Buscar</button>
           </form>
 
+          {reabastecimiento && (
+            <p className="farm-reabastecimiento">
+              El inventario se reabastece cada lunes.{' '}
+              {reabastecimiento.hoyEsLunes && reabastecimiento.hechoEstaSemana
+                ? 'Ya se reabasteció hoy.'
+                : `Próximo reabastecimiento: ${new Date(`${reabastecimiento.proximo}T12:00:00`).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}.`}
+            </p>
+          )}
           {errorCatalogo && <div className="farm-alert farm-alert--error" role="alert">{errorCatalogo}</div>}
           {cargandoCatalogo && <p className="farm-muted">Cargando medicamentos...</p>}
           {!cargandoCatalogo && !errorCatalogo && (
@@ -356,6 +395,42 @@ function Farmacias() {
                   <p className={`farm-card__stock ${sinExistencias ? 'farm-card__stock--agotado' : ''}`}>
                     {sinExistencias ? 'Agotado en todas las farmacias' : `Disponible en ${m.farmaciasConExistencias} farmacias`}
                   </p>
+                  <button
+                    type="button"
+                    className="farm-btn farm-btn--secundario"
+                    aria-expanded={Boolean(abiertos[m.id])}
+                    onClick={() => alternarDisponibilidad(m)}
+                  >
+                    {abiertos[m.id] ? 'Ocultar farmacias' : '¿En qué farmacias hay?'}
+                  </button>
+                  {abiertos[m.id] && (
+                    <div className="farm-disponibilidad" aria-label={`Farmacias con ${m.nombre} ${m.concentracion}`}>
+                      {disponibilidad[m.id]?.cargando && <p className="farm-muted">Consultando farmacias...</p>}
+                      {disponibilidad[m.id]?.error && <p className="farm-item__error">{disponibilidad[m.id].error}</p>}
+                      {disponibilidad[m.id]?.filas && (
+                        <ul>
+                          {disponibilidad[m.id].filas.map(({ farmacia, cantidad, precio }) => (
+                            <li key={farmacia.id} className={cantidad === 0 ? 'farm-disponibilidad--agotado' : ''}>
+                              <strong>{farmacia.nombre}</strong>
+                              <span>{farmacia.direccion}{farmacia.localidad ? `, ${farmacia.localidad}` : ''} — {farmacia.municipio}</span>
+                              <span>{farmacia.horario}</span>
+                              <span>{cantidad > 0 ? `${cantidad} disponibles · ${pesos(precio)}` : 'Agotado en esta sede'}</span>
+                              {!m.controlEspecial && cantidad > 0 && (
+                                <button
+                                  type="button"
+                                  className="farm-btn farm-btn--enlace"
+                                  onClick={() => agregarDesdeFarmacia(m, farmacia)}
+                                  aria-label={`Agregar ${m.nombre} ${m.concentracion} al carrito desde ${farmacia.nombre}`}
+                                >
+                                  Agregar al carrito desde esta sede
+                                </button>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
                   {m.controlEspecial ? (
                     <p className="farm-card__nota">Se reclama solo en la farmacia con la fórmula oficial en original.</p>
                   ) : (
@@ -364,9 +439,9 @@ function Farmacias() {
                       className="farm-btn farm-btn--primary"
                       disabled={sinExistencias}
                       onClick={() => agregarAlPedido(m)}
-                      aria-label={`Agregar ${m.nombre} ${m.concentracion} al pedido`}
+                      aria-label={`Agregar ${m.nombre} ${m.concentracion} al carrito`}
                     >
-                      Agregar al pedido
+                      Agregar al carrito
                     </button>
                   )}
                 </article>
@@ -426,7 +501,7 @@ function Farmacias() {
           )}
 
           {pedido.length === 0 ? (
-            <p className="farm-muted">Tu pedido está vacío. Agrega medicamentos desde el catálogo.</p>
+            <p className="farm-muted">Tu carrito está vacío. Agrega medicamentos desde el catálogo.</p>
           ) : (
             <ul className="farm-items">
               {pedido.map((item) => {
@@ -510,7 +585,7 @@ function Farmacias() {
             <strong>{pesos(totalEstimado)}</strong>
           </div>
           <button type="submit" className="farm-btn farm-btn--primary farm-btn--grande" disabled={enviando}>
-            {enviando ? 'Enviando...' : 'Enviar solicitud'}
+            {enviando ? 'Enviando pedido...' : 'Hacer pedido'}
           </button>
         </form>
       )}

@@ -217,3 +217,8 @@ cd backend && npm test # pruebas de los cinco microservicios (sin MySQL ni SMTP)
    - También se puede lanzar ese día con `cd backend/services/farmacias-service && npm run inventario:reabastecer`. Otro día se niega y dice cuándo es el próximo.
    - La nueva tabla `reabastecimientos` usa la semana ISO como clave única, así que solo puede pasar una vez por semana, y registra el origen, los productos actualizados y las unidades agregadas.
    - `GET /api/farmacias/reabastecimiento` informa el estado. Se agregaron 10 pruebas (incluidos los cambios de día con la hora de Bogotá) y la tabla ya está creada en Azure.
+27. **Farmacias: disponibilidad por sede y carrito.**
+   - **Disponibilidad:** cada medicamento del catálogo tiene el botón "¿En qué farmacias hay?", que lista las sedes con dirección, localidad, municipio, horario, unidades y precio. Desde una sede con existencias se agrega directo al carrito y esa farmacia queda elegida para el pedido.
+   - **Carrito:** la pestaña se llama "Carrito (n)", con "Agregar al carrito" y "Hacer pedido". Al pedir se descuenta el inventario, llega el correo de confirmación y el catálogo se actualiza.
+   - **Reabastecimiento:** un aviso muestra la fecha del próximo.
+   - 1 prueba nueva. Flujo verificado contra Azure: un pedido real bajó el inventario de 48 a 47, el correo quedó como `ENVIADA` en `db_notificaciones` y al cancelar volvió a 48.

@@ -237,6 +237,53 @@
   font-size: 1rem;
 }
 
+/* DISPONIBILIDAD POR FARMACIA */
+.farm-reabastecimiento {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.9rem;
+}
+
+.farm-disponibilidad ul {
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.farm-disponibilidad li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.82rem;
+  color: #475569;
+  border-left: 3px solid #10b981;
+  padding-left: 0.6rem;
+}
+
+.farm-disponibilidad li strong {
+  color: #0f172a;
+}
+
+.farm-disponibilidad li.farm-disponibilidad--agotado {
+  border-left-color: #f87171;
+  opacity: 0.75;
+}
+
+.farm-btn--enlace {
+  min-height: 32px;
+  padding: 0.2rem 0;
+  background: none;
+  color: #145da0;
+  text-align: left;
+  text-decoration: underline;
+}
+
 /* PEDIDO */
 .farm-pedido {
   display: flex;
