@@ -142,11 +142,18 @@ npm run dev                       # frontend en http://localhost:5173
 ## Pruebas y calidad
 
 ```bash
+npm run test:todo      # TODO: imports, lint, frontend y los seis microservicios
 npm test               # frontend (Vitest + Testing Library)
 npm run lint           # ESLint del frontend
 npm run build          # build de producción en dist/
 cd backend && npm test # pruebas de los seis microservicios (sin MySQL ni SMTP)
 ```
+
+### Avisos automáticos si algo se daña
+
+- **GitHub Actions** (`.github/workflows/ci.yml`): en cada `push` y *pull request* ejecuta, en Linux, la revisión de imports, ESLint, las pruebas del frontend, el build, las pruebas de **cada microservicio por separado** y `npm audit`. El resultado aparece como ✔ verde o ✘ roja junto al commit y en la pestaña **Actions** del repositorio, y **GitHub envía un correo** cuando una ejecución falla. Si falla un servicio, los demás se prueban igual para ver el panorama completo.
+- **VS Code**: al abrir el proyecto, VS Code sugiere instalar *Vitest* y *ESLint* (`.vscode/extensions.json`). Con Vitest, todas las pruebas aparecen en el panel **Testing** (ícono de matraz) con marcas verdes o rojas, y se pueden correr una por una. La tarea **Probar todo** (`Ctrl+Shift+P` → *Tasks: Run Test Task*) ejecuta la misma revisión que GitHub.
+- `npm run verificar:imports` detecta `import` cuyo nombre no coincide en mayúsculas con el archivo: en Windows funcionan, pero en Linux (servidores y GitHub) fallan.
 
 ## Pendientes conocidos
 
@@ -239,3 +246,7 @@ cd backend && npm test # pruebas de los seis microservicios (sin MySQL ni SMTP)
    - **Consultar Citas** lista las citas guardadas con su estado (Programada, Atendida, No asistió o Cancelada) y permite cancelar las programadas, lo que libera el horario.
    - Se quitaron las citas de ejemplo que vivían solo en el navegador. La sección de imágenes diagnósticas sigue igual.
    - 3 pruebas en `src/__tests__/citas.test.jsx`.
+31. **Pruebas automáticas con aviso.** Se agregaron:
+   - El flujo de GitHub Actions `.github/workflows/ci.yml`, con frontend, cada microservicio en paralelo y auditoría de dependencias, y correo cuando algo falla.
+   - Las recomendaciones y tareas de VS Code en `.vscode/`, para ver las pruebas en el panel Testing.
+   - Los scripts `npm run test:todo` y `npm run verificar:imports`.
