@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
+    "dev": "node --watch src/index.js",
     "test": "vitest run"
   },
   "dependencies": {
@@ -15,7 +15,6 @@
     "mysql2": "^3.9.7"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0",
     "supertest": "^7.3.1",
     "vitest": "^4.1.12"
   }

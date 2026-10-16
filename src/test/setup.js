@@ -13,4 +13,4 @@ const localStorageMock = {
   clear: vi.fn(),
 };
 
-global.localStorage = localStorageMock;
+vi.stubGlobal('localStorage', localStorageMock);
