@@ -51,3 +51,7 @@ npm test
 ```
 
 El backend trabaja actualmente en memoria. Los registros nuevos se pierden al reiniciar el servidor porque todavía no hay una base de datos conectada.
+
+## Registro de cambios (rama `juan/limpieza-env`)
+
+1. **Secretos fuera de git.** Se dejaron de versionar los `.env` de `auth-service`, `notification-service` y `registro-service`; cada servicio tiene ahora un `.env.example` con las variables necesarias y su propio `.gitignore`. `auth-service` ya no usa un `JWT_SECRET` por defecto escrito en el código: si falta en el `.env`, no arranca. Como los valores anteriores quedaron en el historial de GitHub, deben rotarse (contraseña de aplicación de Gmail, clave de MySQL y `JWT_SECRET`).

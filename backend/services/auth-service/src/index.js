@@ -8,7 +8,12 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3002;
-const JWT_SECRET = process.env.JWT_SECRET || 'tecnosalud_secret_jwt_key_2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('[auth-service] Falta JWT_SECRET en el archivo .env (ver .env.example).');
+  process.exit(1);
+}
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3005';
 
