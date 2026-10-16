@@ -3,6 +3,7 @@
 export const SERVICIO_AUTH = { nombre: 'el servicio de autenticación', carpeta: 'auth-service' };
 export const SERVICIO_REGISTRO = { nombre: 'el servicio de registro', carpeta: 'registro-service' };
 export const SERVICIO_FARMACIAS = { nombre: 'el servicio de farmacias', carpeta: 'farmacias-service' };
+export const SERVICIO_DOCUMENTOS = { nombre: 'el servicio de documentos', carpeta: 'documentos-service' };
 
 export class ErrorServicio extends Error {
   constructor(mensaje, tipo) {
@@ -29,6 +30,11 @@ function pistaDesarrollo(servicio) {
     : ' Intenta de nuevo en unos minutos.';
 }
 
+// Mensaje cuando el servicio no responde (apagado o sin red)
+export function mensajeSinConexion(url, servicio) {
+  return `No hay conexión con ${servicio.nombre} (${origen(url)}): parece estar apagado o sin red.${pistaDesarrollo(servicio)}`;
+}
+
 /**
  * Hace la petición y devuelve { ok, status, datos }.
  * Lanza ErrorServicio cuando el problema no es del usuario (servicio apagado, base de datos caída, etc.),
@@ -39,10 +45,7 @@ export async function llamarServicio(url, opciones, servicio) {
   try {
     respuesta = await fetch(url, opciones);
   } catch {
-    throw new ErrorServicio(
-      `No hay conexión con ${servicio.nombre} (${origen(url)}): parece estar apagado o sin red.${pistaDesarrollo(servicio)}`,
-      'sin-conexion'
-    );
+    throw new ErrorServicio(mensajeSinConexion(url, servicio), 'sin-conexion');
   }
 
   let datos = null;

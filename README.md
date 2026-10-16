@@ -6,7 +6,7 @@ Portal web de salud: un frontend SPA en React + Vite y cinco microservicios en N
 
 | Componente | Puerto | Carpeta | Qué hace |
 |---|---|---|---|
-| Frontend (React 18 + Vite) | 5173 | `src/` | Portal: inicio, nosotros, registro, afiliados, acceso y, con sesión, servicios clínicos y farmacias |
+| Frontend (React 18 + Vite) | 5173 | `src/` | Portal: inicio, nosotros, registro, afiliados, acceso y, con sesión, servicios clínicos, farmacias y documentos clínicos |
 | `auth-service` | 3002 | `backend/services/auth-service` | Login con JWT, recuperación y restablecimiento de contraseña (MySQL `db_auth`) |
 | `registro-service` | 3003 | `backend/services/registro-service` | Guarda las solicitudes de afiliación (MySQL `db_registro`) |
 | `farmacias-service` | 3004 | `backend/services/farmacias-service` | Catálogo de 100 medicamentos, 8 farmacias con inventario y solicitudes de medicamentos (MySQL `db_farmacias`) |
@@ -27,8 +27,8 @@ Navegador ──► auth-service ──────┐
 ## Estructura
 
 - `src/App.jsx`: navegación por hash (`#registro`, `#acceso`...), carga perezosa de páginas y sesión.
-- `src/components/`: `Navbar`, `Layout`, `Footer`, `Breadcrumbs` y `RutaProtegida` (protege Servicios Clínicos y Farmacias validando el JWT).
-- `src/components/pages/`: `Inicio`, `Nosotros`, `Registro`, `Afiliados` (Muerte digna, Medicamentos, Triage), `Acceso` (+ `RestablecerClave`), `ServiciosSalud`, `Farmacias` y `NotFound`.
+- `src/components/`: `Navbar`, `Layout`, `Footer`, `Breadcrumbs` y `RutaProtegida` (protege Servicios Clínicos, Farmacias y Documentos validando el JWT).
+- `src/components/pages/`: `Inicio`, `Nosotros`, `Registro`, `Afiliados` (Muerte digna, Medicamentos, Triage), `Acceso` (+ `RestablecerClave`), `ServiciosSalud`, `Farmacias`, `Documentos` y `NotFound`.
 - `src/__tests__/`: pruebas del frontend (Vitest + Testing Library).
 - `backend/Database/`, `backend/services/registro-service/database/` y `backend/services/farmacias-service/database/`: scripts SQL para crear las bases de datos.
 - `backend/scripts/db-init.js`: crea todas las bases con `npm run db:init`.
@@ -49,7 +49,7 @@ Navegador ──► auth-service ──────┐
    - `SMTP_USER` y `SMTP_PASS` en `notification-service` (contraseña de aplicación de Gmail).
    - Datos de MySQL en `auth-service`, `registro-service`, `farmacias-service` y `documentos-service`.
 
-   Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL`, `VITE_API_REGISTRO_URL` y `VITE_API_FARMACIAS_URL`, que son opcionales.
+   Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL`, `VITE_API_REGISTRO_URL`, `VITE_API_FARMACIAS_URL` y `VITE_API_DOCUMENTOS_URL`, que son opcionales.
 2. **Bases de datos.** Con los `.env` listos, crea `db_auth`, `db_registro`, `db_farmacias` y `db_documentos` con un comando:
    ```bash
    cd backend
@@ -185,3 +185,9 @@ cd backend && npm test # pruebas de los cinco microservicios (sin MySQL ni SMTP)
    - Cambios respecto a la versión original: puerto 3006 en lugar de 3004 (que ya usa `farmacias-service`), respuestas 503 con la causa cuando falla MySQL, carpeta `storage/` resuelta siempre dentro del servicio, `node --watch` en lugar de `nodemon`, pruebas pasadas de `node --test` a Vitest (10 pruebas, incluida una nueva para el 503) y `.env.example` documentado.
    - Detalle en `backend/services/documentos-service/LEEME.md`.
 21. **`documentos-service` integrado.** `npm run db:init` crea también `db_documentos` (o solo esa con `npm run db:init -- documentos`). `backend/package.json` instala y prueba los cinco servicios, y este README documenta su puerto, `JWT_SECRET` compartido y `DOCUMENTOS_ENCRYPTION_KEY`.
+22. **Nueva opción "Documentos clínicos" en el menú**, visible solo con sesión y protegida con `RutaProtegida`. Usa la página `src/components/pages/Documentos/` que hizo el compañero, adaptada así:
+   - Apunta al puerto 3006 (`VITE_API_DOCUMENTOS_URL`).
+   - Usa `llamarServicio` para mostrar la causa real de los errores (servicio apagado, base de datos caída).
+   - Ya no borra la sesión ni recarga la página ante cualquier error 401.
+   - El paciente ve y carga sus propios documentos y descarga confirmando su identificación; `MEDICO` y `ADMIN` también pueden buscar otros pacientes y generar documentos.
+   - 5 pruebas en `src/__tests__/documentos.test.jsx`.

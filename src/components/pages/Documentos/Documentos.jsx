@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import './Documentos.css';
+import { llamarServicio, mensajeSinConexion, SERVICIO_DOCUMENTOS } from '../../../utils/servicios';
 
-const API_DOCUMENTOS = import.meta.env.VITE_API_DOCUMENTOS_URL || 'http://localhost:3004/api/documentos';
+// URL del Microservicio de Documentos
+const API_DOCUMENTOS = import.meta.env.VITE_API_DOCUMENTOS_URL || 'http://localhost:3006/api/documentos';
 const DOCUMENT_PATTERN = /^[A-Za-z0-9.-]{5,20}$/;
 
 function obtenerUsuario() {
@@ -12,25 +14,20 @@ function obtenerUsuario() {
   }
 }
 
-async function solicitarDocumentos(url, options = {}) {
+// Cabeceras con la sesión; con FormData el navegador pone el Content-Type (multipart) por su cuenta
+function encabezados(conJson = true) {
   const token = localStorage.getItem('tecnosalud_token');
-  const respuesta = await fetch(url, {
-    ...options,
-    headers: {
-      ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
-      ...(options.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
+  return {
+    ...(conJson ? { 'Content-Type': 'application/json' } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
-  if (respuesta.status === 401) {
-    localStorage.removeItem('tecnosalud_token');
-    localStorage.removeItem('tecnosalud_sesion_activa');
-    window.location.hash = '/acceso';
-    window.location.reload();
-  }
-
-  return respuesta;
+// Llama al servicio y lanza un Error con el mensaje a mostrar si la respuesta no es exitosa
+async function solicitarDocumentos(url, opciones = {}) {
+  const { ok, datos } = await llamarServicio(url, opciones, SERVICIO_DOCUMENTOS);
+  if (!ok) throw new Error(datos.error || 'No fue posible completar la solicitud.');
+  return datos;
 }
 
 function Documentos() {
@@ -59,9 +56,7 @@ function Documentos() {
     setCargando(true);
     try {
       const query = new URLSearchParams({ documentoPaciente: documentoPaciente.trim() });
-      const respuesta = await solicitarDocumentos(`${API_DOCUMENTOS}?${query}`);
-      const datos = await respuesta.json();
-      if (!respuesta.ok) throw new Error(datos.error || 'No fue posible consultar los documentos.');
+      const datos = await solicitarDocumentos(`${API_DOCUMENTOS}?${query}`, { headers: encabezados() });
       setDocumentos(datos.documentos);
     } catch (error) {
       setDocumentos([]);
@@ -91,12 +86,11 @@ function Documentos() {
 
     setCargando(true);
     try {
-      const respuesta = await solicitarDocumentos(API_DOCUMENTOS, {
+      await solicitarDocumentos(API_DOCUMENTOS, {
         method: 'POST',
+        headers: encabezados(false),
         body: datosFormulario,
       });
-      const datos = await respuesta.json();
-      if (!respuesta.ok) throw new Error(datos.error || 'No fue posible cargar el archivo.');
       setTitulo('');
       setDescripcion('');
       setArchivo(null);
@@ -115,16 +109,15 @@ function Documentos() {
     setMensaje({ tipo: '', texto: '' });
     setCargando(true);
     try {
-      const respuesta = await solicitarDocumentos(`${API_DOCUMENTOS}/generar`, {
+      await solicitarDocumentos(`${API_DOCUMENTOS}/generar`, {
         method: 'POST',
+        headers: encabezados(),
         body: JSON.stringify({
           documentoPaciente: documentoPaciente.trim(),
           titulo: titulo.trim(),
           contenido: contenido.trim(),
         }),
       });
-      const datos = await respuesta.json();
-      if (!respuesta.ok) throw new Error(datos.error || 'No fue posible generar el documento.');
       setTitulo('');
       setContenido('');
       await consultarDocumentos();
@@ -145,12 +138,19 @@ function Documentos() {
 
     setCargando(true);
     try {
-      const respuesta = await solicitarDocumentos(`${API_DOCUMENTOS}/${documento.id}/descargar`, {
-        method: 'POST',
-        body: JSON.stringify({ documentoAcceso: documentoAcceso.trim() }),
-      });
+      // La descarga devuelve el archivo (no JSON), por eso usa fetch directo
+      let respuesta;
+      try {
+        respuesta = await fetch(`${API_DOCUMENTOS}/${documento.id}/descargar`, {
+          method: 'POST',
+          headers: encabezados(),
+          body: JSON.stringify({ documentoAcceso: documentoAcceso.trim() }),
+        });
+      } catch {
+        throw new Error(mensajeSinConexion(API_DOCUMENTOS, SERVICIO_DOCUMENTOS));
+      }
       if (!respuesta.ok) {
-        const datos = await respuesta.json();
+        const datos = await respuesta.json().catch(() => ({}));
         throw new Error(datos.error || 'No fue posible descargar el documento.');
       }
       const archivoBlob = await respuesta.blob();

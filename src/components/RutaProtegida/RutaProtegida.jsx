@@ -34,7 +34,7 @@ function RutaProtegida({ children, onNavigate }) {
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
           <h2 style={{ color: '#145da0', marginBottom: '0.5rem' }}>Acceso Restringido</h2>
           <p style={{ color: '#4b5563', fontSize: '0.95rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
-            Debes iniciar sesión con tus credenciales de afiliado para acceder a los <strong>Servicios Clínicos</strong> y a las <strong>Farmacias</strong> de Tecnosalud.
+            Debes iniciar sesión con tus credenciales de afiliado para acceder a los <strong>Servicios Clínicos</strong>, las <strong>Farmacias</strong> y los <strong>Documentos clínicos</strong> de Tecnosalud.
           </p>
           <button
             type="button"
