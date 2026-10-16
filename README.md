@@ -31,20 +31,71 @@ Navegador ──► auth-service ────┐
 ## Requisitos
 
 - Node.js 20.19 o superior.
-- MySQL 8, solo para usar el login y el registro de verdad. Las pruebas no lo necesitan.
+- Una base MySQL 8 para usar el login y el registro de verdad: **Azure Database for MySQL** (recomendado, compartida por el equipo) o un MySQL local. Las pruebas no la necesitan.
 
 ## Configuración
 
-1. **Bases de datos.** Ejecuta en MySQL:
-   - `backend/Database/Script_Creacion_BasededatosAutenticacion.sql` (crea `db_auth`)
-   - `backend/services/registro-service/database/Script_Creacion_BasedeDatosRegistro.sql` (crea `db_registro`)
-2. **Variables de entorno.** En cada servicio copia `.env.example` como `.env` y completa los valores:
+1. **Variables de entorno.** En cada servicio copia `.env.example` como `.env` y completa los valores:
    - `JWT_SECRET` en `auth-service` (obligatorio, el servicio no arranca sin él).
    - `NOTIFICATION_API_KEY`: **el mismo valor** en los tres servicios.
    - `SMTP_USER` y `SMTP_PASS` en `notification-service` (contraseña de aplicación de Gmail).
    - Datos de MySQL en `auth-service` y `registro-service`.
 
    Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL` y `VITE_API_REGISTRO_URL`, que son opcionales.
+2. **Bases de datos.** Con los `.env` listos, crea `db_auth` y `db_registro` con un comando:
+   ```bash
+   cd backend
+   npm run install:all   # solo la primera vez
+   npm run db:init
+   ```
+   El comando crea las tablas y los usuarios de prueba. Si también tienes un cliente de MySQL, puedes ejecutar a mano `backend/Database/Script_Creacion_BasededatosAutenticacion.sql` y `backend/services/registro-service/database/Script_Creacion_BasedeDatosRegistro.sql`.
+
+### Usuarios de prueba
+
+| Correo | Clave | Rol |
+|---|---|---|
+| `caenjiro@gmail.com` | `123456` | Paciente |
+| `maria.gomez@clinicaejemplo.com` | `maria2026` | Médico |
+| `carlos.jimenez@tecnosalud.com.co` | `admin2026` | Admin |
+| `soporte.tecnosalud@gmail.com` | `soporte123` | Admin |
+| `afiliados.bogota@redsalud.com` | `afiliados2026` | Paciente |
+
+Son claves de demostración: cámbialas o elimina estos usuarios en un entorno real.
+
+## Conectar a Azure Database for MySQL
+
+**1. Crear el servidor** (portal.azure.com → *Azure Database for MySQL – Servidor flexible* → *Crear*; no uses "Single Server", que Microsoft retiró):
+- Nombre: por ejemplo `tecnosalud-mysql`. Tu host será `tecnosalud-mysql.mysql.database.azure.com`.
+- Versión MySQL 8.0. Carga de trabajo *Desarrollo*, tamaño **Burstable B1ms** (el más económico; con Azure for Students o una cuenta gratuita suele estar incluido, pero confirma el precio antes de crear).
+- Usuario administrador, por ejemplo `tecnoadmin` (Azure no permite `root`), con una contraseña fuerte y nueva.
+- **Redes**: *Acceso público* y *Agregar la dirección IP del cliente actual*. Cada integrante del equipo debe agregar su IP. No abras el rango `0.0.0.0 – 255.255.255.255`.
+
+**2. Configurar los `.env`** de `auth-service` y `registro-service`:
+
+```env
+DB_HOST=tecnosalud-mysql.mysql.database.azure.com
+DB_PORT=3306
+DB_USER=tecnoadmin
+DB_PASSWORD=tu-contraseña
+DB_NAME=db_auth          # en registro-service: db_registro
+DB_SSL=true              # Azure exige conexión cifrada
+```
+
+No hace falta descargar certificados: Node ya confía en las autoridades que usa Azure.
+
+**3. Crear las bases:** `cd backend && npm run db:init`.
+
+**4. Reiniciar** `auth-service` y `registro-service`, y entrar con un usuario de prueba.
+
+**Si algo falla**, `db:init` y la pantalla de acceso muestran la causa:
+
+| Mensaje | Solución |
+|---|---|
+| "El servidor no respondió…" / "no respondió a tiempo" | Agrega tu IP en *Redes* del servidor en Azure |
+| "Usuario o contraseña incorrectos" | Revisa `DB_USER` y `DB_PASSWORD` |
+| "No existe el servidor indicado en DB_HOST" | Revisa el nombre del host |
+| "El servidor exige conexión segura" | Pon `DB_SSL=true` |
+| "Faltan tablas" / "la base de datos no existe" | Ejecuta `npm run db:init` |
 
 ## Ejecución
 
@@ -103,3 +154,4 @@ cd backend && npm test # pruebas de los tres microservicios (sin MySQL ni SMTP)
    - Se agregaron 7 pruebas en el frontend y 5 en los microservicios.
 14. **Script SQL de `db_auth` corregido.** Los hashes bcrypt de los 5 usuarios de prueba eran inventados y no correspondían a ninguna clave, así que nadie podía iniciar sesión. Ahora son hashes reales de las claves documentadas en el script (`caenjiro@gmail.com` / `123456`, etc.). Al volver a ejecutar el script se restablecen esas claves, y se quitaron los `select` de inspección que tenía mezclados. La prueba `auth-service/tests/script-sql.test.js` verifica que cada hash coincida con su clave.
 15. **Comando `npm run db:init`** (en `backend/`). Ejecuta los scripts SQL de `db_auth` y `db_registro` con los datos de conexión de `auth-service/.env` y `registro-service/.env`. Sirve igual para MySQL local que para Azure Database for MySQL, sin instalar un cliente de MySQL. También acepta `npm run db:init -- auth` o `-- registro` para crear solo una base. Si falla, explica la causa (IP sin autorizar en el firewall de Azure, credenciales, SSL, servidor inexistente) y se puede volver a ejecutar sin problema. `npm run install:all` instala ahora también las dependencias de `backend/` (`mysql2` y `dotenv`).
+16. **Guía para Azure Database for MySQL en este README.** Explica cómo crear el servidor flexible, configurar el firewall y los `.env` (con `DB_SSL=true`), crear las bases con `npm run db:init` y resolver los errores comunes. Incluye la tabla de usuarios de prueba.
