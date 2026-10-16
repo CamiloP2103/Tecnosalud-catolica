@@ -70,6 +70,20 @@ Navegador ──► auth-service ──────┐
 
 Son claves de demostración: cámbialas o elimina estos usuarios en un entorno real.
 
+### Crear usuarios propios
+
+Para que cada integrante entre con su correo y reciba las alertas y confirmaciones:
+
+```bash
+cd backend
+npm run usuario:crear -- --email ana@correo.com --nombre "Ana Pérez" --doc 1020304050 --tipo CC --rol PACIENTE
+```
+
+- `--rol`: `PACIENTE`, `MEDICO` o `ADMIN`. `--tipo`: `CC`, `TI`, `CE` o `PA`.
+- La contraseña se genera aleatoria y nadie la conoce. El usuario define la suya en la página con **Acceso → "¿Olvidaste tu contraseña?"**: le llega un enlace a su correo, válido por 15 minutos.
+- Si se necesita una clave inicial conocida, se pasa en la variable de entorno `NUEVA_CLAVE` (no como argumento, para que no quede en el historial de la terminal).
+- No sobrescribe usuarios: si el correo o el documento ya existen, no cambia nada.
+
 ## Conectar a Azure Database for MySQL
 
 **1. Crear el servidor** (portal.azure.com → *Azure Database for MySQL – Servidor flexible* → *Crear*; no uses "Single Server", que Microsoft retiró):
@@ -191,3 +205,4 @@ cd backend && npm test # pruebas de los cinco microservicios (sin MySQL ni SMTP)
    - Ya no borra la sesión ni recarga la página ante cualquier error 401.
    - El paciente ve y carga sus propios documentos y descarga confirmando su identificación; `MEDICO` y `ADMIN` también pueden buscar otros pacientes y generar documentos.
    - 5 pruebas en `src/__tests__/documentos.test.jsx`.
+23. **Comando `npm run usuario:crear`** (en `backend/`) para crear usuarios reales en `db_auth` con correo, nombre, documento y rol. Asigna una contraseña aleatoria que el usuario reemplaza con "¿Olvidaste tu contraseña?", valida los datos y no sobrescribe usuarios existentes.

@@ -6,9 +6,11 @@
   "scripts": {
     "install:all": "npm install && npm --prefix services/auth-service install && npm --prefix services/notification-service install && npm --prefix services/registro-service install && npm --prefix services/farmacias-service install && npm --prefix services/documentos-service install",
     "test": "npm --prefix services/auth-service test && npm --prefix services/notification-service test && npm --prefix services/registro-service test && npm --prefix services/farmacias-service test && npm --prefix services/documentos-service test",
-    "db:init": "node scripts/db-init.js"
+    "db:init": "node scripts/db-init.js",
+    "usuario:crear": "node scripts/crear-usuario.js"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "dotenv": "^16.6.1",
     "mysql2": "^3.24.6"
   }
