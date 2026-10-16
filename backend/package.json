@@ -2,9 +2,14 @@
   "name": "tecnosalud-catolica-backend",
   "private": true,
   "version": "1.0.0",
-  "description": "Atajos para instalar y probar los microservicios de Tecnosalud",
+  "description": "Atajos para instalar, probar e inicializar las bases de datos de los microservicios",
   "scripts": {
-    "install:all": "npm --prefix services/auth-service install && npm --prefix services/notification-service install && npm --prefix services/registro-service install",
-    "test": "npm --prefix services/auth-service test && npm --prefix services/notification-service test && npm --prefix services/registro-service test"
+    "install:all": "npm install && npm --prefix services/auth-service install && npm --prefix services/notification-service install && npm --prefix services/registro-service install",
+    "test": "npm --prefix services/auth-service test && npm --prefix services/notification-service test && npm --prefix services/registro-service test",
+    "db:init": "node scripts/db-init.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "mysql2": "^3.24.6"
   }
 }
