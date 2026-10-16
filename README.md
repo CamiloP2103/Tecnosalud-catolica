@@ -147,7 +147,7 @@ cd backend && npm test # pruebas de los cinco microservicios (sin MySQL ni SMTP)
 ## Pendientes conocidos
 
 - `Acceso.jsx` llama a `/api/auth/recuperar-usuario/consultar` y `/verificar`, pero esos endpoints **no existen** en `auth-service`, así que "Recuperar usuario" no funciona todavía.
-- El límite de intentos de login se guarda en memoria: se reinicia al reiniciar `auth-service` y no se comparte entre varias instancias.
+- El límite por IP de `auth-service` vive en memoria (el bloqueo por cuenta ya se guarda en `db_auth`).
 - Las credenciales que estuvieron en git (SMTP, MySQL, `JWT_SECRET`) deben rotarse, porque siguen en el historial de `main`.
 
 ## Registro de cambios (rama `juan/limpieza-env`)
@@ -207,3 +207,8 @@ cd backend && npm test # pruebas de los cinco microservicios (sin MySQL ni SMTP)
    - 5 pruebas en `src/__tests__/documentos.test.jsx`.
 23. **Comando `npm run usuario:crear`** (en `backend/`) para crear usuarios reales en `db_auth` con correo, nombre, documento y rol. Asigna una contraseña aleatoria que el usuario reemplaza con "¿Olvidaste tu contraseña?", valida los datos y no sobrescribe usuarios existentes.
 24. **`notification-service` con base de datos propia `db_notificaciones`.** Cada correo queda registrado con destinatario, asunto, servicio que lo pidió (cabecera `x-servicio-origen`, que ahora envían auth, registro y farmacias), estado `ENVIADA`/`FALLIDA`, `message_id` y motivo del error. El cuerpo no se guarda, para no almacenar enlaces de recuperación ni datos clínicos. Si la base falla, el correo se envía igual. Se agregó `GET /api/notifications/historial` (con `x-api-key`), 4 pruebas, `db:init -- notificaciones` y el `LEEME.md` del servicio. La base ya está creada en Azure.
+25. **`auth-service` usa por completo `db_auth`.**
+   - **Bitácora:** cada intento de login queda en `bitacora_acceso`, con usuario, correo, IP, resultado y motivo (`USUARIO_NO_EXISTE`, `CLAVE_INCORRECTA`, `CUENTA_BLOQUEADA`, `USUARIO_INACTIVO` o `LIMITE_IP`). Si no se puede escribir en la bitácora, el login no se cae.
+   - **Bloqueo por cuenta:** se guarda en `intentos_fallidos` y `bloqueado_hasta`. Tras 5 contraseñas incorrectas seguidas, la cuenta queda bloqueada 15 minutos aunque se reinicie el servicio o se intente desde otra IP. Un login exitoso o restablecer la contraseña la desbloquean.
+   - Se mantiene además el límite en memoria por IP y correo.
+   - Se agregaron 5 pruebas y se verificó el SQL contra Azure.

@@ -8,6 +8,7 @@ const { crearLimitador } = require('./limitador');
 const { errorBaseDatos } = require('./errores');
 
 const LARGO_MINIMO_CLAVE = 8;
+const MAX_INTENTOS_CUENTA = 5; // fallos seguidos antes de bloquear la cuenta 15 minutos
 const QUINCE_MINUTOS = 15 * 60 * 1000;
 const MENSAJE_RECUPERACION =
   'Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.';
@@ -42,6 +43,17 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
 
   const router = express.Router();
 
+  // Registra cada intento de inicio de sesión en db_auth.bitacora_acceso (sin bloquear la respuesta)
+  function registrarIntento({ usuarioId = null, email, ipCliente, exitoso, motivo = null }) {
+    pool.query(
+      `INSERT INTO bitacora_acceso (usuario_id, email_ingresado, ip_origen, exitoso, motivo_fallo)
+       VALUES (?, ?, ?, ?, ?)`,
+      [usuarioId, email.slice(0, 120), String(ipCliente).slice(0, 45), exitoso, motivo]
+    ).catch((error) => {
+      console.error('[auth-service] No se pudo registrar el intento en bitacora_acceso:', error.code || error.message);
+    });
+  }
+
   // 1. Endpoint de Inicio de Sesión
   router.post('/login', async (req, res) => {
     const { usuario, contrasena } = req.body || {};
@@ -54,13 +66,17 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
     const emailIngresado = usuario.trim().toLowerCase();
     const claveLimite = `${ipCliente}|${emailIngresado}`;
 
+    // Límite en memoria por IP + correo: frena ataques aunque el correo no exista
     if (limiteLogin.bloqueado(claveLimite)) {
+      registrarIntento({ email: emailIngresado, ipCliente, exitoso: false, motivo: 'LIMITE_IP' });
       return res.status(429).json({ error: 'Demasiados intentos fallidos. Intenta de nuevo en 15 minutos.' });
     }
 
     try {
       const [rows] = await pool.query(
-        `SELECT u.id, u.tipo_doc, u.documento, u.email, u.contrasena_hash, u.nombre, u.activo, r.nombre AS rol
+        `SELECT u.id, u.tipo_doc, u.documento, u.email, u.contrasena_hash, u.nombre, u.activo, r.nombre AS rol,
+                (u.bloqueado_hasta IS NOT NULL AND u.bloqueado_hasta > NOW()) AS esta_bloqueado,
+                GREATEST(CEIL(TIMESTAMPDIFF(SECOND, NOW(), u.bloqueado_hasta) / 60), 1) AS minutos_bloqueo
          FROM usuarios u
          INNER JOIN roles r ON u.rol_id = r.id
          WHERE u.email = ? LIMIT 1`,
@@ -70,17 +86,36 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
       // Caso A: Si el usuario ni siquiera existe, no enviamos correo para evitar spam a correos ajenos
       if (rows.length === 0) {
         limiteLogin.registrar(claveLimite);
+        registrarIntento({ email: emailIngresado, ipCliente, exitoso: false, motivo: 'USUARIO_NO_EXISTE' });
         return res.status(401).json({ error: 'Credenciales inválidas.' });
       }
 
       const user = rows[0];
 
+      // Cuenta bloqueada en la base de datos (persiste aunque se reinicie el servicio)
+      if (Number(user.esta_bloqueado)) {
+        registrarIntento({ usuarioId: user.id, email: emailIngresado, ipCliente, exitoso: false, motivo: 'CUENTA_BLOQUEADA' });
+        return res.status(429).json({
+          error: `La cuenta está bloqueada por intentos fallidos. Intenta de nuevo en ${user.minutos_bloqueo} minuto(s) o restablece tu contraseña.`,
+        });
+      }
+
       // Validar contraseña antes de revelar si la cuenta está inactiva
       const esValida = await bcrypt.compare(contrasena, user.contrasena_hash);
 
-      // Caso B: El usuario existe pero colocó la contraseña errada -> Dispara Alerta
+      // Caso B: El usuario existe pero colocó la contraseña errada -> suma el intento y dispara alerta.
+      // Al quinto fallo se bloquea la cuenta 15 minutos y el contador vuelve a 0.
+      // (bloqueado_hasta se asigna primero porque MySQL evalúa las asignaciones de izquierda a derecha)
       if (!esValida) {
         limiteLogin.registrar(claveLimite);
+        await pool.query(
+          `UPDATE usuarios
+           SET bloqueado_hasta = IF(intentos_fallidos + 1 >= ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE), bloqueado_hasta),
+               intentos_fallidos = IF(intentos_fallidos + 1 >= ?, 0, intentos_fallidos + 1)
+           WHERE id = ?`,
+          [MAX_INTENTOS_CUENTA, MAX_INTENTOS_CUENTA, user.id]
+        );
+        registrarIntento({ usuarioId: user.id, email: emailIngresado, ipCliente, exitoso: false, motivo: 'CLAVE_INCORRECTA' });
         notificarSeguridadLogin({
           destinatario: user.email,
           nombreUsuario: user.nombre,
@@ -91,10 +126,13 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
       }
 
       if (!user.activo) {
+        registrarIntento({ usuarioId: user.id, email: emailIngresado, ipCliente, exitoso: false, motivo: 'USUARIO_INACTIVO' });
         return res.status(403).json({ error: 'Usuario inactivo o bloqueado.' });
       }
 
       limiteLogin.limpiar(claveLimite);
+      await pool.query('UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL WHERE id = ?', [user.id]);
+      registrarIntento({ usuarioId: user.id, email: emailIngresado, ipCliente, exitoso: true });
 
       // Caso C: Inicio de sesión correcto -> Dispara Notificación de Acceso
       notificarSeguridadLogin({
@@ -232,7 +270,7 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
       const nuevoHash = await bcrypt.hash(nuevaContrasena.trim(), salt);
 
       await pool.query(
-        'UPDATE usuarios SET contrasena_hash = ? WHERE id = ?',
+        'UPDATE usuarios SET contrasena_hash = ?, intentos_fallidos = 0, bloqueado_hasta = NULL WHERE id = ?',
         [nuevoHash, registroToken.usuario_id]
       );
 

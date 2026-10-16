@@ -107,6 +107,56 @@ describe('POST /api/auth/login', () => {
   });
 });
 
+describe('bitácora de accesos y bloqueo de cuenta en db_auth', () => {
+  const sentencias = (pool, inicio) => pool.query.mock.calls.filter(([sql]) => sql.trim().startsWith(inicio));
+  const motivos = (pool) => sentencias(pool, 'INSERT INTO bitacora_acceso').map(([, p]) => [p[3], p[4]]);
+
+  it('registra el acceso exitoso y reinicia los intentos fallidos', async () => {
+    const { app, pool } = crear();
+    await request(app).post('/api/auth/login').send({ usuario: usuarioBase.email, contrasena: CLAVE });
+    expect(motivos(pool)).toEqual([[true, null]]);
+    expect(sentencias(pool, 'UPDATE usuarios SET intentos_fallidos = 0')[0][1]).toEqual([1]);
+  });
+
+  it('suma el intento fallido en la base y lo registra con su motivo', async () => {
+    const { app, pool } = crear();
+    await request(app).post('/api/auth/login').send({ usuario: usuarioBase.email, contrasena: 'mala' });
+    const [sql, parametros] = sentencias(pool, 'UPDATE usuarios')[0];
+    expect(sql).toContain('DATE_ADD(NOW(), INTERVAL 15 MINUTE)');
+    expect(parametros).toEqual([5, 5, 1]);
+    expect(motivos(pool)).toEqual([[false, 'CLAVE_INCORRECTA']]);
+  });
+
+  it('registra los correos inexistentes sin usuario asociado', async () => {
+    const { app, pool } = crear({ usuario: null });
+    await request(app).post('/api/auth/login').send({ usuario: 'nadie@x.co', contrasena: 'x' });
+    const [, parametros] = sentencias(pool, 'INSERT INTO bitacora_acceso')[0];
+    expect(parametros[0]).toBeNull();
+    expect(parametros[4]).toBe('USUARIO_NO_EXISTE');
+  });
+
+  it('rechaza una cuenta bloqueada sin revisar la contraseña, aunque sea correcta', async () => {
+    const { app, pool, notificar } = crear({ usuario: { ...usuarioBase, esta_bloqueado: 1, minutos_bloqueo: 12 } });
+    const res = await request(app).post('/api/auth/login').send({ usuario: usuarioBase.email, contrasena: CLAVE });
+    expect(res.status).toBe(429);
+    expect(res.body.error).toContain('12 minuto');
+    expect(res.body.token).toBeUndefined();
+    expect(motivos(pool)).toEqual([[false, 'CUENTA_BLOQUEADA']]);
+    expect(notificar).not.toHaveBeenCalled();
+  });
+
+  it('no falla el login si no se puede escribir en la bitácora', async () => {
+    const { app, pool } = crear();
+    const consultaOriginal = pool.query.getMockImplementation();
+    pool.query.mockImplementation(async (sql, parametros) => {
+      if (sql.includes('INSERT INTO bitacora_acceso')) throw Object.assign(new Error('tabla'), { code: 'ER_NO_SUCH_TABLE' });
+      return consultaOriginal(sql, parametros);
+    });
+    const res = await request(app).post('/api/auth/login').send({ usuario: usuarioBase.email, contrasena: CLAVE });
+    expect(res.status).toBe(200);
+  });
+});
+
 describe('POST /api/auth/recuperar-clave/solicitar', () => {
   it('responde igual aunque el correo no exista, sin guardar token ni enviar correo', async () => {
     const { app, pool, notificar } = crear({ usuario: null });
@@ -169,6 +219,8 @@ describe('POST /api/auth/recuperar-clave/restablecer', () => {
     const [, [nuevoHash, usuarioId]] = pool.query.mock.calls.find(([sql]) => sql.includes('UPDATE usuarios'));
     expect(usuarioId).toBe(1);
     expect(bcrypt.compareSync('NuevaClave1', nuevoHash)).toBe(true);
+    // Restablecer la contraseña también desbloquea la cuenta
+    expect(pool.query.mock.calls.find(([sql]) => sql.includes('UPDATE usuarios'))[0]).toContain('bloqueado_hasta = NULL');
     expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('UPDATE tokens_recuperacion'), [9]);
   });
 });
