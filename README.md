@@ -24,6 +24,8 @@ Navegador ──► auth-service ──────┐
 
 `farmacias-service` y `documentos-service` validan el JWT que emite `auth-service`, por eso los tres comparten `JWT_SECRET`.
 
+Las cinco bases de datos, sus tablas y cómo se relacionan entre servicios están explicadas, con diagramas, en **[docs/ARQUITECTURA_DATOS.md](docs/ARQUITECTURA_DATOS.md)**.
+
 ## Estructura
 
 - `src/App.jsx`: navegación por hash (`#registro`, `#acceso`...), carga perezosa de páginas y sesión.
@@ -222,3 +224,4 @@ cd backend && npm test # pruebas de los cinco microservicios (sin MySQL ni SMTP)
    - **Carrito:** la pestaña se llama "Carrito (n)", con "Agregar al carrito" y "Hacer pedido". Al pedir se descuenta el inventario, llega el correo de confirmación y el catálogo se actualiza.
    - **Reabastecimiento:** un aviso muestra la fecha del próximo.
    - 1 prueba nueva. Flujo verificado contra Azure: un pedido real bajó el inventario de 48 a 47, el correo quedó como `ENVIADA` en `db_notificaciones` y al cancelar volvió a 48.
+28. **Documento de arquitectura de datos** en [docs/ARQUITECTURA_DATOS.md](docs/ARQUITECTURA_DATOS.md). Explica el principio de una base de datos por microservicio, las tablas de las cinco bases (diagramas entidad-relación en Mermaid, que GitHub dibuja), cómo se relacionan los datos entre servicios (el JWT lleva `id`, `email`, `doc` y `rol`), los flujos de login, pedido, documentos y recuperación de contraseña, y las medidas de seguridad.

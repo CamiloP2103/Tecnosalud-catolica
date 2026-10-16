@@ -164,6 +164,8 @@ Es una vista adicional que aparece en la navegación cuando el usuario ha inicia
 
 Las pruebas de cada servicio simulan MySQL y SMTP, así que se pueden correr sin infraestructura.
 
+La arquitectura de datos completa (bases, tablas, relaciones entre servicios y flujos) está en `docs/ARQUITECTURA_DATOS.md`.
+
 ## 8. Almacenamiento local
 
 El frontend usa `localStorage` para:
