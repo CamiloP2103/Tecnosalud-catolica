@@ -1,56 +1,79 @@
 # Tecnosalud Católica
 
-Aplicación SPA construida con React y Vite.
+Portal web de salud: un frontend SPA en React + Vite y tres microservicios en Node.js + Express.
+
+## Arquitectura
+
+| Componente | Puerto | Carpeta | Qué hace |
+|---|---|---|---|
+| Frontend (React 18 + Vite) | 5173 | `src/` | Portal: inicio, nosotros, registro, afiliados, acceso y servicios clínicos |
+| `auth-service` | 3002 | `backend/services/auth-service` | Login con JWT, recuperación y restablecimiento de contraseña (MySQL `db_auth`) |
+| `registro-service` | 3003 | `backend/services/registro-service` | Guarda las solicitudes de afiliación (MySQL `db_registro`) |
+| `notification-service` | 3005 | `backend/services/notification-service` | Envía correos por SMTP; solo lo llaman los otros servicios, con `x-api-key` |
+
+```
+Navegador ──► auth-service ────┐
+         └──► registro-service ┴──► notification-service ──► SMTP (Gmail)
+                 │                       ▲
+                 └──── MySQL ────────────┘ (auth y registro)
+```
 
 ## Estructura
 
-- `src/App.jsx`: estado global y selección de página.
-- `src/components/Navbar`: navegación principal.
-- `src/components/Layout`: estructura general.
-- `src/components/pages/Inicio`: bienvenida y hora de carga.
-- `src/components/pages/Nosotros`: información institucional y contador.
-- `src/components/pages/Afiliados`: formulario de afiliación.
-- `src/components/pages/Acceso`: formulario de acceso.
+- `src/App.jsx`: navegación por hash (`#registro`, `#acceso`...), carga perezosa de páginas y sesión.
+- `src/components/`: `Navbar`, `Layout`, `Footer`, `Breadcrumbs` y `RutaProtegida` (protege Servicios Clínicos validando el JWT).
+- `src/components/pages/`: `Inicio`, `Nosotros`, `Registro`, `Afiliados` (Muerte digna, Medicamentos, Triage), `Acceso` (+ `RestablecerClave`), `ServiciosSalud` y `NotFound`.
+- `src/__tests__/`: pruebas del frontend (Vitest + Testing Library).
+- `backend/Database/` y `backend/services/registro-service/database/`: scripts SQL para crear las bases de datos.
+- `backend/services/*/src/app.js`: rutas del servicio. `src/index.js` solo carga el `.env` y arranca el servidor.
+- `backend/services/*/tests/`: pruebas de cada microservicio.
+
+## Requisitos
+
+- Node.js 20.19 o superior.
+- MySQL 8, solo para usar el login y el registro de verdad. Las pruebas no lo necesitan.
+
+## Configuración
+
+1. **Bases de datos.** Ejecuta en MySQL:
+   - `backend/Database/Script_Creacion_BasededatosAutenticacion.sql` (crea `db_auth`)
+   - `backend/services/registro-service/database/Script_Creacion_BasedeDatosRegistro.sql` (crea `db_registro`)
+2. **Variables de entorno.** En cada servicio copia `.env.example` como `.env` y completa los valores:
+   - `JWT_SECRET` en `auth-service` (obligatorio, el servicio no arranca sin él).
+   - `NOTIFICATION_API_KEY`: **el mismo valor** en los tres servicios.
+   - `SMTP_USER` y `SMTP_PASS` en `notification-service` (contraseña de aplicación de Gmail).
+   - Datos de MySQL en `auth-service` y `registro-service`.
+
+   Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL` y `VITE_API_REGISTRO_URL`, que son opcionales.
 
 ## Ejecución
 
-### Frontend
-
 ```bash
-npm install
-npm run dev
+# Instalar todo
+npm install                       # frontend
+cd backend && npm run install:all # los tres microservicios
+
+# Levantar (una terminal por servicio)
+cd backend/services/notification-service && npm run dev
+cd backend/services/auth-service && npm run dev
+cd backend/services/registro-service && npm run dev
+npm run dev                       # frontend en http://localhost:5173
 ```
 
-El frontend se inicia normalmente en `http://localhost:5173`.
-
-### Backend
-
-En otra terminal:
+## Pruebas y calidad
 
 ```bash
-cd backend
-npm install
-npm start
+npm test               # frontend (Vitest + Testing Library)
+npm run lint           # ESLint del frontend
+npm run build          # build de producción en dist/
+cd backend && npm test # pruebas de los tres microservicios (sin MySQL ni SMTP)
 ```
 
-El backend queda disponible en `http://localhost:3001`.
+## Pendientes conocidos
 
-### Tests
-
-Desde la raíz del proyecto:
-
-```bash
-npm test
-```
-
-Para ejecutar únicamente los tests del backend:
-
-```bash
-cd backend
-npm test
-```
-
-El backend trabaja actualmente en memoria. Los registros nuevos se pierden al reiniciar el servidor porque todavía no hay una base de datos conectada.
+- `Acceso.jsx` llama a `/api/auth/recuperar-usuario/consultar` y `/verificar`, pero esos endpoints **no existen** en `auth-service`, así que "Recuperar usuario" no funciona todavía.
+- El límite de intentos de login se guarda en memoria: se reinicia al reiniciar `auth-service` y no se comparte entre varias instancias.
+- Las credenciales que estuvieron en git (SMTP, MySQL, `JWT_SECRET`) deben rotarse, porque siguen en el historial de `main`.
 
 ## Registro de cambios (rama `juan/limpieza-env`)
 
@@ -72,3 +95,4 @@ El backend trabaja actualmente en memoria. Los registros nuevos se pierden al re
 9. **Precarga de la imagen de inicio corregida.** `index.html` pedía `Fondo_inicio.webp`, pero el archivo se llama `Fondo_Inicio.webp`. En Windows funcionaba porque no distingue mayúsculas, pero en un servidor Linux (Vercel, Netlify, etc.) la precarga fallaba.
 10. **Se liberan las vistas previas de imágenes.** En `ServiciosSalud.jsx`, cada archivo elegido creaba una URL temporal (`URL.createObjectURL`) que nunca se liberaba. Ahora se libera la anterior cuando el usuario cambia de archivo sin guardar, y todas al salir de la página.
 11. **Imágenes optimizadas.** `Fondo_Inicio.webp` se recomprimió (WebP con calidad 82, misma resolución de 1532×1083) y pasó de 842 KB a 63 KB sin diferencia visible, lo que ayuda a que la página de inicio cargue más rápido en celulares. Se eliminaron cinco imágenes que el código no usaba (unos 3 MB): `Logo.png` y `Logo-inicio.jpg` en la raíz, y `Fondo_Inicio.png`, `Logo.png` y `Logo-inicio.jpg` en `src/components/pages/Inicio/Images/`.
+12. **Documentación actualizada.** Este README se reescribió con la arquitectura real (frontend y tres microservicios), los puertos, cómo configurar los `.env`, cómo crear las bases de datos y cómo correr las pruebas. `DOCUMENTACION.md` dejó de describir el login como "simulado" con `DUMMY_USERS`.

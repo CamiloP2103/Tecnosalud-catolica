@@ -2,7 +2,7 @@
 
 ## 1. Descripción general
 
-Tecnosalud Católica es una aplicación web desarrollada con React y Vite para una marca de salud, tecnología e ingeniería. El proyecto se presenta como una SPA (Single Page Application) orientada a mostrar información institucional, facilitar el registro de afiliados y permitir el acceso a usuarios con autenticación simulada.
+Tecnosalud Católica es una aplicación web desarrollada con React y Vite para una marca de salud, tecnología e ingeniería. El proyecto se presenta como una SPA (Single Page Application) orientada a mostrar información institucional, facilitar el registro de afiliados y permitir el acceso de usuarios mediante microservicios de backend (autenticación con JWT, registro de afiliados y notificaciones por correo).
 
 La solución visualmente está enfocada en un estilo institucional con branding azul y amarillo, integración de elementos gráficos y contenido orientado a salud, innovación y confianza.
 
@@ -13,24 +13,25 @@ El proyecto busca:
 - Presentar la identidad institucional de Tecnosalud Católica.
 - Dar acceso a información sobre la empresa, valores, misión, visión y servicios.
 - Permitir que nuevos usuarios completen un formulario de afiliación.
-- Simular procesos de autenticación y recuperación de usuario/contraseña.
+- Autenticar usuarios y recuperar contraseñas mediante `auth-service`.
 - Mostrar una interfaz dinámica con navegación por secciones y menú desplegable.
 
 ## 3. Stack tecnológico
 
 ### Frontend
 - React 18
-- Vite 5
+- Vite 8
 - JavaScript / JSX
-- CSS modular y archivos .css por componente
+- CSS por componente
+- Vitest 5 + Testing Library (pruebas)
+- ESLint 8 (`.eslintrc.cjs`)
 
-### Dependencias principales
-- react
-- react-dom
-- @vitejs/plugin-react
-- vite
-- eslint
-- eslint-plugin-react
+### Backend (microservicios)
+- Node.js + Express 4
+- `auth-service` (puerto 3002): MySQL (`mysql2`), `bcryptjs`, `jsonwebtoken`
+- `registro-service` (puerto 3003): MySQL (`mysql2`)
+- `notification-service` (puerto 3005): `nodemailer` 10
+- Vitest + Supertest para las pruebas de cada servicio
 
 ## 4. Estructura del proyecto
 
@@ -38,48 +39,32 @@ El proyecto busca:
 Tecnosalud-catolica/
 ├── index.html
 ├── package.json
-├── README.md
-├── DOCUMENTACION.md
 ├── vite.config.js
-├── public/
-│   └── robots.txt
+├── .eslintrc.cjs
+├── .env.example              # VITE_API_AUTH_URL, VITE_API_REGISTRO_URL
 ├── src/
-│   ├── App.jsx
+│   ├── App.jsx               # navegación por hash y sesión
 │   ├── main.jsx
-│   ├── components/
-│   │   ├── Layout/
-│   │   │   ├── Layout.css
-│   │   │   └── Layout.jsx
-│   │   ├── Navbar/
-│   │   │   ├── Navbar.css
-│   │   │   ├── Navbar.jsx
-│   │   │   └── Images/
-│   │   └── pages/
-│   │       ├── Acceso/
-│   │       │   ├── Acceso.css
-│   │       │   └── Acceso.jsx
-│   │       ├── Afiliados/
-│   │       │   ├── Afiliados.css
-│   │       │   ├── Medicamentos.jsx
-│   │       │   ├── MuerteDigna.jsx
-│   │       │   └── Triage.jsx
-│   │       ├── Inicio/
-│   │       │   ├── Inicio.css
-│   │       │   ├── Inicio.jsx
-│   │       │   └── Images/
-│   │       ├── Nosotros/
-│   │       │   ├── Nosotros.css
-│   │       │   └── Nosotros.jsx
-│   │       ├── Registro/
-│   │       │   ├── Registro.css
-│   │       │   └── Registro.jsx
-│   │       └── ServiciosSalud/
-│   │           ├── ServiciosSalud.css
-│   │           └── ServiciosSalud.jsx
-│   └── styles/
-│       └── global.css
-└── .gitignore
+│   ├── __tests__/            # pruebas del frontend
+│   ├── test/setup.js
+│   ├── styles/global.css
+│   └── components/
+│       ├── Breadcrumbs/ Footer/ Layout/ Navbar/
+│       ├── RutaProtegida/    # protege Servicios Clínicos validando el JWT
+│       └── pages/
+│           ├── Acceso/       # Acceso.jsx, RestablecerClave.jsx
+│           ├── Afiliados/    # MuerteDigna, Medicamentos, Triage (+ CSS)
+│           ├── Inicio/ Nosotros/ NotFound/ Registro/ ServiciosSalud/
+└── backend/
+    ├── package.json          # npm run install:all / npm test para todos los servicios
+    ├── Database/             # script SQL de db_auth
+    └── services/
+        ├── auth-service/         # src/app.js, plantillas.js, limitador.js, index.js, tests/
+        ├── notification-service/ # src/app.js, index.js, tests/
+        └── registro-service/     # src/app.js, validators.js, index.js, database/, tests/
 ```
+
+Cada microservicio tiene un `.env.example`. El `.env` real no se versiona.
 
 ## 5. Flujo principal de la aplicación
 
@@ -102,15 +87,12 @@ La navegación se maneja con:
 - Menú con dropdowns para secciones de tipo “Nosotros” y “Afiliados”.
 
 ### 5.3 Estado de sesión
-La sesión del usuario se almacena en localStorage usando la clave:
+Al iniciar sesión, `auth-service` devuelve un JWT válido por 8 horas y los datos públicos del usuario. El frontend los guarda en `localStorage`:
 
-- `tecnosalud_sesion_activa`
+- `tecnosalud_token`: el JWT.
+- `tecnosalud_sesion_activa`: los datos públicos del usuario (sin contraseña).
 
-Esto permite:
-
-- activar el acceso a “Servicios Clínicos” cuando el usuario inicia sesión.
-- mantener la sesión en recargas del navegador.
-- cerrar sesión y volver a la vista de acceso.
+`RutaProtegida` revisa que el token exista y no haya expirado antes de mostrar "Servicios Clínicos". Si no es válido, limpia la sesión y pide iniciar sesión.
 
 ## 6. Módulos y pantallas principales
 
@@ -148,12 +130,12 @@ Archivo: `src/components/pages/Acceso/Acceso.jsx`
 
 Funciones principales:
 
-- Inicio de sesión con credenciales simuladas.
-- Validación de usuario y contraseña.
+- Inicio de sesión contra `auth-service` (`POST /api/auth/login`).
+- Validación de usuario y contraseña; tras 5 intentos fallidos el servicio bloquea 15 minutos.
 - Captcha local para protección del login.
 - Recordar usuario en localStorage.
-- Recuperación de usuario por documento y correo.
-- Recuperación de contraseña por correo y documento.
+- Recuperación de usuario por documento y correo (pendiente: los endpoints `recuperar-usuario` aún no existen en `auth-service`).
+- Recuperación de contraseña: envía por correo un enlace de 15 minutos que abre `RestablecerClave` (mínimo 8 caracteres).
 - Modal de bienvenida y cierre de sesión.
 
 ### Afiliados
@@ -170,28 +152,20 @@ Archivo: `src/components/pages/ServiciosSalud/ServiciosSalud.jsx`
 
 Es una vista adicional que aparece en la navegación cuando el usuario ha iniciado sesión correctamente.
 
-## 7. Datos simulados y pruebas funcionales
+## 7. Microservicios y seguridad
 
-El módulo de acceso usa una lista local llamada `DUMMY_USERS` con usuarios de prueba, por ejemplo:
+- **auth-service**: `POST /api/auth/login`, `POST /api/auth/recuperar-clave/solicitar` y `POST /api/auth/recuperar-clave/restablecer`. Las contraseñas se guardan con bcrypt. Los errores de login son genéricos ("Credenciales inválidas.") y la recuperación responde igual exista o no el correo. Tiene límite de intentos en memoria y CORS restringido a `FRONTEND_URL`.
+- **registro-service**: `POST /api/registro` valida el formulario (`validators.js`) y lo guarda en `db_registro.afiliados`; `GET /api/registro/health`.
+- **notification-service**: `POST /api/notifications/email` exige la cabecera `x-api-key` igual a `NOTIFICATION_API_KEY`, compartida con los otros dos servicios. No acepta peticiones del navegador. `GET /health`.
 
-- Carlos Jiménez
-- Carlos Admin
-- María Gómez
-- Soporte Técnico
-- Afiliaciones Bogotá
+Las pruebas de cada servicio simulan MySQL y SMTP, así que se pueden correr sin infraestructura.
 
-Estas credenciales permiten probar la lógica de autenticación sin backend real.
+## 8. Almacenamiento local
 
-También se incluyen listas de correos y documentos distractores para simular flujos de recuperación de cuenta.
+El frontend usa `localStorage` para:
 
-## 8. Persistencia y almacenamiento local
-
-El proyecto emplea `localStorage` para manejar:
-
-- `tecnosalud_sesion_activa`: guarda la sesión autenticada del usuario.
-- `tecnosalud_usuario_recordado`: recuerda el correo del usuario si se activa la opción de recordar usuario.
-
-Esto permite que la aplicación mantenga una experiencia simple, sin un backend ni base de datos.
+- `tecnosalud_token` y `tecnosalud_sesion_activa`: sesión autenticada (ver 5.3).
+- `tecnosalud_usuario_recordado`: correo recordado si se activa "recordar usuario".
 
 ## 9. Estilos y UI
 
@@ -214,64 +188,52 @@ La interfaz usa una identidad visual con:
 
 ## 10. Cómo ejecutar el proyecto
 
-Desde la raíz del proyecto:
+Los pasos completos (bases de datos, `.env` y orden de arranque) están en el `README.md`. En resumen:
 
 ```bash
-npm install
-npm run dev
+npm install && npm run dev                 # frontend
+cd backend && npm run install:all          # microservicios
+cd backend/services/<servicio> && npm run dev
 ```
 
-### Scripts disponibles
-
-En `package.json` se definen estos comandos:
+### Scripts disponibles (frontend)
 
 ```json
 "scripts": {
   "dev": "vite",
   "build": "vite build",
   "preview": "vite preview",
-  "lint": "eslint src --ext .js,.jsx"
+  "lint": "eslint src --ext .js,.jsx",
+  "test": "vitest run"
 }
 ```
 
 ## 11. Estado actual del proyecto
 
-Hasta este momento, el proyecto se encuentra en una etapa de prototipo funcional con:
-
-- navegación SPA completa
-- pantallas principales desarrolladas
-- autenticación simulada
-- registro de afiliación funcional a nivel frontend
-- formularios con validación local
-- persistencia con `localStorage`
-- branding y diseño de la marca Tecnosalud Católica
+- Navegación SPA completa con rutas por hash y página 404.
+- Autenticación real con JWT y bcrypt contra MySQL (`auth-service`).
+- Registro de afiliados persistido en MySQL (`registro-service`).
+- Correos de confirmación, alertas de acceso y recuperación (`notification-service`).
+- Pruebas automatizadas en el frontend y en los tres microservicios; ESLint configurado.
 
 ## 12. Limitaciones actuales
 
-El sistema todavía no cuenta con:
-
-- backend real
-- conexión a base de datos
-- autenticación segura con JWT o sesiones servidor
-- REST API
-- gestión real de usuarios y afiliados
-- despliegue en entorno productivo
-- pruebas automatizadas de frontend
+- "Recuperar usuario" depende de endpoints que todavía no existen en `auth-service`.
+- El límite de intentos de login vive en memoria (se pierde al reiniciar y no se comparte entre instancias).
+- El JWT se guarda en `localStorage`; una cookie `HttpOnly` sería más segura frente a XSS.
+- No hay despliegue productivo configurado.
 
 ## 13. Posibles mejoras futuras
 
-1. Integrar backend con Node.js o Express.
-2. Conectar formulario de registro a base de datos.
-3. Implementar autenticación real con JWT + cookies o tokens.
-4. Añadir validaciones más robustas en frontend y backend.
-5. Crear rutas protegidas para servicios clínicos.
-6. Rediseñar la estructura para componentes más reutilizables.
-7. Añadir gestión de estados con Redux, Zustand o Context API más scalable.
-8. Implementar pruebas unitarias y de integración.
+1. Implementar `recuperar-usuario/consultar` y `recuperar-usuario/verificar` en `auth-service`.
+2. Guardar el límite de intentos en Redis o en MySQL.
+3. Mover el JWT a una cookie `HttpOnly` y validar el token en el backend para Servicios Clínicos.
+4. Agregar un API gateway o proxy de Vite para no exponer varios puertos.
+5. Configurar CI que ejecute lint, pruebas y build en cada push.
 
 ## 14. Resumen ejecutivo
 
-Tecnosalud Católica es un proyecto frontend orientado a presentar y operar un portal de salud con enfoque institucional. Actualmente cumple con una propuesta visual sólida y una experiencia de usuario funcional básica para navegación, registro y autenticación local. La base del proyecto está lista para evolucionar hacia un sistema más completo con backend, control de seguridad y gestión real de datos.
+Tecnosalud Católica es un portal de salud con frontend en React y tres microservicios en Node.js (autenticación, registro y notificaciones) sobre MySQL. Cuenta con autenticación JWT, registro persistente, correos transaccionales y pruebas automatizadas.
 
 ## 15. Observación final
 
