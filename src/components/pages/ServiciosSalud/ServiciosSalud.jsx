@@ -1,27 +1,6 @@
 import { useState } from 'react';
+import CitasMedicas from './CitasMedicas';
 import './ServiciosSalud.css';
-
-// 1. Datos iniciales simulados para citas
-const CITAS_INICIALES = [
-  {
-    id: 1,
-    especialidad: 'Medicina General',
-    medico: 'Dr. Alejandro Morales',
-    fecha: '2026-09-10',
-    hora: '08:30 AM',
-    sede: 'Sede Principal - Bogotá',
-    estado: 'Confirmada'
-  },
-  {
-    id: 2,
-    especialidad: 'Cardiología',
-    medico: 'Dra. Sandra Martínez',
-    fecha: '2026-09-18',
-    hora: '10:00 AM',
-    sede: 'Sede Norte - Bogotá',
-    estado: 'Confirmada'
-  }
-];
 
 // 2. Datos iniciales simulados para imágenes diagnósticas
 const IMAGENES_INICIALES = [
@@ -45,35 +24,8 @@ const IMAGENES_INICIALES = [
   }
 ];
 
-const ESPECIALIDADES = [
-  'Medicina General',
-  'Cardiología',
-  'Dermatología',
-  'Ortopedia y Traumatología',
-  'Pediatría',
-  'Oftalmología',
-  'Radiología e Imágenes'
-];
-
-const SEDES = [
-  'Sede Principal - Chapinero',
-  'Sede Norte - Calle 127',
-  'Sede Occidente - Salitre',
-  'Sede Sur - Restrepo'
-];
-
 function ServiciosSalud() {
-  const [seccionActiva, setSeccionActiva] = useState('agendar'); // 'agendar' | 'consultar' | 'imagenes'
-
-  // Estados para Citas
-  const [citas, setCitas] = useState(CITAS_INICIALES);
-  const [formCita, setFormCita] = useState({
-    especialidad: '',
-    medico: '',
-    fecha: '',
-    hora: '',
-    sede: '',
-  });
+  const [seccionActiva, setSeccionActiva] = useState('citas');
 
   // Estados para Imágenes Diagnósticas
   const [imagenes, setImagenes] = useState(IMAGENES_INICIALES);
@@ -89,39 +41,6 @@ function ServiciosSalud() {
 
   // Estados para alertas y notificaciones
   const [mensajeAlerta, setMensajeAlerta] = useState({ tipo: '', texto: '' });
-
-  // Manejador formulario de citas
-  const handleCitaChange = (e) => {
-    const { name, value } = e.target;
-    setFormCita((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleAgendarCita = (e) => {
-    e.preventDefault();
-    if (!formCita.especialidad || !formCita.fecha || !formCita.hora || !formCita.sede) {
-      setMensajeAlerta({ tipo: 'error', texto: 'Por favor completa todos los datos de la cita médica.' });
-      return;
-    }
-
-    const nuevaCita = {
-      id: Date.now(),
-      ...formCita,
-      medico: formCita.medico || 'Médico Asignado en Turno',
-      estado: 'Confirmada'
-    };
-
-    setCitas([nuevaCita, ...citas]);
-    setFormCita({ especialidad: '', medico: '', fecha: '', hora: '', sede: '' });
-    setMensajeAlerta({ tipo: 'exito', texto: '¡Cita médica programada exitosamente!' });
-    setSeccionActiva('consultar');
-  };
-
-  const handleCancelarCita = (id) => {
-    if (window.confirm('¿Estás seguro de cancelar esta cita médica?')) {
-      setCitas(citas.filter((c) => c.id !== id));
-      setMensajeAlerta({ tipo: 'exito', texto: 'Cita cancelada correctamente.' });
-    }
-  };
 
   // Manejador carga de archivos simulados
   const handleArchivoChange = (e) => {
@@ -165,22 +84,13 @@ function ServiciosSalud() {
         <p>Gestiona tus citas médicas y consulta tus estudios diagnósticos en línea.</p>
       </div>
 
-      {/* MENÚ DE NAVEGACIÓN PRINCIPAL DE SERVICIOS */}
       <nav className="salud-nav" aria-label="Menú de servicios de salud">
         <button
           type="button"
-          className={`salud-nav__btn ${seccionActiva === 'agendar' ? 'salud-nav__btn--active' : ''}`}
-          onClick={() => { setSeccionActiva('agendar'); setMensajeAlerta({ tipo: '', texto: '' }); }}
+          className={`salud-nav__btn ${seccionActiva === 'citas' ? 'salud-nav__btn--active' : ''}`}
+          onClick={() => { setSeccionActiva('citas'); setMensajeAlerta({ tipo: '', texto: '' }); }}
         >
-          AC Agendar Cita
-        </button>
-
-        <button
-          type="button"
-          className={`salud-nav__btn ${seccionActiva === 'consultar' ? 'salud-nav__btn--active' : ''}`}
-          onClick={() => { setSeccionActiva('consultar'); setMensajeAlerta({ tipo: '', texto: '' }); }}
-        >
-          CC Consultar Citas ({citas.length})
+          Citas médicas
         </button>
 
         <button
@@ -199,128 +109,7 @@ function ServiciosSalud() {
         </div>
       )}
 
-      {/* 1. SECCIÓN: AGENDAR CITA */}
-      {seccionActiva === 'agendar' && (
-        <div className="salud-card">
-          <h3>Agendamiento de Nueva Cita Médica</h3>
-          <p>Selecciona la especialidad, la fecha deseada y la sede de atención.</p>
-
-          <form onSubmit={handleAgendarCita} className="salud-form">
-            <div className="salud-grid">
-              <label>
-                Especialidad Médica *
-                <select name="especialidad" value={formCita.especialidad} onChange={handleCitaChange} required>
-                  <option value="">Selecciona especialidad...</option>
-                  {ESPECIALIDADES.map((esp) => (
-                    <option key={esp} value={esp}>{esp}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                Sede de Atención *
-                <select name="sede" value={formCita.sede} onChange={handleCitaChange} required>
-                  <option value="">Selecciona la sede...</option>
-                  {SEDES.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                Fecha de la cita *
-                <input
-                  type="date"
-                  name="fecha"
-                  value={formCita.fecha}
-                  onChange={handleCitaChange}
-                  min={new Date().toISOString().split('T')[0]}
-                  required
-                />
-              </label>
-
-              <label>
-                Horario disponible *
-                <select name="hora" value={formCita.hora} onChange={handleCitaChange} required>
-                  <option value="">Selecciona horario...</option>
-                  <option value="07:00 AM">07:00 AM</option>
-                  <option value="08:30 AM">08:30 AM</option>
-                  <option value="10:00 AM">10:00 AM</option>
-                  <option value="11:30 AM">11:30 AM</option>
-                  <option value="02:00 PM">02:00 PM</option>
-                  <option value="03:30 PM">03:30 PM</option>
-                  <option value="05:00 PM">05:00 PM</option>
-                </select>
-              </label>
-
-              <label className="salud-col-full">
-                Profesional de preferencia (Opcional)
-                <input
-                  type="text"
-                  name="medico"
-                  value={formCita.medico}
-                  onChange={handleCitaChange}
-                  placeholder="Ej. Dr. Andrés Restrepo (o dejar en blanco)"
-                />
-              </label>
-            </div>
-
-            <button type="submit" className="salud-btn-primary">Confirmar Agendamiento</button>
-          </form>
-        </div>
-      )}
-
-      {/* 2. SECCIÓN: CONSULTAR CITAS */}
-      {seccionActiva === 'consultar' && (
-        <div className="salud-card">
-          <h3>Tus Citas Médicas Programadas</h3>
-          <p>Revisa el estado de tus citas activas o cancela aquellas que no puedas atender.</p>
-
-          {citas.length === 0 ? (
-            <div className="salud-vacio">
-              <p>No tienes citas médicas activas en este momento.</p>
-              <button type="button" className="salud-btn-link" onClick={() => setSeccionActiva('agendar')}>
-                Haz clic aquí para agendar tu primera cita.
-              </button>
-            </div>
-          ) : (
-            <div className="salud-table-responsive">
-              <table className="salud-table">
-                <thead>
-                  <tr>
-                    <th>Especialidad</th>
-                    <th>Profesional</th>
-                    <th>Fecha y Hora</th>
-                    <th>Sede</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {citas.map((c) => (
-                    <tr key={c.id}>
-                      <td><strong>{c.especialidad}</strong></td>
-                      <td>{c.medico}</td>
-                      <td>{c.fecha} - <span className="badge-hora">{c.hora}</span></td>
-                      <td>{c.sede}</td>
-                      <td><span className="badge-estado">{c.estado}</span></td>
-                      <td>
-                        <button
-                          type="button"
-                          className="salud-btn-danger"
-                          onClick={() => handleCancelarCita(c.id)}
-                        >
-                          Cancelar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+      {seccionActiva === 'citas' && <CitasMedicas />}
 
       {/* 3. SECCIÓN: IMÁGENES DIAGNÓSTICAS */}
       {seccionActiva === 'imagenes' && (

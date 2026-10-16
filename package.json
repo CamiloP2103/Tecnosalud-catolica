@@ -6,6 +6,7 @@
   
   "scripts": {
     "dev": "vite",
+    "dev:all": "concurrently --names frontend,backend,auth,citas,notifications --prefix-colors blue,green,magenta,yellow,cyan \"npm run dev\" \"npm --prefix backend start\" \"npm --prefix backend/services/auth-service start\" \"npm --prefix backend/services/citas-service start\" \"npm --prefix backend/services/notification-service start\"",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext .js,.jsx",
@@ -17,6 +18,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",
+    "concurrently": "^9.2.5",
     "vite": "^5.0.0",
     "eslint": "^8.0.0",
     "eslint-plugin-react": "^7.32.0",
