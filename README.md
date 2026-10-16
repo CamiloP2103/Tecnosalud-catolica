@@ -175,3 +175,8 @@ cd backend && npm test # pruebas de los cuatro microservicios (sin MySQL ni SMTP
    - **Mi pedido**: cantidades, disponibilidad y precio en la farmacia elegida, total estimado y, si hace falta, el formulario de la fórmula médica. Si falta alguna existencia, marca qué medicamento.
    - **Mis solicitudes**: historial con estado y opción de cancelar las pendientes.
    - Se agregaron `VITE_API_FARMACIAS_URL` al `.env.example` y 7 pruebas en `src/__tests__/farmacias.test.jsx`.
+20. **Nuevo microservicio `documentos-service` (puerto 3006)**, aportado por un compañero del equipo y adaptado a este proyecto. Permite cargar, generar y descargar documentos clínicos; los archivos se guardan **cifrados con AES-256-GCM** y la base de datos propia `db_documentos` guarda los metadatos y la bitácora de descargas.
+   - Un paciente solo accede a sus propios documentos; `MEDICO` y `ADMIN` pueden gestionar los de otros pacientes.
+   - Se verifica la firma real de los PDF, PNG y JPG, y cada descarga exige confirmar la identificación y queda registrada.
+   - Cambios respecto a la versión original: puerto 3006 en lugar de 3004 (que ya usa `farmacias-service`), respuestas 503 con la causa cuando falla MySQL, carpeta `storage/` resuelta siempre dentro del servicio, `node --watch` en lugar de `nodemon`, pruebas pasadas de `node --test` a Vitest (10 pruebas, incluida una nueva para el 503) y `.env.example` documentado.
+   - Detalle en `backend/services/documentos-service/LEEME.md`.
