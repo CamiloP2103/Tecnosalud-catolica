@@ -11,7 +11,7 @@ Portal web de salud: un frontend SPA en React + Vite y cinco microservicios en N
 | `registro-service` | 3003 | `backend/services/registro-service` | Guarda las solicitudes de afiliación (MySQL `db_registro`) |
 | `farmacias-service` | 3004 | `backend/services/farmacias-service` | Catálogo de 100 medicamentos, 8 farmacias con inventario y solicitudes de medicamentos (MySQL `db_farmacias`) |
 | `documentos-service` | 3006 | `backend/services/documentos-service` | Documentos clínicos cifrados: carga, generación y descarga con bitácora (MySQL `db_documentos`) |
-| `notification-service` | 3005 | `backend/services/notification-service` | Envía correos por SMTP; solo lo llaman los otros servicios, con `x-api-key` |
+| `notification-service` | 3005 | `backend/services/notification-service` | Envía correos por SMTP y guarda su historial; solo lo llaman los otros servicios, con `x-api-key` (MySQL `db_notificaciones`) |
 
 ```
 Navegador ──► auth-service ──────┐
@@ -19,7 +19,7 @@ Navegador ──► auth-service ──────┐
          ├──► farmacias-service ─┘
          └──► documentos-service ──► archivos cifrados (storage/)
                      │
-                     └──► MySQL (db_auth, db_registro, db_farmacias, db_documentos)
+                     └──► MySQL (db_auth, db_registro, db_farmacias, db_documentos, db_notificaciones)
 ```
 
 `farmacias-service` y `documentos-service` validan el JWT que emite `auth-service`, por eso los tres comparten `JWT_SECRET`.
@@ -47,10 +47,10 @@ Navegador ──► auth-service ──────┐
    - `DOCUMENTOS_ENCRYPTION_KEY` en `documentos-service`: clave aleatoria de 64 caracteres hexadecimales. **Guárdala bien**: sin ella no se pueden descifrar los documentos guardados.
    - `NOTIFICATION_API_KEY`: **el mismo valor** en `auth-service`, `registro-service`, `farmacias-service` y `notification-service`.
    - `SMTP_USER` y `SMTP_PASS` en `notification-service` (contraseña de aplicación de Gmail).
-   - Datos de MySQL en `auth-service`, `registro-service`, `farmacias-service` y `documentos-service`.
+   - Datos de MySQL en los cinco servicios (cada uno con su `DB_NAME`).
 
    Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL`, `VITE_API_REGISTRO_URL`, `VITE_API_FARMACIAS_URL` y `VITE_API_DOCUMENTOS_URL`, que son opcionales.
-2. **Bases de datos.** Con los `.env` listos, crea `db_auth`, `db_registro`, `db_farmacias` y `db_documentos` con un comando:
+2. **Bases de datos.** Con los `.env` listos, crea las cinco bases (`db_auth`, `db_registro`, `db_farmacias`, `db_documentos` y `db_notificaciones`) con un comando:
    ```bash
    cd backend
    npm run install:all   # solo la primera vez
@@ -99,7 +99,7 @@ DB_HOST=tecnosalud-mysql.mysql.database.azure.com
 DB_PORT=3306
 DB_USER=tecnoadmin
 DB_PASSWORD=tu-contraseña
-DB_NAME=db_auth          # registro: db_registro · farmacias: db_farmacias · documentos: db_documentos
+DB_NAME=db_auth          # registro: db_registro · farmacias: db_farmacias · documentos: db_documentos · notification: db_notificaciones
 DB_SSL=true              # Azure exige conexión cifrada
 ```
 
@@ -206,3 +206,4 @@ cd backend && npm test # pruebas de los cinco microservicios (sin MySQL ni SMTP)
    - El paciente ve y carga sus propios documentos y descarga confirmando su identificación; `MEDICO` y `ADMIN` también pueden buscar otros pacientes y generar documentos.
    - 5 pruebas en `src/__tests__/documentos.test.jsx`.
 23. **Comando `npm run usuario:crear`** (en `backend/`) para crear usuarios reales en `db_auth` con correo, nombre, documento y rol. Asigna una contraseña aleatoria que el usuario reemplaza con "¿Olvidaste tu contraseña?", valida los datos y no sobrescribe usuarios existentes.
+24. **`notification-service` con base de datos propia `db_notificaciones`.** Cada correo queda registrado con destinatario, asunto, servicio que lo pidió (cabecera `x-servicio-origen`, que ahora envían auth, registro y farmacias), estado `ENVIADA`/`FALLIDA`, `message_id` y motivo del error. El cuerpo no se guarda, para no almacenar enlaces de recuperación ni datos clínicos. Si la base falla, el correo se envía igual. Se agregó `GET /api/notifications/historial` (con `x-api-key`), 4 pruebas, `db:init -- notificaciones` y el `LEEME.md` del servicio. La base ya está creada en Azure.

@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
 import { crearApp } from './app.js';
+import pool from './config/db.js';
+import { crearHistorial } from './historial.js';
 
 dotenv.config();
 
@@ -27,6 +29,7 @@ const app = crearApp({
   apiKey: process.env.NOTIFICATION_API_KEY,
   emailFrom: process.env.EMAIL_FROM || process.env.SMTP_USER,
   puerto: PORT,
+  historial: crearHistorial(pool),
 });
 
 app.listen(PORT, () => {

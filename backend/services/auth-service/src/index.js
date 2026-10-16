@@ -17,7 +17,7 @@ const NOTIFICATION_API_KEY = process.env.NOTIFICATION_API_KEY || '';
 async function notificar({ to, subject, html }) {
   const respuesta = await fetch(`${NOTIFICATION_SERVICE_URL}/api/notifications/email`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': NOTIFICATION_API_KEY },
+    headers: { 'Content-Type': 'application/json', 'x-api-key': NOTIFICATION_API_KEY, 'x-servicio-origen': 'auth-service' },
     body: JSON.stringify({ to, subject, html }),
   });
 
