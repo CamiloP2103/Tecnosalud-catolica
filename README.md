@@ -250,3 +250,9 @@ cd backend && npm test # pruebas de los seis microservicios (sin MySQL ni SMTP)
    - El flujo de GitHub Actions `.github/workflows/ci.yml`, con frontend, cada microservicio en paralelo y auditoría de dependencias, y correo cuando algo falla.
    - Las recomendaciones y tareas de VS Code en `.vscode/`, para ver las pruebas en el panel Testing.
    - Los scripts `npm run test:todo` y `npm run verificar:imports`.
+32. **`db_registro` con catálogos colombianos relacionados.** Nuevas tablas `tipos_documento` (CC, TI, RC, CE, PA, PPT), `generos`, `departamentos` (33, con código DANE), `municipios` (84, con código DANE y ligados a su departamento), `eps` (21), `regimenes`, `tipos_afiliacion`, `parentescos` e `historial_estados`. `afiliados` tiene ahora llaves foráneas a todos los catálogos, así que MySQL rechaza cualquier valor inexistente.
+   - **Validaciones:** tipo de documento según la edad (CC desde 18, TI de 7 a 17, RC menores de 7), teléfono colombiano y documentos alfanuméricos solo para CE, PA y PPT.
+   - **Formulario:** carga las opciones desde `GET /api/registro/catalogos`, el municipio depende del departamento elegido, la EPS es una lista y hay un campo nuevo de parentesco.
+   - **Administración:** resumen, lista con búsqueda y aprobación o rechazo con historial (quién y cuándo), solo para `ADMIN`.
+   - `db:init` migra la tabla vieja si está vacía.
+   - 21 pruebas en el servicio y 5 en el frontend. Verificado contra Azure, incluida la llave foránea.

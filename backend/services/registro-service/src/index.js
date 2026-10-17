@@ -1,8 +1,15 @@
 require('dotenv').config();
 const pool = require('./config/db');
 const { crearApp } = require('./app');
+const { crearRepositorio } = require('./repositorio');
 
 const PORT = process.env.PORT || 3003;
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('[registro-service] Falta JWT_SECRET en el archivo .env (debe ser igual al de auth-service).');
+  process.exit(1);
+}
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3005';
 const NOTIFICATION_API_KEY = process.env.NOTIFICATION_API_KEY || '';
@@ -17,7 +24,7 @@ async function notificar({ to, subject, html }) {
   if (!respuesta.ok) throw new Error(`notification-service respondió ${respuesta.status}`);
 }
 
-const app = crearApp({ pool, frontendUrl: FRONTEND_URL, notificar, puerto: PORT });
+const app = crearApp({ repo: crearRepositorio(pool), jwtSecret: JWT_SECRET, frontendUrl: FRONTEND_URL, notificar, puerto: PORT });
 
 app.listen(PORT, () => {
   console.log(`Microservicio de Registro activo en el puerto ${PORT} (/api/registro)`);
