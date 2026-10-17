@@ -1,4 +1,6 @@
 import express from 'express';
+import cors from 'cors';
+import jwt from 'jsonwebtoken';
 import { timingSafeEqual } from 'node:crypto';
 import { errorBaseDatos } from './errores.js';
 
@@ -14,7 +16,7 @@ function claveValida(recibida, esperada) {
 const servicioOrigen = (req) => String(req.get('x-servicio-origen') || 'desconocido').replace(/[^a-z0-9-]/gi, '').slice(0, 40) || 'desconocido';
 
 // `historial` (ver historial.js) guarda cada envío en db_notificaciones; es opcional y nunca bloquea el correo
-export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = null }) {
+export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = null, jwtSecret = null, frontendUrl = 'http://localhost:5173' }) {
   const app = express();
 
   // Guarda el resultado del envío sin afectar la respuesta si la base de datos falla
@@ -32,6 +34,32 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
   app.get('/health', (req, res) => {
     res.json({ servicio: 'notification-service', estado: 'activo', puerto });
   });
+
+  // Panel de administración: lo llama el navegador con el JWT de auth-service (rol ADMIN).
+  // Se registra ANTES de la verificación de x-api-key y es la única ruta con CORS.
+  app.get('/api/notifications/admin/resumen', cors({ origin: frontendUrl }), async (req, res) => {
+    const [tipo, token] = String(req.get('authorization') || '').split(' ');
+    if (!jwtSecret || !historial) return res.status(503).json({ error: 'El panel de notificaciones no está configurado (JWT_SECRET o base de datos).' });
+    if (tipo !== 'Bearer' || !token) return res.status(401).json({ error: 'Debes iniciar sesión.' });
+    let usuario;
+    try {
+      usuario = jwt.verify(token, jwtSecret);
+    } catch {
+      return res.status(401).json({ error: 'Tu sesión expiró o no es válida. Inicia sesión de nuevo.' });
+    }
+    if (String(usuario.rol || '').toUpperCase() !== 'ADMIN') {
+      return res.status(403).json({ error: 'Solo un administrador puede acceder a esta información.' });
+    }
+    try {
+      return res.json(await historial.resumen());
+    } catch (error) {
+      const mensajeBD = errorBaseDatos(error);
+      if (mensajeBD) return res.status(503).json({ error: mensajeBD });
+      console.error('[Notification-Service] Error en el resumen:', error);
+      return res.status(500).json({ error: 'Error interno en el servidor.' });
+    }
+  });
+  app.options('/api/notifications/admin/resumen', cors({ origin: frontendUrl }));
 
   // Solo los microservicios que conocen NOTIFICATION_API_KEY pueden enviar correos
   app.use('/api/notifications', (req, res, next) => {

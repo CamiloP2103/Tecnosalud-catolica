@@ -247,7 +247,7 @@ test('el resumen de administración exige rol ADMIN y entrega números', async (
     execute: async (query) => {
       if (query.includes('COUNT(DISTINCT paciente_doc)')) return [[{ total: 3, bytes: '2048', pacientes: 2, ultimos7Dias: '1' }], []];
       if (query.includes('GROUP BY content_type')) return [[{ tipo: 'application/pdf', total: 3 }], []];
-      if (query.includes('FROM bitacora_descargas\'') || query.includes('ultimas24h')) return [[{ total: 5, ultimas24h: '2' }], []];
+      if (query.includes('ultimas24h')) return [[{ total: 5, ultimas24h: '2' }], []];
       return [[], []];
     },
   });
