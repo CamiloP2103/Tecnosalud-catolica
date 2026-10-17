@@ -5,7 +5,7 @@ const { errorBaseDatos } = require('./errores');
 
 const numero = (v) => Number(v || 0);
 
-function crearRutasAdmin({ pool, jwtSecret }) {
+function crearRutasAdmin({ pool, jwtSecret, constancias }) {
   const router = express.Router();
   router.use(requiereSesion(jwtSecret), requiereAdmin);
 
@@ -80,7 +80,8 @@ function crearRutasAdmin({ pool, jwtSecret }) {
               u.intentos_fallidos AS intentosFallidos,
               (u.bloqueado_hasta IS NOT NULL AND u.bloqueado_hasta > NOW()) AS bloqueado,
               u.creado_en AS creadoEn,
-              (SELECT MAX(b.fecha_intento) FROM bitacora_acceso b WHERE b.usuario_id = u.id AND b.exitoso = TRUE) AS ultimoAcceso
+              (SELECT MAX(b.fecha_intento) FROM bitacora_acceso b WHERE b.usuario_id = u.id AND b.exitoso = TRUE) AS ultimoAcceso,
+              (SELECT MAX(c.creado_en) FROM constancias_enviadas c WHERE c.usuario_id = u.id AND c.estado = 'ENVIADA') AS ultimaConstancia
        FROM usuarios u INNER JOIN roles r ON r.id = u.rol_id
        ${condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : ''}
        ORDER BY u.creado_en DESC, u.id DESC LIMIT 200`,
@@ -112,6 +113,21 @@ function crearRutasAdmin({ pool, jwtSecret }) {
     const [resultado] = await pool.query('UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL WHERE id = ?', [id]);
     if (resultado.affectedRows === 0) return res.status(404).json({ error: 'El usuario no existe.' });
     return res.json({ id, bloqueado: false });
+  }));
+
+  // Envía la constancia de registro (PDF protegido con el número de identificación) a un usuario
+  router.post('/usuarios/:id/constancia', manejar(async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(404).json({ error: 'El usuario no existe.' });
+    const resultado = await constancias.enviar(id, req.usuario.email);
+    if (resultado.estado === 'NO_EXISTE') return res.status(404).json({ error: resultado.error });
+    if (resultado.estado === 'FALLIDA') return res.status(502).json(resultado);
+    return res.json(resultado);
+  }));
+
+  // Envía la constancia a todos los usuarios activos (máximo 200 por ejecución)
+  router.post('/constancias', manejar(async (req, res) => {
+    res.json(await constancias.enviarATodos(req.usuario.email));
   }));
 
   return router;

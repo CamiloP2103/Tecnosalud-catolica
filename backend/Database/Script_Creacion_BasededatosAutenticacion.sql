@@ -79,3 +79,15 @@ CREATE TABLE IF NOT EXISTS tokens_recuperacion (
   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_token_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- 5. Constancias de registro enviadas (PDF protegido con el número de identificación)
+CREATE TABLE IF NOT EXISTS constancias_enviadas (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT NOT NULL,
+  enviado_por VARCHAR(120) NOT NULL,      -- correo del ADMIN que la envió, o del propio usuario
+  estado ENUM('ENVIADA', 'FALLIDA') NOT NULL,
+  error VARCHAR(255) NULL,
+  creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_constancia_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  INDEX idx_constancia_usuario (usuario_id, creado_en)
+) ENGINE=InnoDB;

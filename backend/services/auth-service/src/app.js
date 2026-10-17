@@ -7,6 +7,8 @@ const { plantillaAlertaLogin, plantillaRecuperacion } = require('./plantillas');
 const { crearLimitador } = require('./limitador');
 const { errorBaseDatos } = require('./errores');
 const { crearRutasAdmin } = require('./admin');
+const { requiereSesion } = require('./autenticacion');
+const { crearEnvioConstancias } = require('./envioConstancias');
 
 const LARGO_MINIMO_CLAVE = 8;
 const MAX_INTENTOS_CUENTA = 5; // fallos seguidos antes de bloquear la cuenta 15 minutos
@@ -292,7 +294,29 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
     }
   });
 
-  router.use('/admin', crearRutasAdmin({ pool, jwtSecret }));
+  // Constancia de registro: cada usuario puede pedir que se la envíen a su propio correo
+  const constancias = crearEnvioConstancias({ pool, notificar });
+  const limiteConstancias = crearLimitador({ maximo: 3, ventanaMs: QUINCE_MINUTOS * 4 });
+  router.post('/mi-constancia', requiereSesion(jwtSecret), async (req, res) => {
+    const clave = String(req.usuario.id);
+    if (limiteConstancias.bloqueado(clave)) {
+      return res.status(429).json({ error: 'Ya pediste tu constancia varias veces. Intenta de nuevo en una hora.' });
+    }
+    limiteConstancias.registrar(clave);
+    try {
+      const resultado = await constancias.enviar(req.usuario.id, req.usuario.email);
+      if (resultado.estado === 'NO_EXISTE') return res.status(404).json({ error: resultado.error });
+      if (resultado.estado === 'FALLIDA') return res.status(502).json({ error: resultado.error });
+      return res.json({ mensaje: `Enviamos tu constancia a ${resultado.email}. Ábrela con tu número de identificación.`, email: resultado.email });
+    } catch (error) {
+      const mensajeBD = errorBaseDatos(error);
+      if (mensajeBD) return res.status(503).json({ error: mensajeBD });
+      console.error('Error en /mi-constancia:', error);
+      return res.status(500).json({ error: 'Error interno en el servidor.' });
+    }
+  });
+
+  router.use('/admin', crearRutasAdmin({ pool, jwtSecret, constancias }));
   app.use('/api/auth', router);
 
   return app;
