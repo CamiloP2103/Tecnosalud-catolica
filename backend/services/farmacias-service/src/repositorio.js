@@ -366,6 +366,109 @@ function crearRepositorio(pool) {
         return { id, estado: 'CANCELADA' };
       });
     },
+
+    // ---- Administración ----
+
+    // Panorama del inventario, de los pedidos y de los medicamentos más pedidos
+    async resumenAdmin({ umbralBajo = 10 } = {}) {
+      const [[catalogo]] = await pool.query(
+        `SELECT COUNT(*) AS medicamentos, SUM(requiere_formula = TRUE) AS conFormula, SUM(control_especial = TRUE) AS controlEspecial
+         FROM medicamentos WHERE activo = TRUE`
+      );
+      const [[inventario]] = await pool.query(
+        `SELECT COALESCE(SUM(cantidad), 0) AS unidades, SUM(cantidad = 0) AS agotados, SUM(cantidad > 0 AND cantidad < ?) AS bajos,
+                COALESCE(SUM(cantidad * precio), 0) AS valor
+         FROM inventario`,
+        [umbralBajo]
+      );
+      const [porFarmacia] = await pool.query(
+        `SELECT f.id, f.nombre, f.municipio, f.abierta_24h, COALESCE(SUM(i.cantidad), 0) AS unidades,
+                SUM(i.cantidad = 0) AS agotados, SUM(i.cantidad > 0 AND i.cantidad < ?) AS bajos, COUNT(i.medicamento_id) AS productos
+         FROM farmacias f LEFT JOIN inventario i ON i.farmacia_id = f.id
+         WHERE f.activa = TRUE GROUP BY f.id ORDER BY f.nombre`,
+        [umbralBajo]
+      );
+      const [bajoStock] = await pool.query(
+        `SELECT f.nombre AS farmacia, m.nombre AS medicamento, m.concentracion, i.cantidad
+         FROM inventario i INNER JOIN farmacias f ON f.id = i.farmacia_id INNER JOIN medicamentos m ON m.id = i.medicamento_id
+         WHERE i.cantidad < ? ORDER BY i.cantidad, m.nombre LIMIT 25`,
+        [umbralBajo]
+      );
+      const [porEstado] = await pool.query('SELECT estado, COUNT(*) AS total, COALESCE(SUM(total), 0) AS valor FROM solicitudes GROUP BY estado');
+      const [masPedidos] = await pool.query(
+        `SELECT m.nombre, m.concentracion, SUM(si.cantidad) AS unidades
+         FROM solicitud_items si INNER JOIN solicitudes s ON s.id = si.solicitud_id INNER JOIN medicamentos m ON m.id = si.medicamento_id
+         WHERE s.estado <> 'CANCELADA' GROUP BY m.id ORDER BY unidades DESC LIMIT 8`
+      );
+      const conteo = Object.fromEntries(porEstado.map((f) => [f.estado, { total: numero(f.total), valor: numero(f.valor) }]));
+      return {
+        catalogo: { medicamentos: numero(catalogo.medicamentos), conFormula: numero(catalogo.conFormula), controlEspecial: numero(catalogo.controlEspecial) },
+        inventario: {
+          unidades: numero(inventario.unidades),
+          productosAgotados: numero(inventario.agotados),
+          productosBajos: numero(inventario.bajos),
+          valorEstimado: numero(inventario.valor),
+          umbralBajo,
+        },
+        porFarmacia: porFarmacia.map((f) => ({
+          id: f.id, nombre: f.nombre, municipio: f.municipio, abierta24h: booleano(f.abierta_24h),
+          unidades: numero(f.unidades), productos: numero(f.productos), agotados: numero(f.agotados), bajos: numero(f.bajos),
+        })),
+        bajoStock: bajoStock.map((f) => ({ ...f, cantidad: numero(f.cantidad) })),
+        solicitudes: {
+          porEstado: conteo,
+          total: porEstado.reduce((s, f) => s + numero(f.total), 0),
+          ventas: ['PENDIENTE', 'LISTA', 'ENTREGADA'].reduce((s, e) => s + (conteo[e]?.valor || 0), 0),
+        },
+        masPedidos: masPedidos.map((f) => ({ ...f, unidades: numero(f.unidades) })),
+      };
+    },
+
+    async listarSolicitudesAdmin({ estado } = {}) {
+      const [filas] = await pool.query(
+        `SELECT s.id, s.usuario_email AS usuarioEmail, s.estado, s.total, s.formula_numero AS formulaNumero, s.creado_en AS creadoEn,
+                f.nombre AS farmacia, f.municipio, COUNT(si.medicamento_id) AS productos, COALESCE(SUM(si.cantidad), 0) AS unidades
+         FROM solicitudes s INNER JOIN farmacias f ON f.id = s.farmacia_id LEFT JOIN solicitud_items si ON si.solicitud_id = s.id
+         ${estado ? 'WHERE s.estado = ?' : ''}
+         GROUP BY s.id ORDER BY s.creado_en DESC, s.id DESC LIMIT 100`,
+        estado ? [estado] : []
+      );
+      return filas.map((f) => ({ ...f, total: numero(f.total), productos: numero(f.productos), unidades: numero(f.unidades) }));
+    },
+
+    /**
+     * Avanza un pedido: PENDIENTE -> LISTA -> ENTREGADA, o PENDIENTE/LISTA -> RECHAZADA.
+     * Al rechazar, las unidades vuelven al inventario. Devuelve el pedido con el correo del usuario.
+     */
+    async cambiarEstadoSolicitud(id, estadoNuevo) {
+      const permitidas = { PENDIENTE: ['LISTA', 'RECHAZADA'], LISTA: ['ENTREGADA', 'RECHAZADA'] };
+      return enTransaccion(async (conexion) => {
+        const [filas] = await conexion.query(
+          `SELECT s.id, s.estado, s.farmacia_id, s.usuario_email, s.total, f.nombre AS farmacia, f.direccion, f.horario
+           FROM solicitudes s INNER JOIN farmacias f ON f.id = s.farmacia_id WHERE s.id = ? FOR UPDATE`,
+          [id]
+        );
+        if (filas.length === 0) throw new ErrorNegocio(404, 'El pedido no existe.');
+        const pedido = filas[0];
+        if (!(permitidas[pedido.estado] || []).includes(estadoNuevo)) {
+          throw new ErrorNegocio(409, `Un pedido ${pedido.estado} no puede pasar a ${estadoNuevo}.`);
+        }
+        if (estadoNuevo === 'RECHAZADA') {
+          const [items] = await conexion.query('SELECT medicamento_id, cantidad FROM solicitud_items WHERE solicitud_id = ?', [id]);
+          for (const item of items) {
+            await conexion.query(
+              'UPDATE inventario SET cantidad = cantidad + ? WHERE farmacia_id = ? AND medicamento_id = ?',
+              [item.cantidad, pedido.farmacia_id, item.medicamento_id]
+            );
+          }
+        }
+        await conexion.query('UPDATE solicitudes SET estado = ? WHERE id = ?', [estadoNuevo, id]);
+        return {
+          id, estadoAnterior: pedido.estado, estado: estadoNuevo, usuarioEmail: pedido.usuario_email,
+          farmacia: { nombre: pedido.farmacia, direccion: pedido.direccion, horario: pedido.horario }, total: numero(pedido.total),
+        };
+      });
+    },
   };
 }
 
