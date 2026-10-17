@@ -282,3 +282,7 @@ GitHub solo acepta cambios en `.github/workflows/` si el token con que haces `gi
    - **Actualización manual o automática** cada minuto. Si un servicio falla, el resto sigue visible.
    - 9 pruebas en `src/__tests__/panelAdmin.test.jsx`, incluida una que verifica que no se muestren emojis.
 35. **Documentación ampliada.** `docs/ARQUITECTURA_DATOS.md` se reescribió con las seis bases (diagramas de `db_registro` con catálogos y de `db_citas`, relaciones por JWT, flujos y auditoría). Nuevos `docs/PANEL_ADMIN.md` (cada sección, sus datos, acciones y endpoints) y `docs/PRUEBAS.md` (las 203 pruebas por archivo, cómo correrlas y los avisos de GitHub y VS Code). Se agregó al README cómo dar el permiso *workflow* al token de GitHub.
+36. **Carrito visible en Farmacias.**
+   - **Botón flotante** abajo a la derecha, con ícono SVG, cantidad de unidades, productos y total estimado. Lleva al carrito y se oculta cuando ya estás en él; la pestaña "Carrito" también tiene el ícono.
+   - **El carrito se conserva** en el navegador (`localStorage`, clave `tecnosalud_carrito`) aunque cambies de página, y se vacía al hacer el pedido.
+   - 2 pruebas nuevas.

@@ -114,6 +114,35 @@ describe('Página de Farmacias', () => {
     expect(screen.getByLabelText('Farmacia donde vas a reclamar')).toHaveValue('1');
   });
 
+  it('el botón flotante muestra el carrito con su cantidad y total, y lo abre', async () => {
+    vi.stubGlobal('fetch', simularServicio());
+    render(<Farmacias />);
+
+    expect(await screen.findByRole('button', { name: /Ver carrito: 0 unidades/ })).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: 'Agregar Acetaminofén 500 mg al carrito' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar Amoxicilina 500 mg al carrito' }));
+
+    const flotante = screen.getByRole('button', { name: /Ver carrito: 2 unidades/ });
+    expect(flotante).toHaveTextContent('2 productos');
+    fireEvent.click(flotante);
+    expect(screen.getByRole('button', { name: 'Hacer pedido' })).toBeInTheDocument();
+    // Dentro del carrito el botón flotante se oculta
+    expect(screen.queryByRole('button', { name: /Ver carrito/ })).not.toBeInTheDocument();
+  });
+
+  it('guarda el carrito en el navegador y lo recupera al volver a la página', async () => {
+    vi.stubGlobal('fetch', simularServicio());
+    const { unmount } = render(<Farmacias />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Agregar Acetaminofén 500 mg al carrito' }));
+    const guardado = localStorage.setItem.mock.calls.filter(([clave]) => clave === 'tecnosalud_carrito').pop();
+    expect(JSON.parse(guardado[1]).pedido[0]).toMatchObject({ id: 1, cantidad: 1 });
+    unmount();
+
+    localStorage.getItem.mockImplementation((clave) => (clave === 'tecnosalud_carrito' ? guardado[1] : 'token-de-prueba'));
+    render(<Farmacias />);
+    expect(await screen.findByRole('button', { name: /Ver carrito: 1 unidad,/ })).toBeInTheDocument();
+  });
+
   it('envía una solicitud de venta libre con la sesión del usuario', async () => {
     const fetch = simularServicio();
     vi.stubGlobal('fetch', fetch);
