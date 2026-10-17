@@ -154,6 +154,23 @@ export function SeccionUsuarios({ resumen, recargar }) {
     cargar();
   }, [cargar]);
 
+  const [enviandoTodas, setEnviandoTodas] = useState(false);
+
+  // Constancia de registro (PDF protegido) a todos los usuarios activos
+  const enviarATodos = async () => {
+    if (!window.confirm('¿Enviar la constancia de registro en PDF al correo de todos los usuarios activos?')) return;
+    setEnviandoTodas(true);
+    try {
+      const r = await pedir('auth', '/admin/constancias', { method: 'POST' });
+      setAviso(`Constancias enviadas: ${r.enviadas} de ${r.total}${r.fallidas ? ` (${r.fallidas} fallaron; revisa la sección Correos)` : ''}.`);
+      cargar();
+    } catch (error) {
+      setAviso(error.message);
+    } finally {
+      setEnviandoTodas(false);
+    }
+  };
+
   const ejecutar = async (accion, mensaje) => {
     try {
       await accion();
@@ -176,7 +193,19 @@ export function SeccionUsuarios({ resumen, recargar }) {
         </div>
       )}
 
-      <Tarjeta ancho titulo="Usuarios" error={lista.error} acciones={<Buscador valor={buscar} onCambio={setBuscar} placeholder="Buscar por nombre, correo o documento" />}>
+      <Tarjeta
+        ancho
+        titulo="Usuarios"
+        error={lista.error}
+        acciones={(
+          <div className="adm-filtros">
+            <Buscador valor={buscar} onCambio={setBuscar} placeholder="Buscar por nombre, correo o documento" />
+            <button type="button" className="adm-btn adm-btn--azul" onClick={enviarATodos} disabled={enviandoTodas}>
+              {enviandoTodas ? 'Enviando constancias...' : 'Enviar constancias a todos'}
+            </button>
+          </div>
+        )}
+      >
         {lista.cargando ? <p className="adm-vacio">Cargando usuarios...</p> : (
           <Tabla
             filas={lista.usuarios}
@@ -184,6 +213,7 @@ export function SeccionUsuarios({ resumen, recargar }) {
               { clave: 'nombre', titulo: 'Usuario', render: (u) => <><strong>{u.nombre}</strong><span className="adm-sub">{u.email} · {u.tipoDoc} {u.documento}</span></> },
               { clave: 'rol', titulo: 'Rol', render: (u) => <Insignia estado={u.rol} /> },
               { clave: 'ultimoAcceso', titulo: 'Último acceso', render: (u) => fechaHora(u.ultimoAcceso) },
+              { clave: 'ultimaConstancia', titulo: 'Constancia enviada', render: (u) => (u.ultimaConstancia ? fechaHora(u.ultimaConstancia) : 'Nunca') },
               {
                 clave: 'estado',
                 titulo: 'Estado',
@@ -194,6 +224,14 @@ export function SeccionUsuarios({ resumen, recargar }) {
                 titulo: 'Acciones',
                 render: (u) => (
                   <div className="adm-acciones">
+                    <button
+                      type="button"
+                      className="adm-btn"
+                      title="Envía al correo del usuario un PDF con sus datos y fecha de registro, protegido con su número de identificación"
+                      onClick={() => ejecutar(() => pedir('auth', `/admin/usuarios/${u.id}/constancia`, { method: 'POST' }), `Constancia enviada a ${u.email}. Se abre con su número de identificación.`)}
+                    >
+                      Enviar constancia
+                    </button>
                     {u.bloqueado && (
                       <button type="button" className="adm-btn adm-btn--azul" onClick={() => ejecutar(() => pedir('auth', `/admin/usuarios/${u.id}/desbloquear`, { method: 'POST' }), `${u.nombre} fue desbloqueado.`)}>
                         Desbloquear

@@ -40,7 +40,9 @@ function simular({ caidos = [] } = {}) {
     if (pathname.endsWith('/admin/solicitudes')) return respuesta(200, { solicitudes: PEDIDOS });
     if (pathname.endsWith('/admin/citas')) return respuesta(200, { citas: [] });
     if (pathname.endsWith('/admin/afiliados')) return respuesta(200, { afiliados: [] });
-    if (pathname.endsWith('/admin/usuarios')) return respuesta(200, { usuarios: [] });
+    if (pathname.endsWith('/admin/usuarios')) return respuesta(200, { usuarios: [{ id: 6, nombre: 'Juan', email: 'juan@x.co', tipoDoc: 'CC', documento: '1000000001', rol: 'PACIENTE', activo: true, bloqueado: false, ultimaConstancia: null }] });
+    if (opciones.method === 'POST' && pathname.endsWith('/constancia')) return respuesta(200, { usuarioId: 6, email: 'juan@x.co', estado: 'ENVIADA' });
+    if (opciones.method === 'POST' && pathname.endsWith('/admin/constancias')) return respuesta(200, { total: 2, enviadas: 2, fallidas: 0 });
     return respuesta(404, { error: 'no encontrado' });
   });
 }
@@ -135,3 +137,23 @@ describe('Opción del menú principal', () => {
     expect(Boolean(screen.queryByRole('button', { name: 'Panel de administración' }))).toBe(visible);
   });
 });
+
+describe('Constancias desde el panel', () => {
+  it('el administrador envía la constancia de un usuario y a todos', async () => {
+    sesion('ADMIN');
+    vi.stubGlobal('confirm', vi.fn(() => true));
+    const fetch = simular();
+    vi.stubGlobal('fetch', fetch);
+    render(<PanelAdmin />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Usuarios registrados/ }));
+    expect(await screen.findByText('Nunca')).toBeInTheDocument(); // columna "Constancia enviada"
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar constancia' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Constancia enviada a juan@x.co');
+    expect(fetch.mock.calls.some(([u, o]) => o.method === 'POST' && u.endsWith('/admin/usuarios/6/constancia'))).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar constancias a todos' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Constancias enviadas: 2 de 2'));
+  });
+});
+

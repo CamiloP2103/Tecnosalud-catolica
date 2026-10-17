@@ -180,3 +180,43 @@
   margin: 0.4rem 0;
   color: #334155;
   font-size: 0.9rem;}
+/* Constancia de registro (PDF con contraseña) */
+.acceso-logueado-icon svg {
+  color: #145da0;
+}
+
+.acceso-constancia {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #eff6ff;
+  text-align: left;
+}
+
+.acceso-constancia .modal-btn-confirm {
+  width: 100%;
+}
+
+.acceso-constancia__ayuda {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: #1e3a8a;
+}
+
+.acceso-constancia__msg {
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+.acceso-constancia__msg--exito {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.acceso-constancia__msg--error {
+  background: #fef2f2;
+  color: #991b1b;
+}

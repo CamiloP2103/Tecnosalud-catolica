@@ -27,6 +27,8 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
   });
   const [errorMsg, setErrorMsg] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [enviandoConstancia, setEnviandoConstancia] = useState(false);
+  const [constanciaMsg, setConstanciaMsg] = useState({ tipo: '', texto: '' });
 
   // Estado del usuario activo
   const [usuarioLogueado, setUsuarioLogueado] = useState(() => {
@@ -339,19 +341,62 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     }
   };
 
+  // Pide a auth-service que envíe la constancia de registro (PDF con contraseña) al correo del usuario
+  const enviarMiConstancia = async () => {
+    setEnviandoConstancia(true);
+    setConstanciaMsg({ tipo: '', texto: '' });
+    try {
+      const token = localStorage.getItem('tecnosalud_token');
+      const { ok, datos } = await llamarServicio(`${API_AUTH}/mi-constancia`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      }, SERVICIO_AUTH);
+      setConstanciaMsg(ok
+        ? { tipo: 'exito', texto: datos.mensaje }
+        : { tipo: 'error', texto: datos.error || 'No se pudo enviar la constancia.' });
+    } catch (error) {
+      setConstanciaMsg({ tipo: 'error', texto: mensajeDeError(error, SERVICIO_AUTH) });
+    } finally {
+      setEnviandoConstancia(false);
+    }
+  };
+
   if (sesionActiva && usuarioLogueado && !modalAviso) {
     return (
       <section className="page page--form">
         <div className="acceso-logueado-card">
-          <div className="acceso-logueado-icon">👤</div>
+          <div className="acceso-logueado-icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21a8 8 0 0 1 16 0" />
+            </svg>
+          </div>
           <h2>Sesión Activa</h2>
           <p>Actualmente ya te encuentras autenticado en el portal de <strong>Tecnosalud</strong>.</p>
-          
+
           <div className="acceso-logueado-info">
             <p><strong>Nombre:</strong> {usuarioLogueado.nombre}</p>
             <p><strong>Correo:</strong> {usuarioLogueado.email}</p>
             <p><strong>Documento:</strong> {usuarioLogueado.tipoDoc} {usuarioLogueado.documento}</p>
             <p><strong>Rol:</strong> {usuarioLogueado.rol}</p>
+          </div>
+
+          {/* Constancia de registro en PDF protegida con el número de identificación */}
+          <div className="acceso-constancia">
+            <button
+              type="button"
+              className="modal-btn-confirm"
+              onClick={enviarMiConstancia}
+              disabled={enviandoConstancia}
+            >
+              {enviandoConstancia ? 'Enviando constancia...' : 'Enviarme mi constancia de registro (PDF)'}
+            </button>
+            <p className="acceso-constancia__ayuda">
+              Te llega al correo un PDF con tus datos y tu fecha de registro. Para abrirlo usa tu número de identificación.
+            </p>
+            {constanciaMsg.texto && (
+              <p className={`acceso-constancia__msg acceso-constancia__msg--${constanciaMsg.tipo}`} role="status">{constanciaMsg.texto}</p>
+            )}
           </div>
 
           <div className="acceso-logueado-actions">

@@ -28,7 +28,7 @@ Navegador ──► auth-service ──────┐
 Documentación detallada:
 - **[docs/ARQUITECTURA_DATOS.md](docs/ARQUITECTURA_DATOS.md)**: las seis bases de datos, sus tablas, relaciones (diagramas) y flujos.
 - **[docs/PANEL_ADMIN.md](docs/PANEL_ADMIN.md)**: el panel de administración, sección por sección.
-- **[docs/PRUEBAS.md](docs/PRUEBAS.md)**: las 203 pruebas, cómo correrlas y los avisos de GitHub y VS Code.
+- **[docs/PRUEBAS.md](docs/PRUEBAS.md)**: las 224 pruebas, cómo correrlas y los avisos de GitHub y VS Code.
 
 ## Estructura
 
@@ -286,3 +286,13 @@ GitHub solo acepta cambios en `.github/workflows/` si el token con que haces `gi
    - **Botón flotante** abajo a la derecha, con ícono SVG, cantidad de unidades, productos y total estimado. Lleva al carrito y se oculta cuando ya estás en él; la pestaña "Carrito" también tiene el ícono.
    - **El carrito se conserva** en el navegador (`localStorage`, clave `tecnosalud_carrito`) aunque cambies de página, y se vacía al hacer el pedido.
    - 2 pruebas nuevas.
+37. **`notification-service` acepta adjuntos PDF**: hasta 3 de 3 MB, con firma `%PDF` verificada y nombres sin rutas.
+38. **Constancia de registro en PDF protegida con contraseña.** `auth-service` genera con PDFKit un PDF cifrado con AES-256 con los datos del usuario y su **fecha de registro**.
+   - **Contraseña:** se abre con el **número de identificación** del titular y no permite editarlo ni copiar su texto.
+   - **Envío:** llega por correo como adjunto; el correo explica cómo abrirlo sin revelar la contraseña.
+   - **Quién la envía:**
+     - El propio usuario, con el botón **"Enviarme mi constancia de registro (PDF)"** en la tarjeta de sesión de Acceso (máximo 3 por hora).
+     - El administrador, desde el panel (**"Enviar constancia"** por usuario o **"Enviar constancias a todos"**), que además ve la fecha del último envío.
+   - Cada envío queda en la nueva tabla `db_auth.constancias_enviadas`.
+   - **Verificación:** con pypdf (no abre sin la contraseña o con una incorrecta) y con un envío real a un correo de prueba. Detalle en `backend/services/auth-service/LEEME.md`.
+   - El ícono 👤 de la tarjeta de sesión se reemplazó por un SVG.

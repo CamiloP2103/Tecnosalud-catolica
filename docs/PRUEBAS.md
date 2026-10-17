@@ -1,6 +1,6 @@
 # Pruebas automáticas
 
-El proyecto tiene **203 pruebas automáticas**: 43 del frontend y 160 de los seis microservicios. Detectan si un cambio daña algo que ya funcionaba. **No necesitan MySQL, SMTP ni internet**: la base de datos, el correo y los demás servicios se simulan.
+El proyecto tiene **224 pruebas automáticas**: 49 del frontend y 175 de los seis microservicios. Detectan si un cambio daña algo que ya funcionaba. **No necesitan MySQL, SMTP ni internet**: la base de datos, el correo y los demás servicios se simulan.
 
 ## Cómo correrlas
 
@@ -46,18 +46,20 @@ El proyecto tiene **203 pruebas automáticas**: 43 del frontend y 160 de los sei
 | `servicios.test.js` | 7 | Mensajes de error: servicio apagado, base de datos caída (503), error interno, respuesta inválida |
 | `registro.test.jsx` | 5 | Catálogos desde el servicio, municipio que depende del departamento, teléfono colombiano y envío de códigos sin el departamento |
 | `citas.test.jsx` | 3 | Horarios libres por día, reserva con sesión, horario tomado por otra persona y cancelación |
-| `farmacias.test.jsx` | 8 | Catálogo con tipo de venta, disponibilidad por sede, carrito, fórmula médica, existencias insuficientes (409), menú solo con sesión |
+| `farmacias.test.jsx` | 10 | Catálogo con tipo de venta, disponibilidad por sede, carrito y botón flotante, carrito guardado al volver, fórmula médica, existencias insuficientes (409) y menú solo con sesión |
 | `documentos.test.jsx` | 5 | Consulta con sesión, permisos de paciente y médico, carga multipart, servicio caído y 503 |
-| `panelAdmin.test.jsx` | 9 | Solo ADMIN, indicadores, contadores del menú, servicio caído, despacho de pedidos, sin emojis y opción del menú según el rol |
+| `panelAdmin.test.jsx` | 10 | Solo ADMIN, indicadores, contadores del menú, servicio caído, despacho de pedidos, envío de constancias, sin emojis y opción del menú según el rol |
+| `constancia.test.jsx` | 3 | Botón "Enviarme mi constancia" con la sesión, límite de solicitudes y tarjeta sin emojis |
 
 ### Microservicios (`backend/services/*/tests/`, Vitest + Supertest)
 
 | Servicio | Archivo | Pruebas | Qué verifica |
 |---|---|---|---|
 | auth | `auth.test.js` | 24 | Login, JWT, bloqueo tras 5 fallos (en la base), bitácora, recuperación y restablecimiento de contraseña, correo de alerta escapado, 503 |
+| auth | `constancia.test.js` | 10 | PDF cifrado con AES-256 sin datos en claro, contraseña = identificación, adjunto al correo sin revelar la contraseña, registro de envíos exitosos y fallidos, rutas de ADMIN y límite de 3 por hora |
 | auth | `admin.test.js` | 5 | Rutas `/admin` solo para ADMIN, resumen, búsqueda escapada, activar, desactivar y desbloquear; el admin no se desactiva a sí mismo |
 | auth | `script-sql.test.js` | 5 | Cada hash del script SQL corresponde a su clave documentada |
-| notification | `notification.test.js` | 12 | `x-api-key`, envío, error SMTP sin detalles, historial (enviada y fallida), el correo sale aunque falle la base, resumen admin con JWT y CORS solo en esa ruta |
+| notification | `notification.test.js` | 17 | `x-api-key`, envío, error SMTP sin detalles, historial (enviada y fallida), el correo sale aunque falle la base, resumen admin con JWT y CORS solo en esa ruta, adjuntos PDF (tipo, firma, nombre y cantidad) |
 | registro | `registro.test.js` | 21 | Validación contra catálogos, documento según edad, teléfono, fechas, habeas data, 409, 503, rutas admin con historial y estructura del script SQL (llaves foráneas, códigos DANE coherentes) |
 | farmacias | `app.test.js` | 19 | Catálogo, sedes, inventario, pedidos con y sin fórmula, control especial, existencias insuficientes, JSON mal formado y 503 |
 | farmacias | `repositorio.test.js` | 6 | Transacción con `FOR UPDATE`, descuento, rollback sin existencias y cancelación |
