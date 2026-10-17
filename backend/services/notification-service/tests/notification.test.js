@@ -133,3 +133,30 @@ describe('resumen para el panel de administración', () => {
     expect(envio.headers['access-control-allow-origin']).toBeUndefined();
   });
 });
+
+describe('adjuntos PDF', () => {
+  const pdf = Buffer.from('%PDF-1.7\n%prueba').toString('base64');
+  const conAdjunto = (adjuntos) => ({ ...correo, adjuntos });
+
+  it('envía un PDF adjunto a nodemailer', async () => {
+    const { app, transporter } = crear();
+    const res = await request(app).post('/api/notifications/email').set('x-api-key', API_KEY)
+      .send(conAdjunto([{ nombre: 'constancia-registro.pdf', tipo: 'application/pdf', contenidoBase64: pdf }]));
+    expect(res.status).toBe(200);
+    const [{ attachments }] = transporter.sendMail.mock.calls[0];
+    expect(attachments[0]).toMatchObject({ filename: 'constancia-registro.pdf', contentType: 'application/pdf' });
+    expect(attachments[0].content.subarray(0, 5).toString()).toBe('%PDF-');
+  });
+
+  it.each([
+    ['un tipo distinto de PDF', [{ nombre: 'virus.exe', tipo: 'application/octet-stream', contenidoBase64: pdf }]],
+    ['un nombre con rutas', [{ nombre: '../../etc/passwd.pdf', tipo: 'application/pdf', contenidoBase64: pdf }]],
+    ['contenido que no es PDF', [{ nombre: 'falso.pdf', tipo: 'application/pdf', contenidoBase64: Buffer.from('hola').toString('base64') }]],
+    ['más de 3 adjuntos', Array.from({ length: 4 }, (_, i) => ({ nombre: `a${i}.pdf`, tipo: 'application/pdf', contenidoBase64: pdf }))],
+  ])('rechaza %s', async (_, adjuntos) => {
+    const { app, transporter } = crear();
+    const res = await request(app).post('/api/notifications/email').set('x-api-key', API_KEY).send(conAdjunto(adjuntos));
+    expect(res.status).toBe(400);
+    expect(transporter.sendMail).not.toHaveBeenCalled();
+  });
+});

@@ -12,6 +12,30 @@ function claveValida(recibida, esperada) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+const MAX_ADJUNTOS = 3;
+const MAX_BYTES_ADJUNTO = 3 * 1024 * 1024;
+
+/**
+ * Valida los adjuntos: [{ nombre: "constancia.pdf", tipo: "application/pdf", contenidoBase64 }].
+ * Solo se aceptan PDF (con su firma %PDF real), hasta 3 archivos de 3 MB cada uno.
+ * Devuelve { error } o { adjuntos } listos para nodemailer.
+ */
+export function validarAdjuntos(lista) {
+  if (lista === undefined || lista === null) return { adjuntos: [] };
+  if (!Array.isArray(lista) || lista.length > MAX_ADJUNTOS) return { error: `Se permiten máximo ${MAX_ADJUNTOS} adjuntos.` };
+  const adjuntos = [];
+  for (const a of lista) {
+    if (!a || a.tipo !== 'application/pdf' || !/^[\w.-]{1,80}\.pdf$/i.test(String(a.nombre || ''))) {
+      return { error: 'Solo se aceptan adjuntos PDF con un nombre de archivo válido.' };
+    }
+    const contenido = Buffer.from(String(a.contenidoBase64 || ''), 'base64');
+    if (contenido.length === 0 || contenido.length > MAX_BYTES_ADJUNTO) return { error: 'Cada adjunto debe pesar entre 1 byte y 3 MB.' };
+    if (contenido.subarray(0, 5).toString('latin1') !== '%PDF-') return { error: 'El adjunto no es un PDF válido.' };
+    adjuntos.push({ filename: a.nombre, content: contenido, contentType: 'application/pdf' });
+  }
+  return { adjuntos };
+}
+
 // Nombre del microservicio que pide el correo (cabecera x-servicio-origen), saneado para el historial
 const servicioOrigen = (req) => String(req.get('x-servicio-origen') || 'desconocido').replace(/[^a-z0-9-]/gi, '').slice(0, 40) || 'desconocido';
 
@@ -28,7 +52,8 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
   }
 
   // Servicio interno: solo lo llaman los otros microservicios, nunca el navegador (sin CORS)
-  app.use(express.json({ limit: '200kb' }));
+  // 5 MB para permitir adjuntos PDF codificados en base64
+  app.use(express.json({ limit: '5mb' }));
 
   // Health check
   app.get('/health', (req, res) => {
@@ -71,7 +96,7 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
 
   // Endpoint transversal para envío de correos
   app.post('/api/notifications/email', async (req, res) => {
-    const { to, subject, html, text } = req.body || {};
+    const { to, subject, html, text, adjuntos: listaAdjuntos } = req.body || {};
 
     if (!to || !subject || (!html && !text)) {
       return res.status(400).json({
@@ -79,6 +104,8 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
         mensaje: 'Los campos to, subject y html/text son obligatorios',
       });
     }
+    const { error: errorAdjuntos, adjuntos } = validarAdjuntos(listaAdjuntos);
+    if (errorAdjuntos) return res.status(400).json({ exito: false, mensaje: errorAdjuntos });
 
     try {
       const info = await transporter.sendMail({
@@ -87,6 +114,7 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
         subject,
         text: text || '',
         html: html || `<p>${text}</p>`,
+        ...(adjuntos.length ? { attachments: adjuntos } : {}),
       });
 
       console.log(`[Notification-Service] Correo enviado a ${to}. ID: ${info.messageId}`);
