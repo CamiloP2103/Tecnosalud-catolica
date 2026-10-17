@@ -52,7 +52,7 @@ Las cinco bases de datos, sus tablas y cómo se relacionan entre servicios está
    - `SMTP_USER` y `SMTP_PASS` en `notification-service` (contraseña de aplicación de Gmail).
    - Datos de MySQL en los cinco servicios (cada uno con su `DB_NAME`).
 
-   Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL`, `VITE_API_REGISTRO_URL`, `VITE_API_FARMACIAS_URL`, `VITE_API_DOCUMENTOS_URL` y `VITE_API_CITAS_URL`, que son opcionales.
+   Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL`, `VITE_API_REGISTRO_URL`, `VITE_API_FARMACIAS_URL`, `VITE_API_DOCUMENTOS_URL`, `VITE_API_CITAS_URL` y `VITE_API_NOTIFICACIONES_URL`, que son opcionales.
 2. **Bases de datos.** Con los `.env` listos, crea las seis bases (`db_auth`, `db_registro`, `db_farmacias`, `db_documentos`, `db_notificaciones` y `db_citas`) con un comando:
    ```bash
    cd backend
@@ -256,3 +256,17 @@ cd backend && npm test # pruebas de los seis microservicios (sin MySQL ni SMTP)
    - **Administración:** resumen, lista con búsqueda y aprobación o rechazo con historial (quién y cuándo), solo para `ADMIN`.
    - `db:init` migra la tabla vieja si está vacía.
    - 21 pruebas en el servicio y 5 en el frontend. Verificado contra Azure, incluida la llave foránea.
+33. **Endpoints de administración en todos los servicios** (solo rol `ADMIN`, con el JWT de `auth-service`):
+   - `auth`: `/admin/resumen`, `/admin/usuarios`, activar o desactivar cuentas y desbloquear.
+   - `registro`: resumen, afiliados y aprobación con historial.
+   - `farmacias`: resumen de inventario y pedidos, lista de pedidos y cambio de estado con devolución de unidades y correo al usuario.
+   - `documentos`: resumen.
+   - `notification`: resumen, con CORS solo en esa ruta.
+   - `citas`: resumen, agenda y cambio de estado.
+   - Se verificaron todos contra Azure.
+34. **Panel de administración** (`src/components/pages/Admin/`), opción del menú visible solo para `ADMIN`. Todo son componentes React, con íconos SVG propios de salud y sin emojis.
+   - **Menú lateral interactivo** con contadores de pendientes y una marca cuando un servicio falla.
+   - **Resumen general** con tarjetas que llevan a cada sección y el estado de los seis microservicios.
+   - **Secciones:** Citas (ocupación, disponibilidad por especialidad y agenda con acciones), Farmacias e inventario (existencias por sede, agotados, más pedidos y reabastecimiento), Pedidos (marcar lista, entregada o rechazar), Afiliaciones (distribución por EPS, régimen y departamento, búsqueda, aprobar o rechazar), Usuarios y accesos (roles, bloqueos, bitácora, activar, desactivar y desbloquear), Documentos y Correos.
+   - **Actualización manual o automática** cada minuto. Si un servicio falla, el resto sigue visible.
+   - 9 pruebas en `src/__tests__/panelAdmin.test.jsx`, incluida una que verifica que no se muestren emojis.

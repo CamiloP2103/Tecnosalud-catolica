@@ -12,6 +12,7 @@ const breadcrumbMap = {
   servicios: 'Servicios clínicos',
   farmacias: 'Farmacias',
   documentos: 'Documentos clínicos',
+  admin: 'Panel de administración',
   'muerte-digna': 'Muerte digna',
   medicamentos: 'Medicamentos',
   triage: 'Triage',
