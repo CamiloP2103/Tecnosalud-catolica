@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const { plantillaAlertaLogin, plantillaRecuperacion } = require('./plantillas');
 const { crearLimitador } = require('./limitador');
 const { errorBaseDatos } = require('./errores');
+const { crearRutasAdmin } = require('./admin');
 
 const LARGO_MINIMO_CLAVE = 8;
 const MAX_INTENTOS_CUENTA = 5; // fallos seguidos antes de bloquear la cuenta 15 minutos
@@ -291,6 +292,7 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
     }
   });
 
+  router.use('/admin', crearRutasAdmin({ pool, jwtSecret }));
   app.use('/api/auth', router);
 
   return app;
