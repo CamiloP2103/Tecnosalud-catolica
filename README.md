@@ -25,7 +25,10 @@ Navegador ──► auth-service ──────┐
 
 `farmacias-service` y `documentos-service` validan el JWT que emite `auth-service`, por eso los tres comparten `JWT_SECRET`.
 
-Las cinco bases de datos, sus tablas y cómo se relacionan entre servicios están explicadas, con diagramas, en **[docs/ARQUITECTURA_DATOS.md](docs/ARQUITECTURA_DATOS.md)**.
+Documentación detallada:
+- **[docs/ARQUITECTURA_DATOS.md](docs/ARQUITECTURA_DATOS.md)**: las seis bases de datos, sus tablas, relaciones (diagramas) y flujos.
+- **[docs/PANEL_ADMIN.md](docs/PANEL_ADMIN.md)**: el panel de administración, sección por sección.
+- **[docs/PRUEBAS.md](docs/PRUEBAS.md)**: las 203 pruebas, cómo correrlas y los avisos de GitHub y VS Code.
 
 ## Estructura
 
@@ -149,6 +152,13 @@ npm run build          # build de producción en dist/
 cd backend && npm test # pruebas de los seis microservicios (sin MySQL ni SMTP)
 ```
 
+### Permiso workflow para subir el flujo de GitHub Actions
+
+GitHub solo acepta cambios en `.github/workflows/` si el token con que haces `git push` tiene el permiso **workflow**. Si el push responde `refusing to allow a Personal Access Token to create or update workflow ... without workflow scope`:
+1. En GitHub: **Settings → Developer settings → Personal access tokens** → crea un token (classic) con los permisos **repo** y **workflow**.
+2. En Windows: **Administrador de credenciales → Credenciales de Windows**, elimina la entrada `git:https://github.com`.
+3. Haz `git push` otra vez y usa el token nuevo como contraseña. También puedes ejecutar `gh auth login` (GitHub CLI) y aceptar el permiso workflow.
+
 ### Avisos automáticos si algo se daña
 
 - **GitHub Actions** (`.github/workflows/ci.yml`): en cada `push` y *pull request* ejecuta, en Linux, la revisión de imports, ESLint, las pruebas del frontend, el build, las pruebas de **cada microservicio por separado** y `npm audit`. El resultado aparece como ✔ verde o ✘ roja junto al commit y en la pestaña **Actions** del repositorio, y **GitHub envía un correo** cuando una ejecución falla. Si falla un servicio, los demás se prueban igual para ver el panorama completo.
@@ -159,6 +169,7 @@ cd backend && npm test # pruebas de los seis microservicios (sin MySQL ni SMTP)
 
 - `Acceso.jsx` llama a `/api/auth/recuperar-usuario/consultar` y `/verificar`, pero esos endpoints **no existen** en `auth-service`, así que "Recuperar usuario" no funciona todavía.
 - El límite por IP de `auth-service` vive en memoria (el bloqueo por cuenta ya se guarda en `db_auth`).
+- El panel de administración es de consulta y gestión; todavía no permite editar el catálogo de medicamentos, médicos u horarios (se hace con los scripts SQL).
 - Las credenciales que estuvieron en git (SMTP, MySQL, `JWT_SECRET`) deben rotarse, porque siguen en el historial de `main`.
 
 ## Registro de cambios (rama `juan/limpieza-env`)
@@ -270,3 +281,4 @@ cd backend && npm test # pruebas de los seis microservicios (sin MySQL ni SMTP)
    - **Secciones:** Citas (ocupación, disponibilidad por especialidad y agenda con acciones), Farmacias e inventario (existencias por sede, agotados, más pedidos y reabastecimiento), Pedidos (marcar lista, entregada o rechazar), Afiliaciones (distribución por EPS, régimen y departamento, búsqueda, aprobar o rechazar), Usuarios y accesos (roles, bloqueos, bitácora, activar, desactivar y desbloquear), Documentos y Correos.
    - **Actualización manual o automática** cada minuto. Si un servicio falla, el resto sigue visible.
    - 9 pruebas en `src/__tests__/panelAdmin.test.jsx`, incluida una que verifica que no se muestren emojis.
+35. **Documentación ampliada.** `docs/ARQUITECTURA_DATOS.md` se reescribió con las seis bases (diagramas de `db_registro` con catálogos y de `db_citas`, relaciones por JWT, flujos y auditoría). Nuevos `docs/PANEL_ADMIN.md` (cada sección, sus datos, acciones y endpoints) y `docs/PRUEBAS.md` (las 203 pruebas por archivo, cómo correrlas y los avisos de GitHub y VS Code). Se agregó al README cómo dar el permiso *workflow* al token de GitHub.
