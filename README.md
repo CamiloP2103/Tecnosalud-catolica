@@ -22,6 +22,7 @@ Desde la raíz del proyecto, instala las dependencias de todos los servicios la 
 npm install
 npm install --prefix backend
 npm install --prefix backend/services/auth-service
+npm install --prefix backend/services/registro-service
 npm install --prefix backend/services/citas-service
 npm install --prefix backend/services/notification-service
 ```
@@ -37,6 +38,7 @@ El comando inicia todos los procesos de desarrollo:
 - frontend: `http://localhost:5173`
 - backend de registro: puerto `3001`
 - autenticación: puerto `3002`
+- registro (catálogos y afiliación): puerto `3004`
 - citas médicas: puerto `3003`
 - notificaciones: puerto `3005`
 

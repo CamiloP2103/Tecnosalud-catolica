@@ -3,9 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const pool = require('./config/db');
 const { validarRegistro } = require('./validators');
+const { DEPARTAMENTOS, EPS } = require('./data/catalogos');
 
 const app = express();
-const PORT = process.env.PORT || 3003;
+const PORT = process.env.PORT || 3004;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 // Agregamos la URL del auth-service para la comunicación interna
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3002'; 
@@ -17,6 +18,18 @@ const router = express.Router();
 
 router.get('/health', (req, res) => {
   res.json({ servicio: 'registro-service', estado: 'activo', puerto: PORT });
+});
+
+// Catálogos del formulario (antes estaban escritos en el front)
+
+// GET /api/registro/departamentos -> [{ id, nombre, ciudades: [{ id, nombre }] }]
+router.get('/departamentos', (req, res) => {
+  res.json(DEPARTAMENTOS);
+});
+
+// GET /api/registro/eps -> [{ id, nombre }]
+router.get('/eps', (req, res) => {
+  res.json(EPS);
 });
 
 router.post('/', async (req, res) => {

@@ -1,3 +1,5 @@
+const { CIUDADES_VALIDAS, EPS_VALIDAS } = require('./data/catalogos');
+
 const EMAIL_VALIDO = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const TIPOS_DOC = ['CC', 'TI', 'CE', 'PA'];
 const GENEROS = ['M', 'F', 'Otro'];
@@ -36,9 +38,9 @@ function validarRegistro(body = {}) {
   if (!EMAIL_VALIDO.test(correo)) errores.correo = 'El correo electrónico no es válido';
   if (!/^\d{7,10}$/.test(telefono)) errores.telefono = 'El teléfono debe tener entre 7 y 10 dígitos';
   if (!direccion) errores.direccion = 'La dirección es obligatoria';
-  if (!ciudad) errores.ciudad = 'La ciudad es obligatoria';
+  if (!CIUDADES_VALIDAS.has(ciudad)) errores.ciudad = 'La ciudad seleccionada no es válida';
   if (!TIPOS_AFILIACION.includes(tipoAfiliacion)) errores.tipoAfiliacion = 'El tipo de afiliación no es válido';
-  if (!eps) errores.eps = 'La EPS es obligatoria';
+  if (!EPS_VALIDAS.has(eps)) errores.eps = 'La EPS seleccionada no es válida';
   if (!REGIMENES.includes(regimen)) errores.regimen = 'El régimen de salud no es válido';
   if (!contactoEmergenciaNombre) errores.contactoEmergenciaNombre = 'El nombre del contacto de emergencia es obligatorio';
   if (!/^\d{7,10}$/.test(contactoEmergenciaTelefono)) {

@@ -230,7 +230,7 @@ Configura `backend/services/auth-service/.env` con las credenciales de MySQL y a
 npm run dev:all
 ```
 
-El comando inicia el frontend en `http://localhost:5173` y los servicios en los puertos `3001` (registro), `3002` (autenticación), `3003` (citas) y `3005` (notificaciones). Detén cualquier instancia iniciada por separado antes de ejecutarlo para evitar conflictos de puertos. Mantén abierta la terminal mientras trabajas y presiona `Ctrl+C` para detener todos los procesos. El envío de correo requiere credenciales SMTP en `backend/services/notification-service/.env`.
+El comando inicia el frontend en `http://localhost:5173` y los servicios en los puertos `3001` (registro), `3002` (autenticación), `3003` (citas), `3004` (registro de afiliados) y `3005` (notificaciones). Detén cualquier instancia iniciada por separado antes de ejecutarlo para evitar conflictos de puertos. Mantén abierta la terminal mientras trabajas y presiona `Ctrl+C` para detener todos los procesos. El envío de correo requiere credenciales SMTP en `backend/services/notification-service/.env`.
 
 Para instalar las dependencias de pruebas y ejecutarlas desde la raíz:
 
