@@ -1,10 +1,18 @@
 import cors from 'cors';
+import { existsSync, readFileSync } from 'node:fs';
 import express from 'express';
+import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import { fileURLToPath } from 'node:url';
 
 const PORT = Number(process.env.PORT || 3003);
-const JWT_SECRET = process.env.JWT_SECRET || 'tecnosalud_secret_jwt_key_2026';
+const AUTH_ENV_PATH = new URL('../../auth-service/.env', import.meta.url);
+const AUTH_ENV = existsSync(AUTH_ENV_PATH)
+  ? dotenv.parse(readFileSync(AUTH_ENV_PATH))
+  : {};
+export const JWT_SECRET = process.env.JWT_SECRET
+  || AUTH_ENV.JWT_SECRET
+  || 'tecnosalud_secret_jwt_key_2026';
 const DOCTORES = [
   { id: 'doctor-1', nombre: 'Doctor de Prueba' },
   { id: 'doctor-2', nombre: 'Doctor 2' },

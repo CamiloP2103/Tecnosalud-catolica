@@ -40,6 +40,8 @@ El comando inicia todos los procesos de desarrollo:
 - citas médicas: puerto `3003`
 - notificaciones: puerto `3005`
 
+El servicio de citas usa el mismo `JWT_SECRET` que autenticación. En desarrollo lo lee de `backend/services/auth-service/.env` si no se define como variable de entorno; en despliegues, configura el mismo secreto en ambos servicios.
+
 Detén con `Ctrl+C` los servidores iniciados en otras terminales antes de ejecutar el comando para evitar conflictos de puertos. Mantén abierta la terminal de `npm run dev:all` mientras uses la aplicación; `Ctrl+C` detiene todos los servicios. El envío de correos requiere configurar las credenciales SMTP en `backend/services/notification-service/.env`.
 
 Las citas y los registros del backend de registro se guardan en memoria y se pierden al reiniciar sus servicios. El servicio de autenticación usa MySQL. La cuenta de demostración `doctor@tecnosalud.com.co` tiene rol `MEDICO` y está vinculada al médico `doctor-1`; solo puede consultar las citas de esa agenda. Los pacientes pueden consultar y gestionar sus propias citas.
