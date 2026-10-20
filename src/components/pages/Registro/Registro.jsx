@@ -19,23 +19,7 @@ const MESES = [
 
 const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: anioActual - 1920 + 1 }, (_, i) => String(anioActual - i));
-const API_REGISTRO = 'http://localhost:3003/api/registro';
-
-const MUNICIPIOS_COLOMBIA = [
-  { depto: 'Cundinamarca / D.C.', ciudades: ['Bogotá D.C.', 'Soacha', 'Chía', 'Zipaquirá', 'Facatativá', 'Girardot'] },
-  { depto: 'Antioquia', ciudades: ['Medellín', 'Bello', 'Itagüí', 'Envigado', 'Rionegro', 'Apartadó'] },
-  { depto: 'Valle del Cauca', ciudades: ['Cali', 'Palmira', 'Buenaventura', 'Tuluá', 'Cartago', 'Buga'] },
-  { depto: 'Atlántico', ciudades: ['Barranquilla', 'Soledad', 'Malambo', 'Sabanalarga', 'Puerto Colombia'] },
-  { depto: 'Santander', ciudades: ['Bucaramanga', 'Floridablanca', 'Girón', 'Piedecuesta', 'Barrancabermeja'] },
-  { depto: 'Bolívar', ciudades: ['Cartagena', 'Magangué', 'Turbaco', 'Arjona', 'El Carmen de Bolívar'] },
-  { depto: 'Eje Cafetero', ciudades: ['Pereira', 'Manizales', 'Armenia', 'Dosquebradas', 'Santa Rosa de Cabal'] },
-  { depto: 'Tolima y Huila', ciudades: ['Ibagué', 'Neiva', 'Espinal', 'Pitalito', 'Melgar'] },
-  { depto: 'Nariño y Cauca', ciudades: ['Pasto', 'Popayán', 'Ipiales', 'Tumaco', 'Santander de Quilichao'] },
-  { depto: 'Norte de Santander', ciudades: ['Cúcuta', 'Ocaña', 'Villa del Rosario', 'Los Patios', 'Pamplona'] },
-  { depto: 'Costa Caribe (Otras)', ciudades: ['Santa Marta', 'Valledupar', 'Montería', 'Sincelejo', 'Riohacha'] },
-  { depto: 'Llanos y Amazonía/Orinoquía', ciudades: ['Villavicencio', 'Yopal', 'Florencia', 'Arauca', 'Leticia', 'San José del Guaviare'] },
-  { depto: 'Otros', ciudades: ['Otro Municipio'] }
-];
+const API_REGISTRO = import.meta.env.VITE_API_REGISTRO_URL || 'http://localhost:3004/api/registro';
 
 const estadoInicial = {
   nombres: '',
@@ -84,6 +68,11 @@ function Registro() {
   const [modalExito, setModalExito] = useState(false);
   const [correoEnviado, setCorreoEnviado] = useState('');
 
+  // Catálogos que entrega el servicio de Registro (antes estaban escritos en este archivo)
+  const [departamentos, setDepartamentos] = useState([]);
+  const [listaEps, setListaEps] = useState([]);
+  const [errorCatalogos, setErrorCatalogos] = useState('');
+
   // Captcha local
   const [captchaChallenge, setCaptchaChallenge] = useState({ num1: 0, num2: 0, resultado: 0 });
   const [captchaInput, setCaptchaInput] = useState('');
@@ -97,6 +86,39 @@ function Registro() {
 
   useEffect(() => {
     generarCaptchaLocal();
+  }, []);
+
+  // Carga departamentos (con sus ciudades) y EPS desde el servicio de Registro
+  useEffect(() => {
+    let cancelado = false;
+
+    const cargarCatalogos = async () => {
+      try {
+        const [respDeptos, respEps] = await Promise.all([
+          fetch(`${API_REGISTRO}/departamentos`),
+          fetch(`${API_REGISTRO}/eps`),
+        ]);
+        const deptos = await respDeptos.json();
+        const eps = await respEps.json();
+
+        if (cancelado) return;
+        if (!respDeptos.ok || !respEps.ok || !Array.isArray(deptos) || !Array.isArray(eps)) {
+          throw new Error('Respuesta inesperada del servicio de registro');
+        }
+        setDepartamentos(deptos);
+        setListaEps(eps);
+        setErrorCatalogos('');
+      } catch {
+        if (!cancelado) {
+          setErrorCatalogos('No se pudieron cargar las ciudades y las EPS. Verifica que el servicio de registro esté corriendo en el puerto 3004.');
+        }
+      }
+    };
+
+    cargarCatalogos();
+    return () => {
+      cancelado = true;
+    };
   }, []);
 
   const handleChange = (event) => {
@@ -189,7 +211,7 @@ function Registro() {
       setForm(estadoInicial);
       generarCaptchaLocal();
     } catch {
-      setErrorMsg('No se pudo conectar con el servicio de registro. Verifica que esté corriendo en el puerto 3003.');
+      setErrorMsg('No se pudo conectar con el servicio de registro. Verifica que esté corriendo en el puerto 3004.');
     }
   };
 
@@ -207,6 +229,12 @@ function Registro() {
         <div className="form__alert-error" role="alert">
           {errorMsg}
         </div>
+      )}
+
+      {errorCatalogos && (
+        <p className="form__alert-error" role="status">
+          {errorCatalogos}
+        </p>
       )}
 
       <form onSubmit={handleSubmit} noValidate>
@@ -366,11 +394,11 @@ function Registro() {
               Ciudad / Municipio (Colombia) *
               <select name="ciudad" value={form.ciudad} onChange={handleChange} required>
                 <option value="">Selecciona tu municipio...</option>
-                {MUNICIPIOS_COLOMBIA.map((grupo) => (
-                  <optgroup key={grupo.depto} label={grupo.depto}>
-                    {grupo.ciudades.map((ciudad) => (
-                      <option key={ciudad} value={ciudad}>
-                        {ciudad}
+                {departamentos.map((depto) => (
+                  <optgroup key={depto.id} label={depto.nombre}>
+                    {depto.ciudades.map((ciudad) => (
+                      <option key={ciudad.id} value={ciudad.nombre}>
+                        {ciudad.nombre}
                       </option>
                     ))}
                   </optgroup>
@@ -396,14 +424,14 @@ function Registro() {
 
             <label>
               EPS / Entidad actual *
-              <input
-                type="text"
-                name="eps"
-                value={form.eps}
-                onChange={handleChange}
-                placeholder="Ej. Sanitas, Sura, Famisanar"
-                required
-              />
+              <select name="eps" value={form.eps} onChange={handleChange} required>
+                <option value="">Selecciona tu EPS...</option>
+                {listaEps.map((eps) => (
+                  <option key={eps.id} value={eps.nombre}>
+                    {eps.nombre}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label className="form__col-full">

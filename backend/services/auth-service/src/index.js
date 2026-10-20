@@ -285,7 +285,7 @@ router.post('/recuperar-clave/restablecer', async (req, res) => {
     const nuevoHash = await bcrypt.hash(nuevaContrasena.trim(), salt);
 
     await pool.query(
-      'UPDATE usuarios SET contrasena_hash = ? WHERE id = ?',
+      'UPDATE usuarios SET contrasena_hash = ?,  activo = 1 WHERE id = ?',
       [nuevoHash, registroToken.usuario_id]
     );
 
@@ -305,4 +305,52 @@ app.use('/api/auth', router);
 
 app.listen(PORT, () => {
   console.log(`Microservicio de Autenticación activo en el puerto ${PORT} (/api/auth)`);
+});
+
+router.post('/registro-interno', async (req, res) => {
+  const { tipo_doc, documento, email, nombre, rol_id } = req.body;
+
+  try {
+    // 1. Insertar en la tabla usuarios (Nace inactivo y sin contraseña)
+    const [resultadoUsuario] = await pool.query(
+      `INSERT INTO usuarios (tipo_doc, documento, email, contrasena_hash, nombre, rol_id, activo)
+       VALUES (?, ?, ?, '$2a$10$GcXq.R.QWp3F6H.VUzrHZug.qmzSIHE.BxDyK3ChI7UB5pWC71Fri', ?, ?, 0)`,
+      [tipo_doc, documento, email, nombre, rol_id]
+    );
+
+    const usuarioId = resultadoUsuario.insertId;
+
+    // 2. Generar token de activación (Expira en 24h)
+    const tokenConfiguracion = crypto.randomBytes(32).toString('hex');
+    const fechaExpiracion = new Date(Date.now() + 24 * 3600000);
+
+    await pool.query(
+      'INSERT INTO tokens_recuperacion (usuario_id, token, expira_en) VALUES (?, ?, ?)',
+      [usuarioId, tokenConfiguracion, fechaExpiracion]
+    );
+
+    // 3. Generar correo y delegar al notification-service
+    const enlaceConfiguracion = `${FRONTEND_URL}/#restablecer-clave?token=${tokenConfiguracion}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <h2 style="color: #145da0; text-align: center;">Bienvenido a Tecnosalud Católica</h2>
+        <p>Hola, <strong>${nombre}</strong>.</p>
+        <p>Tu registro ha sido exitoso. Para activar tu cuenta e ingresar al portal, debes crear tu contraseña haciendo clic en el siguiente botón:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${enlaceConfiguracion}" style="background-color: #145da0; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Activar cuenta y crear contraseña</a>
+        </div>
+        <p style="font-size: 14px; color: #475569;">O copia este enlace en tu navegador:<br><a href="${enlaceConfiguracion}" style="color: #145da0;">${enlaceConfiguracion}</a></p>
+      </div>`;
+
+    await fetch(`${NOTIFICATION_SERVICE_URL}/api/notifications/email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: email, subject: 'Activa tu cuenta - Tecnosalud Católica', html })
+    });
+
+    return res.status(201).json({ exito: true });
+  } catch (error) {
+    console.error('[auth-service] Error en /registro-interno:', error);
+    return res.status(500).json({ error: 'Error interno creando el usuario.' });
+  }
 });
