@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
-import app, { resetCitas } from '../src/index.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'tecnosalud_secret_jwt_key_2026';
+import app, { JWT_SECRET, resetCitas } from '../src/index.js';
 
 function tokenDe(usuarioId = 1, claims = {}) {
   return jwt.sign({ id: usuarioId, ...claims }, JWT_SECRET, { expiresIn: '1h' });

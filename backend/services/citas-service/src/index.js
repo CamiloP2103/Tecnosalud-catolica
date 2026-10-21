@@ -1,14 +1,44 @@
-require('dotenv').config();
-const pool = require('./config/db');
-const { crearRepositorio } = require('./repositorio');
-const { crearApp } = require('./app');
+import cors from 'cors';
+import { existsSync, readFileSync } from 'node:fs';
+import express from 'express';
+import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
+import { fileURLToPath } from 'node:url';
 
-const PORT = process.env.PORT || 3007;
-const JWT_SECRET = process.env.JWT_SECRET;
+const PORT = Number(process.env.PORT || 3003);
+const AUTH_ENV_PATH = new URL('../../auth-service/.env', import.meta.url);
+const AUTH_ENV = existsSync(AUTH_ENV_PATH)
+  ? dotenv.parse(readFileSync(AUTH_ENV_PATH))
+  : {};
+export const JWT_SECRET = process.env.JWT_SECRET
+  || AUTH_ENV.JWT_SECRET
+  || 'tecnosalud_secret_jwt_key_2026';
+const DOCTORES = [
+  { id: 'doctor-1', nombre: 'Doctor de Prueba' },
+  { id: 'doctor-2', nombre: 'Doctor 2' },
+  { id: 'doctor-3', nombre: 'Doctor 3' },
+  { id: 'doctor-4', nombre: 'Doctor 4' },
+];
+const DOCTOR_ID_POR_CORREO = {
+  'doctor@tecnosalud.com.co': 'doctor-1',
+};
+const HORAS_ATENCION = [
+  { inicio: 8, fin: 12 },
+  { inicio: 14, fin: 18 },
+];
+const DURACION_CITA_MINUTOS = 30;
+const app = express();
+let citas = [];
+let siguienteId = 1;
 
-if (!JWT_SECRET) {
-  console.error('[citas-service] Falta JWT_SECRET en el archivo .env (debe ser igual al de auth-service).');
-  process.exit(1);
+app.use(cors());
+app.use(express.json());
+
+function esDiaHabil(fecha) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha || '')) return false;
+  const fechaUtc = new Date(`${fecha}T00:00:00.000Z`);
+  if (Number.isNaN(fechaUtc.getTime()) || fechaUtc.toISOString().slice(0, 10) !== fecha) return false;
+  return fechaUtc.getUTCDay() > 0 && fechaUtc.getUTCDay() < 6;
 }
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3005';
