@@ -1,0 +1,76 @@
+# Integración continua: en cada push y pull request revisa que nada se haya dañado.
+# GitHub muestra el resultado con una marca verde (todo bien) o roja (algo falló) en el commit y en
+# la pestaña "Actions", y envía un correo al autor cuando una ejecución falla.
+name: Pruebas
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch: # permite ejecutarlo a mano desde la pestaña Actions
+
+concurrency:
+  group: pruebas-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (lint, pruebas y build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Imports con mayúsculas correctas
+        run: npm run verificar:imports
+      - name: ESLint
+        run: npm run lint
+      - name: Pruebas del frontend
+        run: npm test
+      - name: Build de producción
+        run: npm run build
+
+  microservicios:
+    name: Pruebas de ${{ matrix.servicio }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # si un servicio falla, igual se prueban los demás para ver el panorama completo
+      matrix:
+        servicio:
+          - auth-service
+          - notification-service
+          - registro-service
+          - farmacias-service
+          - documentos-service
+          - citas-service
+    defaults:
+      run:
+        working-directory: backend/services/${{ matrix.servicio }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/services/${{ matrix.servicio }}/package-lock.json
+      - run: npm ci
+      - name: Pruebas
+        run: npm test
+
+  dependencias:
+    name: Vulnerabilidades de dependencias
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: npm audit (frontend y microservicios)
+        run: |
+          npm audit --audit-level=high
+          for servicio in backend/services/*/; do
+            echo "== $servicio"
+            (cd "$servicio" && npm audit --audit-level=high)
+          done
