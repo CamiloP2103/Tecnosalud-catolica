@@ -52,7 +52,7 @@ function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reabasteced
     const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
       <h2 style="color: #145da0; text-align: center;">Tecnosalud Católica</h2>
-      <p>Recibimos tu solicitud de medicamentos <strong>#${solicitud.id}</strong>. Está en estado <strong>pendiente</strong>.</p>
+      <p>Recibimos tu solicitud de medicamentos <strong>#${solicitud.id}</strong>. Tu pedido está <strong>completado</strong> y llegará en un día.</p>
       <p><strong>Farmacia:</strong> ${escaparHtml(solicitud.farmacia.nombre)} — ${escaparHtml(solicitud.farmacia.direccion)}, ${escaparHtml(solicitud.farmacia.municipio)}<br>
       <strong>Horario:</strong> ${escaparHtml(solicitud.farmacia.horario)}</p>
       <table style="width: 100%; border-collapse: collapse; font-size: 14px;">

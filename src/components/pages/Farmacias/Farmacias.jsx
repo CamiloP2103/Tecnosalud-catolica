@@ -16,7 +16,7 @@ const fechaLegible = (valor) =>
   valor ? new Date(valor).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' }) : '';
 
 const ETIQUETAS_ESTADO = {
-  PENDIENTE: 'Pendiente',
+  PENDIENTE: 'Completado',
   LISTA: 'Lista para reclamar',
   ENTREGADA: 'Entregada',
   CANCELADA: 'Cancelada',
@@ -266,7 +266,7 @@ function Farmacias() {
       setPestana('solicitudes');
       setAviso({
         tipo: 'exito',
-        texto: `Pedido #${datos.id} enviado a ${datos.farmacia.nombre} por ${pesos(datos.total)}. Te enviamos la confirmación a tu correo y descontamos las unidades del inventario.`,
+        texto: `Pedido #${datos.id} enviado a ${datos.farmacia.nombre} por ${pesos(datos.total)}. Pedido completado: tu pedido llegará en un día. Te enviamos la confirmación a tu correo.`,
       });
     } catch (error) {
       setErrorPedido(mensajeDeError(error, SERVICIO_FARMACIAS));
