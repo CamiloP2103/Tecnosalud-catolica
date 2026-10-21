@@ -1,17 +1,15 @@
+import express from 'express';
+import cors from 'cors';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
-import { crearApp } from './app.js';
-import pool from './config/db.js';
-import { crearHistorial } from './historial.js';
 
 dotenv.config();
 
+const app = express();
 const PORT = process.env.PORT || 3005;
 
-if (!process.env.NOTIFICATION_API_KEY) {
-  console.error('[Notification-Service] Falta NOTIFICATION_API_KEY en el archivo .env (ver .env.example).');
-  process.exit(1);
-}
+app.use(cors());
+app.use(express.json());
 
 // Configuración del transporter Nodemailer
 const transporter = nodemailer.createTransport({
@@ -24,12 +22,45 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const app = crearApp({
-  transporter,
-  apiKey: process.env.NOTIFICATION_API_KEY,
-  emailFrom: process.env.EMAIL_FROM || process.env.SMTP_USER,
-  puerto: PORT,
-  historial: crearHistorial(pool),
+// Endpoint transversal para envío de correos
+app.post('/api/notifications/email', async (req, res) => {
+  const { to, subject, html, text } = req.body;
+
+  if (!to || !subject || (!html && !text)) {
+    return res.status(400).json({
+      exito: false,
+      mensaje: 'Los campos to, subject y html/text son obligatorios',
+    });
+  }
+
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+      to,
+      subject,
+      text: text || '',
+      html: html || `<p>${text}</p>`,
+    });
+
+    console.log(`[Notification-Service] Correo enviado a ${to}. ID: ${info.messageId}`);
+    return res.json({
+      exito: true,
+      mensaje: 'Notificación enviada satisfactoriamente',
+      messageId: info.messageId,
+    });
+  } catch (error) {
+    console.error('[Notification-Service] Error enviando correo:', error);
+    return res.status(500).json({
+      exito: false,
+      mensaje: 'Fallo al despachar el correo electrónico',
+      error: error.message,
+    });
+  }
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ servicio: 'notification-service', estado: 'activo', puerto: PORT });
 });
 
 app.listen(PORT, () => {
