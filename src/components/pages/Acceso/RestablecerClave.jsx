@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './Acceso.css';
+import { llamarServicio, mensajeDeError, SERVICIO_AUTH } from '../../../utils/servicios';
 
 const API_AUTH = import.meta.env.VITE_API_AUTH_URL || 'http://localhost:3002/api/auth';
 
@@ -30,8 +31,8 @@ function RestablecerClave({ onNavigate }) {
       return;
     }
 
-    if (nuevaClave.length < 6) {
-      setErrorMsg('La contraseña debe tener al menos 6 caracteres.');
+    if (nuevaClave.length < 8) {
+      setErrorMsg('La contraseña debe tener al menos 8 caracteres.');
       return;
     }
 
@@ -42,22 +43,20 @@ function RestablecerClave({ onNavigate }) {
 
     setCargando(true);
     try {
-      const res = await fetch(`${API_AUTH}/recuperar-clave/restablecer`, {
+      const { ok, datos: data } = await llamarServicio(`${API_AUTH}/recuperar-clave/restablecer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, nuevaContrasena: nuevaClave }),
-      });
+      }, SERVICIO_AUTH);
 
-      const data = await res.json();
-
-      if (!res.ok) {
+      if (!ok) {
         setErrorMsg(data.error || 'No se pudo restablecer la contraseña.');
         return;
       }
 
       setExitoMsg('¡Tu contraseña ha sido actualizada con éxito! Ya puedes iniciar sesión.');
-    } catch {
-      setErrorMsg('Error al conectar con el servidor.');
+    } catch (error) {
+      setErrorMsg(mensajeDeError(error, SERVICIO_AUTH));
     } finally {
       setCargando(false);
     }
@@ -95,7 +94,7 @@ function RestablecerClave({ onNavigate }) {
                   type="password"
                   value={nuevaClave}
                   onChange={(e) => setNuevaClave(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                   required
                   disabled={cargando}
                 />

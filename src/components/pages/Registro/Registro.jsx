@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import './Registro.css';
+import { llamarServicio, mensajeDeError, SERVICIO_REGISTRO } from '../../../utils/servicios';
 
 const DIAS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
 const MESES = [
@@ -194,14 +195,13 @@ function Registro() {
     }
 
     try {
-      const respuesta = await fetch(API_REGISTRO, {
+      const { ok, datos } = await llamarServicio(API_REGISTRO, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
-      });
-      const datos = await respuesta.json();
+      }, SERVICIO_REGISTRO);
 
-      if (!respuesta.ok) {
+      if (!ok) {
         setErrorMsg(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar el registro.');
         return;
       }

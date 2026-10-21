@@ -1,0 +1,22 @@
+{
+  "name": "documentos-service",
+  "version": "1.0.0",
+  "description": "Microservicio protegido para cargar, generar y descargar documentos clínicos",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.3",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.4.0",
+    "mysql2": "^3.24.6"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.12"
+  }
+}

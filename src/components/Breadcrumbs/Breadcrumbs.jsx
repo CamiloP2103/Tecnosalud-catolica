@@ -10,6 +10,8 @@ const breadcrumbMap = {
   registro: 'Registro',
   acceso: 'Acceso',
   servicios: 'Servicios clínicos',
+  farmacias: 'Farmacias',
+  documentos: 'Documentos clínicos',
   'muerte-digna': 'Muerte digna',
   medicamentos: 'Medicamentos',
   triage: 'Triage',

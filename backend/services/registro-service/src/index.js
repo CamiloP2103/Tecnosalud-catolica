@@ -5,6 +5,7 @@ const pool = require('./config/db');
 const { validarRegistro } = require('./validators');
 const { DEPARTAMENTOS, EPS } = require('./data/catalogos');
 
+
 const app = express();
 const PORT = process.env.PORT || 3004;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';

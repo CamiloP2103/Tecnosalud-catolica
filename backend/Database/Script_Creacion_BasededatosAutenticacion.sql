@@ -53,23 +53,23 @@ INSERT IGNORE INTO roles (id, nombre, descripcion) VALUES
   (2, 'MEDICO', 'Personal asistencial y clínico'),
   (3, 'ADMIN', 'Administrador técnico de la plataforma');
 
--- Poblamiento de Usuarios con contraseñas encriptadas con bcrypt (cost factor = 10)
--- 1. '123456'        -> $2a$10$wK1bQv22i6.dK.8y2j69eODJbNqG7m.K7gK4u2g7i2O7M7y2q69eO
--- 2. 'admin2026'     -> $2a$10$4B9.x5u5.5lY.5q5.5q5.u8mP.P5q5.5q5.5q5.5q5.5q5.5q5.5
--- 3. 'maria2026'     -> $2a$10$7C9.x5u5.5lY.5q5.5q5.u8mP.P5q5.5q5.5q5.5q5.5q5.5q5.6
+-- Poblamiento de Usuarios de prueba. Hashes bcrypt reales (cost factor = 10) de estas claves:
+--   caenjiro@gmail.com               -> 123456
+--   carlos.jimenez@tecnosalud.com.co -> admin2026
+--   maria.gomez@clinicaejemplo.com   -> maria2026
+--   soporte.tecnosalud@gmail.com     -> soporte123
+--   afiliados.bogota@redsalud.com    -> afiliados2026
+-- Son claves de DEMOSTRACIÓN: cámbialas (o elimina estos usuarios) en un entorno real.
+-- Volver a ejecutar el script restablece estas claves de prueba.
 INSERT INTO usuarios (tipo_doc, documento, email, contrasena_hash, nombre, rol_id, activo) VALUES
-  ('CC', '72000607', 'caenjiro@gmail.com', '$2a$10$1Yj4MflVf0XF6xT394eQ/eL9o6QpZ0i8Nq0.qK1k7k2pM4y7l2a1S', 'Carlos Jiménez', 1, TRUE),
-  ('CC', '1020304050', 'carlos.jimenez@tecnosalud.com.co', '$2a$10$9GvG3qY0Qp/eL9o6QpZ0i8Nq0.qK1k7k2pM4y7l2a1S1Yj4MflVf0', 'Carlos Admin', 3, TRUE),
-  ('CE', '52148963', 'maria.gomez@clinicaejemplo.com', '$2a$10$k2pM4y7l2a1S1Yj4MflVf0XF6xT394eQ/eL9o6QpZ0i8Nq0.qK1k7', 'María Gómez', 2, TRUE),
-  ('TI', '80123456', 'soporte.tecnosalud@gmail.com', '$2a$10$L9o6QpZ0i8Nq0.qK1k7k2pM4y7l2a1S1Yj4MflVf0XF6xT394eQ/e', 'Soporte Técnico', 3, TRUE),
-  ('PA', '19456789', 'afiliados.bogota@redsalud.com', '$2a$10$qK1k7k2pM4y7l2a1S1Yj4MflVf0XF6xT394eQ/eL9o6QpZ0i8Nq0.', 'Afiliaciones Bogotá', 1, TRUE)
-ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
+  ('CC', '72000607', 'caenjiro@gmail.com', '$2a$10$7mu6GqbPZz7jhf8dEFZxUeS/xrjIMSflJUBzZbOX2uOzS3LcZMoK.', 'Carlos Jiménez', 1, TRUE),
+  ('CC', '1020304050', 'carlos.jimenez@tecnosalud.com.co', '$2a$10$1MrL0NFs6GMTQUwe6f9KduGSYybU1zdE0i8tpookKC4OL2U5JlK.K', 'Carlos Admin', 3, TRUE),
+  ('CE', '52148963', 'maria.gomez@clinicaejemplo.com', '$2a$10$xJ7Q9olRX3tiel8z7DLke.1yuF8LsowoyEwszxV.KLrPW2piFJrb2', 'María Gómez', 2, TRUE),
+  ('TI', '80123456', 'soporte.tecnosalud@gmail.com', '$2a$10$CL2/AUijxk3ENThIFo5jA.Z0pBS3pcpRStzK2YishRKMf8KBNjJHa', 'Soporte Técnico', 3, TRUE),
+  ('PA', '19456789', 'afiliados.bogota@redsalud.com', '$2a$10$PZzUhXr4CerhuHtymBs7e.Tovq/NeednKzucIRvDsb18l0873bZre', 'Afiliaciones Bogotá', 1, TRUE)
+ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), contrasena_hash = VALUES(contrasena_hash);
 
-select * from usuarios;
-
-
-USE db_auth;
-
+-- 4. Tokens de recuperación de contraseña
 CREATE TABLE IF NOT EXISTS tokens_recuperacion (
   id INT AUTO_INCREMENT PRIMARY KEY,
   usuario_id INT NOT NULL,
@@ -79,5 +79,3 @@ CREATE TABLE IF NOT EXISTS tokens_recuperacion (
   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_token_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
-
-select * from db_auth.tokens_recuperacion;
