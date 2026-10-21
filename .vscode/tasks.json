@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Probar todo (frontend + microservicios)",
+      "type": "shell",
+      "command": "npm run verificar:imports && npm run lint && npm test && npm --prefix backend test",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Probar frontend",
+      "type": "shell",
+      "command": "npm test",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Probar microservicios",
+      "type": "shell",
+      "command": "npm --prefix backend test",
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}

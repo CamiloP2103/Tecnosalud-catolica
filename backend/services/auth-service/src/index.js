@@ -14,11 +14,11 @@ const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http:/
 const NOTIFICATION_API_KEY = process.env.NOTIFICATION_API_KEY || '';
 
 // Delega el envío de correos al notification-service
-async function notificar({ to, subject, html }) {
+async function notificar({ to, subject, html, adjuntos }) {
   const respuesta = await fetch(`${NOTIFICATION_SERVICE_URL}/api/notifications/email`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': NOTIFICATION_API_KEY, 'x-servicio-origen': 'auth-service' },
-    body: JSON.stringify({ to, subject, html }),
+    body: JSON.stringify({ to, subject, html, ...(adjuntos ? { adjuntos } : {}) }),
   });
 
   if (!respuesta.ok) {

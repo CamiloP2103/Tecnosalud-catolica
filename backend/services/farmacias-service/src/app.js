@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { requiereSesion } = require('./autenticacion');
+const { requiereSesion, requiereAdmin } = require('./autenticacion');
 const { validarSolicitud, validarReglasMedicamentos } = require('./validators');
 const { errorBaseDatos } = require('./errores');
 
@@ -158,6 +158,51 @@ function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reabasteced
     const id = idValido(req.params.id);
     if (!id) return res.status(404).json({ error: 'La solicitud no existe.' });
     return res.json(await repo.cancelarSolicitud(id, req.usuario.id));
+  }));
+
+  // ---- Administración (rol ADMIN) ----
+  const soloAdmin = [conSesion, requiereAdmin];
+
+  // Avisa al usuario cuando su pedido está listo para reclamar o fue rechazado
+  function avisarCambioPedido(pedido) {
+    if (!['LISTA', 'RECHAZADA'].includes(pedido.estado)) return;
+    const lista = pedido.estado === 'LISTA';
+    const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
+      <h2 style="color: #145da0; text-align: center;">Tecnosalud Católica</h2>
+      <p>${lista ? 'Tu pedido de medicamentos <strong>#' + pedido.id + '</strong> está <strong>listo para reclamar</strong>.' : 'Tu pedido de medicamentos <strong>#' + pedido.id + '</strong> fue <strong>rechazado</strong> por la farmacia. Las unidades se liberaron y puedes hacer un nuevo pedido.'}</p>
+      <p><strong>Farmacia:</strong> ${escaparHtml(pedido.farmacia.nombre)} — ${escaparHtml(pedido.farmacia.direccion)}<br>
+      <strong>Horario:</strong> ${escaparHtml(pedido.farmacia.horario)}</p>
+      ${lista ? '<p>Lleva tu documento de identidad y, si aplica, la fórmula médica en original.</p>' : ''}
+      <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+      <p style="color: #94a3b8; font-size: 12px; text-align: center;">Tecnosalud Católica - Portal Institucional de Salud</p>
+    </div>`;
+    notificar({ to: pedido.usuarioEmail, subject: `Tu pedido #${pedido.id} ${lista ? 'está listo para reclamar' : 'fue rechazado'} - Tecnosalud Católica`, html })
+      .catch((err) => console.error('[farmacias-service] No se pudo notificar:', err.message));
+  }
+
+  router.get('/admin/resumen', ...soloAdmin, manejar(async (req, res) => {
+    const resumen = await repo.resumenAdmin();
+    res.json({ ...resumen, reabastecimiento: reabastecedor ? await reabastecedor.estado() : null });
+  }));
+
+  // ?estado=PENDIENTE|LISTA|ENTREGADA|CANCELADA|RECHAZADA
+  router.get('/admin/solicitudes', ...soloAdmin, manejar(async (req, res) => {
+    const estado = ['PENDIENTE', 'LISTA', 'ENTREGADA', 'CANCELADA', 'RECHAZADA'].includes(req.query.estado) ? req.query.estado : undefined;
+    const solicitudes = await repo.listarSolicitudesAdmin({ estado });
+    res.json({ total: solicitudes.length, solicitudes });
+  }));
+
+  router.patch('/admin/solicitudes/:id/estado', ...soloAdmin, manejar(async (req, res) => {
+    const id = idValido(req.params.id);
+    if (!id) return res.status(404).json({ error: 'El pedido no existe.' });
+    const estado = String(req.body?.estado || '').toUpperCase();
+    if (!['LISTA', 'ENTREGADA', 'RECHAZADA'].includes(estado)) {
+      return res.status(400).json({ error: 'Estado inválido. Usa: LISTA, ENTREGADA o RECHAZADA.' });
+    }
+    const pedido = await repo.cambiarEstadoSolicitud(id, estado);
+    avisarCambioPedido(pedido); // segundo plano
+    return res.json(pedido);
   }));
 
   app.use('/api/farmacias', router);

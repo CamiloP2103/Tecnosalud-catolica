@@ -22,21 +22,19 @@ const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: anioActual - 1920 + 1 }, (_, i) => String(anioActual - i));
 const API_REGISTRO = import.meta.env.VITE_API_REGISTRO_URL || 'http://localhost:3003/api/registro';
 
-const MUNICIPIOS_COLOMBIA = [
-  { depto: 'Cundinamarca / D.C.', ciudades: ['Bogotá D.C.', 'Soacha', 'Chía', 'Zipaquirá', 'Facatativá', 'Girardot'] },
-  { depto: 'Antioquia', ciudades: ['Medellín', 'Bello', 'Itagüí', 'Envigado', 'Rionegro', 'Apartadó'] },
-  { depto: 'Valle del Cauca', ciudades: ['Cali', 'Palmira', 'Buenaventura', 'Tuluá', 'Cartago', 'Buga'] },
-  { depto: 'Atlántico', ciudades: ['Barranquilla', 'Soledad', 'Malambo', 'Sabanalarga', 'Puerto Colombia'] },
-  { depto: 'Santander', ciudades: ['Bucaramanga', 'Floridablanca', 'Girón', 'Piedecuesta', 'Barrancabermeja'] },
-  { depto: 'Bolívar', ciudades: ['Cartagena', 'Magangué', 'Turbaco', 'Arjona', 'El Carmen de Bolívar'] },
-  { depto: 'Eje Cafetero', ciudades: ['Pereira', 'Manizales', 'Armenia', 'Dosquebradas', 'Santa Rosa de Cabal'] },
-  { depto: 'Tolima y Huila', ciudades: ['Ibagué', 'Neiva', 'Espinal', 'Pitalito', 'Melgar'] },
-  { depto: 'Nariño y Cauca', ciudades: ['Pasto', 'Popayán', 'Ipiales', 'Tumaco', 'Santander de Quilichao'] },
-  { depto: 'Norte de Santander', ciudades: ['Cúcuta', 'Ocaña', 'Villa del Rosario', 'Los Patios', 'Pamplona'] },
-  { depto: 'Costa Caribe (Otras)', ciudades: ['Santa Marta', 'Valledupar', 'Montería', 'Sincelejo', 'Riohacha'] },
-  { depto: 'Llanos y Amazonía/Orinoquía', ciudades: ['Villavicencio', 'Yopal', 'Florencia', 'Arauca', 'Leticia', 'San José del Guaviare'] },
-  { depto: 'Otros', ciudades: ['Otro Municipio'] }
-];
+// Catálogos vacíos mientras llegan de registro-service (GET /catalogos)
+const CATALOGOS_VACIOS = {
+  tiposDocumento: [],
+  generos: [],
+  departamentos: [],
+  eps: [],
+  regimenes: [],
+  tiposAfiliacion: [],
+  parentescos: [],
+};
+
+// Celular colombiano (10 dígitos que empiezan por 3), fijo nacional (60 + 8 dígitos) o fijo de 7 dígitos
+const TELEFONO_COLOMBIA = /^3\d{9}$|^60\d{8}$|^\d{7}$/;
 
 const estadoInicial = {
   nombres: '',
@@ -50,12 +48,14 @@ const estadoInicial = {
   correo: '',
   telefono: '',
   direccion: '',
-  ciudad: '',
+  departamento: '',
+  municipio: '',
   tipoAfiliacion: '',
   eps: '',
   regimen: '',
   contactoEmergenciaNombre: '',
   contactoEmergenciaTelefono: '',
+  contactoEmergenciaParentesco: '',
   aceptaTratamientoDatos: false,
 };
 
@@ -71,7 +71,8 @@ const camposRequeridos = {
   correo: 'Correo electrónico',
   telefono: 'Teléfono / Celular',
   direccion: 'Dirección de residencia',
-  ciudad: 'Ciudad / Municipio',
+  departamento: 'Departamento',
+  municipio: 'Municipio',
   tipoAfiliacion: 'Tipo de afiliación',
   eps: 'EPS / Entidad actual',
   regimen: 'Régimen de salud',
@@ -84,6 +85,8 @@ function Registro() {
   const [errorMsg, setErrorMsg] = useState('');
   const [modalExito, setModalExito] = useState(false);
   const [correoEnviado, setCorreoEnviado] = useState('');
+  const [catalogos, setCatalogos] = useState(CATALOGOS_VACIOS);
+  const [cargandoCatalogos, setCargandoCatalogos] = useState(true);
 
   // Captcha local
   const [captchaChallenge, setCaptchaChallenge] = useState({ num1: 0, num2: 0, resultado: 0 });
@@ -100,11 +103,30 @@ function Registro() {
     generarCaptchaLocal();
   }, []);
 
+  // Tipos de documento, departamentos y municipios, EPS, regímenes... desde db_registro
+  useEffect(() => {
+    (async () => {
+      try {
+        const { ok, datos } = await llamarServicio(`${API_REGISTRO}/catalogos`, {}, SERVICIO_REGISTRO);
+        if (!ok) throw new Error(datos.error || 'No se pudieron cargar las opciones del formulario.');
+        setCatalogos({ ...CATALOGOS_VACIOS, ...datos });
+      } catch (error) {
+        setErrorMsg(error.message || mensajeDeError(error, SERVICIO_REGISTRO));
+      } finally {
+        setCargandoCatalogos(false);
+      }
+    })();
+  }, []);
+
+  const municipiosDelDepartamento =
+    catalogos.departamentos.find((d) => d.codigo === form.departamento)?.municipios || [];
+
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
     setForm((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
+      ...(name === 'departamento' ? { municipio: '' } : {}),
     }));
   };
 
@@ -139,8 +161,8 @@ function Registro() {
       return 'Por favor ingresa un correo electrónico válido (ej. usuario@dominio.com).';
     }
 
-    if (form.telefono.length < 7 || form.telefono.length > 10) {
-      return 'El número de teléfono debe tener entre 7 y 10 dígitos.';
+    if (!TELEFONO_COLOMBIA.test(form.telefono)) {
+      return 'El teléfono debe ser un celular colombiano (10 dígitos que empiezan por 3) o un fijo (60 + 8 dígitos).';
     }
 
     if (form.contactoEmergenciaTelefono.length < 7 || form.contactoEmergenciaTelefono.length > 10) {
@@ -176,7 +198,8 @@ function Registro() {
       const { ok, datos } = await llamarServicio(API_REGISTRO, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        // El departamento solo filtra la lista de municipios: no se envía
+        body: JSON.stringify((({ departamento: _departamento, ...resto }) => resto)(form)),
       }, SERVICIO_REGISTRO);
 
       if (!ok) {
@@ -224,6 +247,28 @@ function Registro() {
                 placeholder="Ej. Juan Carlos"
                 required
               />
+            </label>
+
+            <label>
+              Apellidos *
+              <input
+                type="text"
+                name="apellidos"
+                value={form.apellidos}
+                onChange={handleChange}
+                placeholder="Ej. Pérez Gómez"
+                required
+              />
+            </label>
+
+            <label>
+              Tipo de documento *
+              <select name="tipoDocumento" value={form.tipoDocumento} onChange={handleChange} required>
+                <option value="">{cargandoCatalogos ? 'Cargando...' : 'Selecciona una opción'}</option>
+                {catalogos.tiposDocumento.map((t) => (
+                  <option key={t.codigo} value={t.codigo} title={t.descripcion || ''}>{t.nombre} ({t.codigo})</option>
+                ))}
+              </select>
             </label>
 
             <label>
@@ -310,10 +355,10 @@ function Registro() {
             <label>
               Género *
               <select name="genero" value={form.genero} onChange={handleChange} required>
-                <option value="">Selecciona una opción</option>
-                <option value="M">Masculino</option>
-                <option value="F">Femenino</option>
-                <option value="Otro">Otro / Prefiero no decir</option>
+                <option value="">{cargandoCatalogos ? 'Cargando...' : 'Selecciona una opción'}</option>
+                {catalogos.generos.map((g) => (
+                  <option key={g.codigo} value={g.codigo}>{g.nombre}</option>
+                ))}
               </select>
             </label>
           </div>
@@ -363,17 +408,27 @@ function Registro() {
             </label>
 
             <label>
-              Ciudad / Municipio (Colombia) *
-              <select name="ciudad" value={form.ciudad} onChange={handleChange} required>
-                <option value="">Selecciona tu municipio...</option>
-                {MUNICIPIOS_COLOMBIA.map((grupo) => (
-                  <optgroup key={grupo.depto} label={grupo.depto}>
-                    {grupo.ciudades.map((ciudad) => (
-                      <option key={ciudad} value={ciudad}>
-                        {ciudad}
-                      </option>
-                    ))}
-                  </optgroup>
+              Departamento *
+              <select name="departamento" value={form.departamento} onChange={handleChange} required>
+                <option value="">{cargandoCatalogos ? 'Cargando...' : 'Selecciona tu departamento...'}</option>
+                {catalogos.departamentos.map((d) => (
+                  <option key={d.codigo} value={d.codigo}>{d.nombre}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Municipio *
+              <select
+                name="municipio"
+                value={form.municipio}
+                onChange={handleChange}
+                disabled={!form.departamento}
+                required
+              >
+                <option value="">{form.departamento ? 'Selecciona tu municipio...' : 'Primero elige el departamento'}</option>
+                {municipiosDelDepartamento.map((m) => (
+                  <option key={m.codigo} value={m.codigo}>{m.nombre}</option>
                 ))}
               </select>
             </label>
@@ -387,33 +442,30 @@ function Registro() {
             <label>
               Tipo de afiliación requerida *
               <select name="tipoAfiliacion" value={form.tipoAfiliacion} onChange={handleChange} required>
-                <option value="">Selecciona una opción</option>
-                <option value="paciente">Paciente / Afiliado General</option>
-                <option value="profesional">Profesional de la salud</option>
-                <option value="empresa">Empresa / Convenio Institucional</option>
+                <option value="">{cargandoCatalogos ? 'Cargando...' : 'Selecciona una opción'}</option>
+                {catalogos.tiposAfiliacion.map((t) => (
+                  <option key={t.codigo} value={t.codigo}>{t.nombre}</option>
+                ))}
               </select>
             </label>
 
             <label>
               EPS / Entidad actual *
-              <input
-                type="text"
-                name="eps"
-                value={form.eps}
-                onChange={handleChange}
-                placeholder="Ej. Sanitas, Sura, Famisanar"
-                required
-              />
+              <select name="eps" value={form.eps} onChange={handleChange} required>
+                <option value="">{cargandoCatalogos ? 'Cargando...' : 'Selecciona tu EPS...'}</option>
+                {catalogos.eps.map((e) => (
+                  <option key={e.codigo} value={e.codigo}>{e.nombre}</option>
+                ))}
+              </select>
             </label>
 
             <label className="form__col-full">
               Régimen de salud *
               <select name="regimen" value={form.regimen} onChange={handleChange} required>
-                <option value="">Selecciona una opción</option>
-                <option value="contributivo">Contributivo</option>
-                <option value="subsidiado">Subsidiado</option>
-                <option value="especial">Especial / Régimen de Excepción</option>
-                <option value="particular">Particular / Póliza de Salud</option>
+                <option value="">{cargandoCatalogos ? 'Cargando...' : 'Selecciona una opción'}</option>
+                {catalogos.regimenes.map((r) => (
+                  <option key={r.codigo} value={r.codigo} title={r.descripcion || ''}>{r.nombre}</option>
+                ))}
               </select>
             </label>
           </div>
@@ -448,6 +500,16 @@ function Registro() {
                 maxLength={10}
                 required
               />
+            </label>
+
+            <label>
+              Parentesco (opcional)
+              <select name="contactoEmergenciaParentesco" value={form.contactoEmergenciaParentesco} onChange={handleChange}>
+                <option value="">Selecciona una opción</option>
+                {catalogos.parentescos.map((p) => (
+                  <option key={p.codigo} value={p.codigo}>{p.nombre}</option>
+                ))}
+              </select>
             </label>
           </div>
         </fieldset>

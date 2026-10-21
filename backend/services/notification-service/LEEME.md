@@ -17,8 +17,18 @@ Cada servicio se identifica con la cabecera `x-servicio-origen` (por ejemplo `fa
 | Método | Ruta | Descripción |
 |---|---|---|
 | GET | `/health` | Estado del servicio (público) |
-| POST | `/api/notifications/email` | Envía un correo. Cuerpo: `{ to, subject, html \| text }`. Requiere `x-api-key` |
+| POST | `/api/notifications/email` | Envía un correo. Cuerpo: `{ to, subject, html o text, adjuntos? }`. Requiere `x-api-key` |
 | GET | `/api/notifications/historial?limite=50&destinatario=&estado=ENVIADA\|FALLIDA` | Últimos envíos (máximo 200). Requiere `x-api-key` |
+| GET | `/api/notifications/admin/resumen` | Resumen para el panel de administración. Requiere el JWT de un ADMIN (no `x-api-key`); única ruta con CORS |
+
+## Adjuntos
+
+`adjuntos` es opcional: `[{ "nombre": "constancia.pdf", "tipo": "application/pdf", "contenidoBase64": "..." }]`.
+- **Solo PDF:** se verifica la firma real `%PDF-` del contenido, no solo el tipo declarado.
+- **Límites:** máximo 3 adjuntos de 3 MB cada uno.
+- **Nombre de archivo:** solo letras, números, puntos, guiones y guion bajo, sin rutas.
+
+Lo usa `auth-service` para enviar la constancia de registro protegida con contraseña.
 
 ## Base de datos `db_notificaciones`
 

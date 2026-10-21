@@ -3,6 +3,13 @@ const MAX_UNIDADES_POR_ITEM = 10;
 const MAX_OBSERVACIONES = 300;
 const VIGENCIA_FORMULA_DIAS = 30;
 
+// Fecha de hoy en Bogotá (como fecha local a medianoche), sin depender de la zona horaria del servidor
+function hoyBogota(instante = new Date()) {
+  const [anio, mes, dia] = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .format(instante).split('-').map(Number);
+  return new Date(anio, mes - 1, dia);
+}
+
 const texto = (v) => (typeof v === 'string' ? v.trim() : '');
 const enteroPositivo = (v) => {
   const n = Number(v);
@@ -64,7 +71,7 @@ function validarSolicitud(body = {}) {
 }
 
 /** Valida los datos de la fórmula médica. Devuelve { errores, formula }. */
-function validarFormula(formula, hoy = new Date()) {
+function validarFormula(formula, hoy = hoyBogota()) {
   const errores = {};
   const numero = texto(formula && formula.numero);
   const medico = texto(formula && formula.medico);
@@ -105,7 +112,7 @@ function validarFormula(formula, hoy = new Date()) {
  * y fórmula médica. `medicamentos` son las filas de la base de datos para los ids pedidos.
  * Devuelve { status, error, detalle } si algo falla, o { formula } (null si no hace falta).
  */
-function validarReglasMedicamentos(items, medicamentos, formulaRecibida, hoy = new Date()) {
+function validarReglasMedicamentos(items, medicamentos, formulaRecibida, hoy = hoyBogota()) {
   const porId = new Map(medicamentos.map((m) => [m.id, m]));
 
   const inexistentes = items.filter((i) => !porId.has(i.medicamentoId) || !porId.get(i.medicamentoId).activo);
@@ -147,6 +154,7 @@ function validarReglasMedicamentos(items, medicamentos, formulaRecibida, hoy = n
 }
 
 module.exports = {
+  hoyBogota,
   validarSolicitud,
   validarFormula,
   validarReglasMedicamentos,

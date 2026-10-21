@@ -25,7 +25,10 @@ Navegador ──► auth-service ──────┐
 
 `farmacias-service` y `documentos-service` validan el JWT que emite `auth-service`, por eso los tres comparten `JWT_SECRET`.
 
-Las cinco bases de datos, sus tablas y cómo se relacionan entre servicios están explicadas, con diagramas, en **[docs/ARQUITECTURA_DATOS.md](docs/ARQUITECTURA_DATOS.md)**.
+Documentación detallada:
+- **[docs/ARQUITECTURA_DATOS.md](docs/ARQUITECTURA_DATOS.md)**: las seis bases de datos, sus tablas, relaciones (diagramas) y flujos.
+- **[docs/PANEL_ADMIN.md](docs/PANEL_ADMIN.md)**: el panel de administración, sección por sección.
+- **[docs/PRUEBAS.md](docs/PRUEBAS.md)**: las 224 pruebas, cómo correrlas y los avisos de GitHub y VS Code.
 
 ## Estructura
 
@@ -52,7 +55,7 @@ Las cinco bases de datos, sus tablas y cómo se relacionan entre servicios está
    - `SMTP_USER` y `SMTP_PASS` en `notification-service` (contraseña de aplicación de Gmail).
    - Datos de MySQL en los cinco servicios (cada uno con su `DB_NAME`).
 
-   Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL`, `VITE_API_REGISTRO_URL`, `VITE_API_FARMACIAS_URL`, `VITE_API_DOCUMENTOS_URL` y `VITE_API_CITAS_URL`, que son opcionales.
+   Los `.env` están en `.gitignore`: **nunca los subas a git**. Para el frontend, el `.env.example` de la raíz muestra `VITE_API_AUTH_URL`, `VITE_API_REGISTRO_URL`, `VITE_API_FARMACIAS_URL`, `VITE_API_DOCUMENTOS_URL`, `VITE_API_CITAS_URL` y `VITE_API_NOTIFICACIONES_URL`, que son opcionales.
 2. **Bases de datos.** Con los `.env` listos, crea las seis bases (`db_auth`, `db_registro`, `db_farmacias`, `db_documentos`, `db_notificaciones` y `db_citas`) con un comando:
    ```bash
    cd backend
@@ -142,16 +145,31 @@ npm run dev                       # frontend en http://localhost:5173
 ## Pruebas y calidad
 
 ```bash
+npm run test:todo      # TODO: imports, lint, frontend y los seis microservicios
 npm test               # frontend (Vitest + Testing Library)
 npm run lint           # ESLint del frontend
 npm run build          # build de producción en dist/
 cd backend && npm test # pruebas de los seis microservicios (sin MySQL ni SMTP)
 ```
 
+### Permiso workflow para subir el flujo de GitHub Actions
+
+GitHub solo acepta cambios en `.github/workflows/` si el token con que haces `git push` tiene el permiso **workflow**. Si el push responde `refusing to allow a Personal Access Token to create or update workflow ... without workflow scope`:
+1. En GitHub: **Settings → Developer settings → Personal access tokens** → crea un token (classic) con los permisos **repo** y **workflow**.
+2. En Windows: **Administrador de credenciales → Credenciales de Windows**, elimina la entrada `git:https://github.com`.
+3. Haz `git push` otra vez y usa el token nuevo como contraseña. También puedes ejecutar `gh auth login` (GitHub CLI) y aceptar el permiso workflow.
+
+### Avisos automáticos si algo se daña
+
+- **GitHub Actions** (`.github/workflows/ci.yml`): en cada `push` y *pull request* ejecuta, en Linux, la revisión de imports, ESLint, las pruebas del frontend, el build, las pruebas de **cada microservicio por separado** y `npm audit`. El resultado aparece como ✔ verde o ✘ roja junto al commit y en la pestaña **Actions** del repositorio, y **GitHub envía un correo** cuando una ejecución falla. Si falla un servicio, los demás se prueban igual para ver el panorama completo.
+- **VS Code**: al abrir el proyecto, VS Code sugiere instalar *Vitest* y *ESLint* (`.vscode/extensions.json`). Con Vitest, todas las pruebas aparecen en el panel **Testing** (ícono de matraz) con marcas verdes o rojas, y se pueden correr una por una. La tarea **Probar todo** (`Ctrl+Shift+P` → *Tasks: Run Test Task*) ejecuta la misma revisión que GitHub.
+- `npm run verificar:imports` detecta `import` cuyo nombre no coincide en mayúsculas con el archivo: en Windows funcionan, pero en Linux (servidores y GitHub) fallan.
+
 ## Pendientes conocidos
 
 - `Acceso.jsx` llama a `/api/auth/recuperar-usuario/consultar` y `/verificar`, pero esos endpoints **no existen** en `auth-service`, así que "Recuperar usuario" no funciona todavía.
 - El límite por IP de `auth-service` vive en memoria (el bloqueo por cuenta ya se guarda en `db_auth`).
+- El panel de administración es de consulta y gestión; todavía no permite editar el catálogo de medicamentos, médicos u horarios (se hace con los scripts SQL).
 - Las credenciales que estuvieron en git (SMTP, MySQL, `JWT_SECRET`) deben rotarse, porque siguen en el historial de `main`.
 
 ## Registro de cambios (rama `juan/limpieza-env`)
@@ -239,3 +257,42 @@ cd backend && npm test # pruebas de los seis microservicios (sin MySQL ni SMTP)
    - **Consultar Citas** lista las citas guardadas con su estado (Programada, Atendida, No asistió o Cancelada) y permite cancelar las programadas, lo que libera el horario.
    - Se quitaron las citas de ejemplo que vivían solo en el navegador. La sección de imágenes diagnósticas sigue igual.
    - 3 pruebas en `src/__tests__/citas.test.jsx`.
+31. **Pruebas automáticas con aviso.** Se agregaron:
+   - El flujo de GitHub Actions `.github/workflows/ci.yml`, con frontend, cada microservicio en paralelo y auditoría de dependencias, y correo cuando algo falla.
+   - Las recomendaciones y tareas de VS Code en `.vscode/`, para ver las pruebas en el panel Testing.
+   - Los scripts `npm run test:todo` y `npm run verificar:imports`.
+32. **`db_registro` con catálogos colombianos relacionados.** Nuevas tablas `tipos_documento` (CC, TI, RC, CE, PA, PPT), `generos`, `departamentos` (33, con código DANE), `municipios` (84, con código DANE y ligados a su departamento), `eps` (21), `regimenes`, `tipos_afiliacion`, `parentescos` e `historial_estados`. `afiliados` tiene ahora llaves foráneas a todos los catálogos, así que MySQL rechaza cualquier valor inexistente.
+   - **Validaciones:** tipo de documento según la edad (CC desde 18, TI de 7 a 17, RC menores de 7), teléfono colombiano y documentos alfanuméricos solo para CE, PA y PPT.
+   - **Formulario:** carga las opciones desde `GET /api/registro/catalogos`, el municipio depende del departamento elegido, la EPS es una lista y hay un campo nuevo de parentesco.
+   - **Administración:** resumen, lista con búsqueda y aprobación o rechazo con historial (quién y cuándo), solo para `ADMIN`.
+   - `db:init` migra la tabla vieja si está vacía.
+   - 21 pruebas en el servicio y 5 en el frontend. Verificado contra Azure, incluida la llave foránea.
+33. **Endpoints de administración en todos los servicios** (solo rol `ADMIN`, con el JWT de `auth-service`):
+   - `auth`: `/admin/resumen`, `/admin/usuarios`, activar o desactivar cuentas y desbloquear.
+   - `registro`: resumen, afiliados y aprobación con historial.
+   - `farmacias`: resumen de inventario y pedidos, lista de pedidos y cambio de estado con devolución de unidades y correo al usuario.
+   - `documentos`: resumen.
+   - `notification`: resumen, con CORS solo en esa ruta.
+   - `citas`: resumen, agenda y cambio de estado.
+   - Se verificaron todos contra Azure.
+34. **Panel de administración** (`src/components/pages/Admin/`), opción del menú visible solo para `ADMIN`. Todo son componentes React, con íconos SVG propios de salud y sin emojis.
+   - **Menú lateral interactivo** con contadores de pendientes y una marca cuando un servicio falla.
+   - **Resumen general** con tarjetas que llevan a cada sección y el estado de los seis microservicios.
+   - **Secciones:** Citas (ocupación, disponibilidad por especialidad y agenda con acciones), Farmacias e inventario (existencias por sede, agotados, más pedidos y reabastecimiento), Pedidos (marcar lista, entregada o rechazar), Afiliaciones (distribución por EPS, régimen y departamento, búsqueda, aprobar o rechazar), Usuarios y accesos (roles, bloqueos, bitácora, activar, desactivar y desbloquear), Documentos y Correos.
+   - **Actualización manual o automática** cada minuto. Si un servicio falla, el resto sigue visible.
+   - 9 pruebas en `src/__tests__/panelAdmin.test.jsx`, incluida una que verifica que no se muestren emojis.
+35. **Documentación ampliada.** `docs/ARQUITECTURA_DATOS.md` se reescribió con las seis bases (diagramas de `db_registro` con catálogos y de `db_citas`, relaciones por JWT, flujos y auditoría). Nuevos `docs/PANEL_ADMIN.md` (cada sección, sus datos, acciones y endpoints) y `docs/PRUEBAS.md` (las 203 pruebas por archivo, cómo correrlas y los avisos de GitHub y VS Code). Se agregó al README cómo dar el permiso *workflow* al token de GitHub.
+36. **Carrito visible en Farmacias.**
+   - **Botón flotante** abajo a la derecha, con ícono SVG, cantidad de unidades, productos y total estimado. Lleva al carrito y se oculta cuando ya estás en él; la pestaña "Carrito" también tiene el ícono.
+   - **El carrito se conserva** en el navegador (`localStorage`, clave `tecnosalud_carrito`) aunque cambies de página, y se vacía al hacer el pedido.
+   - 2 pruebas nuevas.
+37. **`notification-service` acepta adjuntos PDF**: hasta 3 de 3 MB, con firma `%PDF` verificada y nombres sin rutas.
+38. **Constancia de registro en PDF protegida con contraseña.** `auth-service` genera con PDFKit un PDF cifrado con AES-256 con los datos del usuario y su **fecha de registro**.
+   - **Contraseña:** se abre con el **número de identificación** del titular y no permite editarlo ni copiar su texto.
+   - **Envío:** llega por correo como adjunto; el correo explica cómo abrirlo sin revelar la contraseña.
+   - **Quién la envía:**
+     - El propio usuario, con el botón **"Enviarme mi constancia de registro (PDF)"** en la tarjeta de sesión de Acceso (máximo 3 por hora).
+     - El administrador, desde el panel (**"Enviar constancia"** por usuario o **"Enviar constancias a todos"**), que además ve la fecha del último envío.
+   - Cada envío queda en la nueva tabla `db_auth.constancias_enviadas`.
+   - **Verificación:** con pypdf (no abre sin la contraseña o con una incorrecta) y con un envío real a un correo de prueba. Detalle en `backend/services/auth-service/LEEME.md`.
+   - El ícono 👤 de la tarjeta de sesión se reemplazó por un SVG.

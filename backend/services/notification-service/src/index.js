@@ -30,6 +30,8 @@ const app = crearApp({
   emailFrom: process.env.EMAIL_FROM || process.env.SMTP_USER,
   puerto: PORT,
   historial: crearHistorial(pool),
+  jwtSecret: process.env.JWT_SECRET || null,
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
 });
 
 app.listen(PORT, () => {

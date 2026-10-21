@@ -160,11 +160,12 @@ Es una vista adicional que aparece en la navegación cuando el usuario ha inicia
 - **registro-service**: `POST /api/registro` valida el formulario (`validators.js`) y lo guarda en `db_registro.afiliados`; `GET /api/registro/health`.
 - **farmacias-service** (puerto 3004, `db_farmacias`): catálogo de 100 medicamentos (venta libre, con fórmula o de control especial), 8 farmacias de Bogotá, Chía, Cajicá y Soacha con su inventario, y solicitudes de medicamentos con sesión (valida el JWT de `auth-service`). Exige fórmula vigente (30 días) cuando el medicamento la requiere, no permite pedir en línea los de control especial y descuenta las existencias en una transacción. Detalle en `backend/services/farmacias-service/LEEME.md`.
 - **documentos-service** (puerto 3006, `db_documentos`): carga (PDF, PNG o JPG hasta 10 MB), generación (solo `MEDICO`/`ADMIN`) y descarga de documentos clínicos. Los archivos se cifran con AES-256-GCM; un paciente solo accede a los suyos y cada descarga se registra en `bitacora_descargas`. Detalle en `backend/services/documentos-service/LEEME.md`.
+- **citas-service** (puerto 3007, `db_citas`): especialidades, sedes, médicos, horarios y citas; disponibilidad calculada en hora de Bogotá e índice único contra la doble reserva. Detalle en `backend/services/citas-service/LEEME.md`.
 - **notification-service**: `POST /api/notifications/email` exige la cabecera `x-api-key` igual a `NOTIFICATION_API_KEY`, compartida con los otros dos servicios. No acepta peticiones del navegador. `GET /health`.
 
 Las pruebas de cada servicio simulan MySQL y SMTP, así que se pueden correr sin infraestructura.
 
-La arquitectura de datos completa (bases, tablas, relaciones entre servicios y flujos) está en `docs/ARQUITECTURA_DATOS.md`.
+La arquitectura de datos completa (bases, tablas, relaciones entre servicios y flujos) está en `docs/ARQUITECTURA_DATOS.md`. El panel de administración se describe en `docs/PANEL_ADMIN.md` y las pruebas automáticas en `docs/PRUEBAS.md`.
 
 ## 8. Almacenamiento local
 

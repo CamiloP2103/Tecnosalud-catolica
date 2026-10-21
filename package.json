@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext .js,.jsx",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verificar:imports": "node scripts/verificar-imports.mjs",
+    "test:todo": "npm run verificar:imports && npm run lint && npm test && npm --prefix backend test"
   },
   "dependencies": {
     "react": "^18.2.0",

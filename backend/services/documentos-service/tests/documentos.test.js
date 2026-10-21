@@ -240,3 +240,23 @@ test('responde 503 con la causa cuando MySQL no está disponible', async () => {
   assert.equal(response.status, 503);
   assert.match((await response.json()).error, /MySQL no está corriendo/);
 });
+
+test('el resumen de administración exige rol ADMIN y entrega números', async () => {
+  const ADMIN = { doc: '9000000001', rol: 'ADMIN' };
+  const fixture = await createFixture({
+    execute: async (query) => {
+      if (query.includes('COUNT(DISTINCT paciente_doc)')) return [[{ total: 3, bytes: '2048', pacientes: 2, ultimos7Dias: '1' }], []];
+      if (query.includes('GROUP BY content_type')) return [[{ tipo: 'application/pdf', total: 3 }], []];
+      if (query.includes('ultimas24h')) return [[{ total: 5, ultimas24h: '2' }], []];
+      return [[], []];
+    },
+  });
+  const denegado = await fetch(`${fixture.url}/api/documentos/admin/resumen`, { headers: { Authorization: `Bearer ${fixture.token(PACIENTE)}` } });
+  assert.equal(denegado.status, 403);
+  const respuesta = await fetch(`${fixture.url}/api/documentos/admin/resumen`, { headers: { Authorization: `Bearer ${fixture.token(ADMIN)}` } });
+  assert.equal(respuesta.status, 200);
+  const cuerpo = await respuesta.json();
+  assert.deepEqual(cuerpo.documentos, { total: 3, bytes: 2048, pacientes: 2, ultimos7Dias: 1 });
+  assert.deepEqual(cuerpo.descargas, { total: 5, ultimas24h: 2 });
+  assert.equal(cuerpo.porTipo[0].tipo, 'application/pdf');
+});

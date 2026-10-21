@@ -8,7 +8,8 @@ const JWT_SECRET = 'secreto-de-prueba';
 const token = jwt.sign({ id: 1, email: 'carlos@tecnosalud.com.co', rol: 'PACIENTE' }, JWT_SECRET, { expiresIn: '1h' });
 const conSesion = (peticion) => peticion.set('Authorization', `Bearer ${token}`);
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+// Fecha de hoy en Bogotá, la misma que usa el servicio (toISOString daría la fecha UTC)
+const hoy = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date());
 const formulaValida = () => ({ numero: 'F-1234', medico: 'Dra. Laura Rojas', registroMedico: 'RM-56789', fecha: hoy() });
 
 const CATALOGO = {
@@ -151,7 +152,7 @@ describe('POST /api/farmacias/solicitudes', () => {
   });
 
   it('rechaza una fórmula vencida', async () => {
-    const vieja = new Date(Date.now() - 40 * 86400000).toISOString().slice(0, 10);
+    const vieja = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date(Date.now() - 40 * 86400000));
     const res = await conSesion(request(crear().app).post('/api/farmacias/solicitudes'))
       .send(pedido({ items: [{ medicamentoId: 18, cantidad: 1 }], formula: { ...formulaValida(), fecha: vieja } }));
     expect(res.status).toBe(400);

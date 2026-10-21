@@ -47,3 +47,11 @@ describe('validarFormula', () => {
     expect(Object.keys(errores).sort()).toEqual(['medico', 'numero', 'registroMedico']);
   });
 });
+
+describe('hoyBogota', () => {
+  it('usa la fecha de Bogotá aunque en UTC ya sea el día siguiente', async () => {
+    const { hoyBogota } = await import('../src/validators.js');
+    const fecha = hoyBogota(new Date('2026-10-17T03:00:00Z')); // 16 de octubre, 10 p. m. en Bogotá
+    expect([fecha.getFullYear(), fecha.getMonth() + 1, fecha.getDate()]).toEqual([2026, 10, 16]);
+  });
+});

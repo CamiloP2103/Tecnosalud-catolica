@@ -1,4 +1,6 @@
 import express from 'express';
+import cors from 'cors';
+import jwt from 'jsonwebtoken';
 import { timingSafeEqual } from 'node:crypto';
 import { errorBaseDatos } from './errores.js';
 
@@ -10,11 +12,35 @@ function claveValida(recibida, esperada) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+const MAX_ADJUNTOS = 3;
+const MAX_BYTES_ADJUNTO = 3 * 1024 * 1024;
+
+/**
+ * Valida los adjuntos: [{ nombre: "constancia.pdf", tipo: "application/pdf", contenidoBase64 }].
+ * Solo se aceptan PDF (con su firma %PDF real), hasta 3 archivos de 3 MB cada uno.
+ * Devuelve { error } o { adjuntos } listos para nodemailer.
+ */
+export function validarAdjuntos(lista) {
+  if (lista === undefined || lista === null) return { adjuntos: [] };
+  if (!Array.isArray(lista) || lista.length > MAX_ADJUNTOS) return { error: `Se permiten máximo ${MAX_ADJUNTOS} adjuntos.` };
+  const adjuntos = [];
+  for (const a of lista) {
+    if (!a || a.tipo !== 'application/pdf' || !/^[\w.-]{1,80}\.pdf$/i.test(String(a.nombre || ''))) {
+      return { error: 'Solo se aceptan adjuntos PDF con un nombre de archivo válido.' };
+    }
+    const contenido = Buffer.from(String(a.contenidoBase64 || ''), 'base64');
+    if (contenido.length === 0 || contenido.length > MAX_BYTES_ADJUNTO) return { error: 'Cada adjunto debe pesar entre 1 byte y 3 MB.' };
+    if (contenido.subarray(0, 5).toString('latin1') !== '%PDF-') return { error: 'El adjunto no es un PDF válido.' };
+    adjuntos.push({ filename: a.nombre, content: contenido, contentType: 'application/pdf' });
+  }
+  return { adjuntos };
+}
+
 // Nombre del microservicio que pide el correo (cabecera x-servicio-origen), saneado para el historial
 const servicioOrigen = (req) => String(req.get('x-servicio-origen') || 'desconocido').replace(/[^a-z0-9-]/gi, '').slice(0, 40) || 'desconocido';
 
 // `historial` (ver historial.js) guarda cada envío en db_notificaciones; es opcional y nunca bloquea el correo
-export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = null }) {
+export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = null, jwtSecret = null, frontendUrl = 'http://localhost:5173' }) {
   const app = express();
 
   // Guarda el resultado del envío sin afectar la respuesta si la base de datos falla
@@ -26,12 +52,39 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
   }
 
   // Servicio interno: solo lo llaman los otros microservicios, nunca el navegador (sin CORS)
-  app.use(express.json({ limit: '200kb' }));
+  // 5 MB para permitir adjuntos PDF codificados en base64
+  app.use(express.json({ limit: '5mb' }));
 
   // Health check
   app.get('/health', (req, res) => {
     res.json({ servicio: 'notification-service', estado: 'activo', puerto });
   });
+
+  // Panel de administración: lo llama el navegador con el JWT de auth-service (rol ADMIN).
+  // Se registra ANTES de la verificación de x-api-key y es la única ruta con CORS.
+  app.get('/api/notifications/admin/resumen', cors({ origin: frontendUrl }), async (req, res) => {
+    const [tipo, token] = String(req.get('authorization') || '').split(' ');
+    if (!jwtSecret || !historial) return res.status(503).json({ error: 'El panel de notificaciones no está configurado (JWT_SECRET o base de datos).' });
+    if (tipo !== 'Bearer' || !token) return res.status(401).json({ error: 'Debes iniciar sesión.' });
+    let usuario;
+    try {
+      usuario = jwt.verify(token, jwtSecret);
+    } catch {
+      return res.status(401).json({ error: 'Tu sesión expiró o no es válida. Inicia sesión de nuevo.' });
+    }
+    if (String(usuario.rol || '').toUpperCase() !== 'ADMIN') {
+      return res.status(403).json({ error: 'Solo un administrador puede acceder a esta información.' });
+    }
+    try {
+      return res.json(await historial.resumen());
+    } catch (error) {
+      const mensajeBD = errorBaseDatos(error);
+      if (mensajeBD) return res.status(503).json({ error: mensajeBD });
+      console.error('[Notification-Service] Error en el resumen:', error);
+      return res.status(500).json({ error: 'Error interno en el servidor.' });
+    }
+  });
+  app.options('/api/notifications/admin/resumen', cors({ origin: frontendUrl }));
 
   // Solo los microservicios que conocen NOTIFICATION_API_KEY pueden enviar correos
   app.use('/api/notifications', (req, res, next) => {
@@ -43,7 +96,7 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
 
   // Endpoint transversal para envío de correos
   app.post('/api/notifications/email', async (req, res) => {
-    const { to, subject, html, text } = req.body || {};
+    const { to, subject, html, text, adjuntos: listaAdjuntos } = req.body || {};
 
     if (!to || !subject || (!html && !text)) {
       return res.status(400).json({
@@ -51,6 +104,8 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
         mensaje: 'Los campos to, subject y html/text son obligatorios',
       });
     }
+    const { error: errorAdjuntos, adjuntos } = validarAdjuntos(listaAdjuntos);
+    if (errorAdjuntos) return res.status(400).json({ exito: false, mensaje: errorAdjuntos });
 
     try {
       const info = await transporter.sendMail({
@@ -59,6 +114,7 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
         subject,
         text: text || '',
         html: html || `<p>${text}</p>`,
+        ...(adjuntos.length ? { attachments: adjuntos } : {}),
       });
 
       console.log(`[Notification-Service] Correo enviado a ${to}. ID: ${info.messageId}`);

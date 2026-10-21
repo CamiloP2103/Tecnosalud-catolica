@@ -26,8 +26,26 @@ const BASES = {
     env: path.join(RAIZ, 'services/registro-service/.env'),
     script: path.join(RAIZ, 'services/registro-service/database/Script_Creacion_BasedeDatosRegistro.sql'),
     base: 'db_registro',
-    verificacion: 'SELECT COUNT(*) AS total FROM db_registro.afiliados',
+    verificacion: `SELECT CONCAT((SELECT COUNT(*) FROM db_registro.departamentos), ' departamentos, ',
+                          (SELECT COUNT(*) FROM db_registro.municipios), ' municipios, ',
+                          (SELECT COUNT(*) FROM db_registro.eps), ' EPS y ',
+                          (SELECT COUNT(*) FROM db_registro.afiliados)) AS total`,
     descripcion: 'afiliados registrados',
+    // Migración: la primera versión de `afiliados` guardaba ciudad y EPS como texto libre. La nueva usa
+    // llaves foráneas a los catálogos. Si existe la tabla vieja y está vacía, se reemplaza; si tiene datos,
+    // se detiene para no perder información.
+    antes: async (conexion) => {
+      const [columnas] = await conexion.query(
+        "SELECT 1 FROM information_schema.columns WHERE table_schema = 'db_registro' AND table_name = 'afiliados' AND column_name = 'ciudad'"
+      );
+      if (columnas.length === 0) return;
+      const [[{ total }]] = await conexion.query('SELECT COUNT(*) AS total FROM db_registro.afiliados');
+      if (Number(total) > 0) {
+        throw new Error(`db_registro.afiliados tiene ${total} registros con la estructura anterior. Migra esos datos a mano antes de continuar (ver LEEME de registro-service).`);
+      }
+      console.log('  Migración: se reemplaza la tabla afiliados vacía de la versión anterior por la nueva con catálogos.');
+      await conexion.query('DROP TABLE db_registro.afiliados');
+    },
   },
   farmacias: {
     servicio: 'farmacias-service',
@@ -119,6 +137,7 @@ async function inicializar(nombre) {
   }
 
   try {
+    if (config.antes) await config.antes(conexion);
     console.log(`  Ejecutando ${path.relative(RAIZ, config.script)}...`);
     await conexion.query(fs.readFileSync(config.script, 'utf8'));
     const [[{ total }]] = await conexion.query(config.verificacion);

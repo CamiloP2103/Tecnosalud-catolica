@@ -1,5 +1,29 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import './Farmacias.css';
+
+const CLAVE_CARRITO = 'tecnosalud_carrito';
+
+// Recupera el carrito guardado; si no hay o está dañado, empieza vacío
+function leerCarritoGuardado() {
+  try {
+    const guardado = JSON.parse(localStorage.getItem(CLAVE_CARRITO) || 'null');
+    if (guardado && Array.isArray(guardado.pedido)) return { pedido: guardado.pedido, farmaciaId: guardado.farmaciaId || '' };
+  } catch {
+    // ignorado: se usa un carrito vacío
+  }
+  return { pedido: [], farmaciaId: '' };
+}
+
+// Ícono de carrito en SVG (sin emojis)
+function IconoCarrito({ tamano = 20 }) {
+  return (
+    <svg width={tamano} height={tamano} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <circle cx="9" cy="20" r="1.5" />
+      <circle cx="18" cy="20" r="1.5" />
+      <path d="M2.5 3.5h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.3a1.5 1.5 0 0 0 1.5-1.1l1.8-6.8H6.3" />
+    </svg>
+  );
+}
 import { llamarServicio, mensajeDeError, SERVICIO_FARMACIAS } from '../../../utils/servicios';
 
 // URL del Microservicio de Farmacias
@@ -52,12 +76,22 @@ function Farmacias() {
 
   // Farmacias e inventario
   const [farmacias, setFarmacias] = useState([]);
-  const [farmaciaId, setFarmaciaId] = useState('');
+  const [farmaciaId, setFarmaciaId] = useState(() => leerCarritoGuardado().farmaciaId);
   const [inventario, setInventario] = useState([]);
   const [errorFarmacias, setErrorFarmacias] = useState('');
 
   // Pedido
-  const [pedido, setPedido] = useState([]);
+  const [pedido, setPedido] = useState(() => leerCarritoGuardado().pedido);
+
+  // El carrito se conserva en este navegador aunque el usuario cambie de página
+  useEffect(() => {
+    try {
+      if (pedido.length > 0) localStorage.setItem(CLAVE_CARRITO, JSON.stringify({ pedido, farmaciaId }));
+      else localStorage.removeItem(CLAVE_CARRITO);
+    } catch {
+      // Sin almacenamiento disponible: el carrito vive solo mientras la página está abierta
+    }
+  }, [pedido, farmaciaId]);
   const [formula, setFormula] = useState(FORMULA_VACIA);
   const [observaciones, setObservaciones] = useState('');
   const [enviando, setEnviando] = useState(false);
@@ -316,6 +350,7 @@ function Farmacias() {
             aria-pressed={pestana === p.id}
             onClick={() => cambiarPestana(p.id)}
           >
+            {p.id === 'pedido' && <IconoCarrito tamano={18} />}
             {p.label}
           </button>
         ))}
@@ -624,6 +659,25 @@ function Farmacias() {
             </article>
           ))}
         </div>
+      )}
+
+      {/* Botón flotante del carrito: siempre visible fuera de la pestaña Carrito */}
+      {pestana !== 'pedido' && (
+        <button
+          type="button"
+          className={`farm-carrito-flotante ${unidadesPedido > 0 ? 'farm-carrito-flotante--lleno' : ''}`}
+          onClick={() => cambiarPestana('pedido')}
+          aria-label={`Ver carrito: ${unidadesPedido} ${unidadesPedido === 1 ? 'unidad' : 'unidades'}, total estimado ${pesos(totalEstimado)}`}
+        >
+          <span className="farm-carrito-flotante__icono">
+            <IconoCarrito tamano={24} />
+            {unidadesPedido > 0 && <span className="farm-carrito-flotante__cuenta">{unidadesPedido}</span>}
+          </span>
+          <span className="farm-carrito-flotante__texto">
+            <strong>Carrito</strong>
+            <span>{unidadesPedido > 0 ? `${pedido.length} ${pedido.length === 1 ? 'producto' : 'productos'} · ${pesos(totalEstimado)}` : 'Vacío'}</span>
+          </span>
+        </button>
       )}
     </section>
   );

@@ -1,17 +1,38 @@
 const express = require('express');
 const cors = require('cors');
 const { validarRegistro } = require('./validators');
+const { requiereSesion, requiereAdmin } = require('./autenticacion');
 const { errorBaseDatos } = require('./errores');
 
 const escaparHtml = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-// `notificar({ to, subject, html })` delega el envío al notification-service y devuelve una promesa
-function crearApp({ pool, frontendUrl, notificar, puerto }) {
+const idValido = (v) => {
+  const n = Number(v);
+  return Number.isInteger(n) && n > 0 ? n : null;
+};
+
+// `repo`: ver repositorio.js. `notificar({ to, subject, html })` delega el envío al notification-service.
+function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto }) {
   const app = express();
 
   app.use(cors({ origin: frontendUrl }));
   app.use(express.json({ limit: '100kb' }));
+
+  const manejar = (ruta) => async (req, res) => {
+    try {
+      await ruta(req, res);
+    } catch (error) {
+      if (error && error.name === 'ErrorNegocio') return res.status(error.status).json({ error: error.message });
+      const mensajeBD = errorBaseDatos(error);
+      if (mensajeBD) {
+        console.error('[registro-service] Base de datos no disponible:', error.code);
+        return res.status(503).json({ error: mensajeBD });
+      }
+      console.error(`[registro-service] Error en ${req.method} ${req.originalUrl}:`, error);
+      return res.status(500).json({ error: 'Error interno en el servidor.' });
+    }
+  };
 
   // Llama al notification-service sin bloquear la respuesta al usuario
   function enviarConfirmacion({ correo, nombres }) {
@@ -29,55 +50,67 @@ function crearApp({ pool, frontendUrl, notificar, puerto }) {
   }
 
   const router = express.Router();
+  const conSesion = requiereSesion(jwtSecret);
 
   router.get('/health', (req, res) => {
     res.json({ servicio: 'registro-service', estado: 'activo', puerto });
   });
 
-  router.post('/', async (req, res) => {
-    const { errores, datos } = validarRegistro(req.body);
-    if (Object.keys(errores).length > 0) {
-      return res.status(400).json({ errores });
-    }
+  // Catálogos colombianos para el formulario (tipos de documento, departamentos y municipios, EPS...)
+  router.get('/catalogos', manejar(async (req, res) => {
+    res.json((await repo.catalogos()).listas);
+  }));
 
-    try {
-      const [resultado] = await pool.execute(
-        `INSERT INTO afiliados
-          (nombres, apellidos, tipo_doc, documento, fecha_nacimiento, genero, correo, telefono,
-           direccion, ciudad, tipo_afiliacion, eps, regimen,
-           contacto_emergencia_nombre, contacto_emergencia_telefono, acepta_tratamiento_datos)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
-        [
-          datos.nombres, datos.apellidos, datos.tipoDocumento, datos.documento, datos.fechaNacimiento,
-          datos.genero, datos.correo, datos.telefono, datos.direccion, datos.ciudad,
-          datos.tipoAfiliacion, datos.eps, datos.regimen,
-          datos.contactoEmergenciaNombre, datos.contactoEmergenciaTelefono,
-        ]
-      );
+  router.post('/', manejar(async (req, res) => {
+    const { validos } = await repo.catalogos();
+    const { errores, datos } = validarRegistro(req.body, validos);
+    if (Object.keys(errores).length > 0) return res.status(400).json({ errores });
 
-      enviarConfirmacion({ correo: datos.correo, nombres: datos.nombres }); // segundo plano
+    const id = await repo.crearAfiliado(datos);
+    enviarConfirmacion({ correo: datos.correo, nombres: datos.nombres }); // segundo plano
+    return res.status(201).json({
+      id,
+      email: datos.correo,
+      nombre: `${datos.nombres} ${datos.apellidos}`,
+      estado: 'PENDIENTE',
+    });
+  }));
 
-      return res.status(201).json({
-        id: resultado.insertId,
-        email: datos.correo,
-        nombre: `${datos.nombres} ${datos.apellidos}`,
-        estado: 'PENDIENTE',
-      });
-    } catch (error) {
-      if (error.code === 'ER_DUP_ENTRY') {
-        return res.status(409).json({ error: 'El correo o el documento ya está registrado.' });
-      }
-      const mensajeBD = errorBaseDatos(error);
-      if (mensajeBD) {
-        console.error('[registro-service] Base de datos no disponible:', error.code);
-        return res.status(503).json({ error: mensajeBD });
-      }
-      console.error('[registro-service] Error en POST /api/registro:', error);
-      return res.status(500).json({ error: 'Error interno en el servidor.' });
-    }
-  });
+  // ---- Administración (rol ADMIN) ----
+  router.get('/admin/resumen', conSesion, requiereAdmin, manejar(async (req, res) => {
+    res.json(await repo.resumen());
+  }));
+
+  // ?estado=PENDIENTE|ACTIVO|RECHAZADO&buscar=texto
+  router.get('/admin/afiliados', conSesion, requiereAdmin, manejar(async (req, res) => {
+    const estado = ['PENDIENTE', 'ACTIVO', 'RECHAZADO'].includes(req.query.estado) ? req.query.estado : undefined;
+    const buscar = typeof req.query.buscar === 'string' ? req.query.buscar.trim().slice(0, 60) : '';
+    const afiliados = await repo.listarAfiliados({ estado, buscar: buscar || undefined });
+    res.json({ total: afiliados.length, afiliados });
+  }));
+
+  router.patch('/admin/afiliados/:id/estado', conSesion, requiereAdmin, manejar(async (req, res) => {
+    const id = idValido(req.params.id);
+    if (!id) return res.status(404).json({ error: 'El afiliado no existe.' });
+    const estado = String(req.body?.estado || '').toUpperCase();
+    const observacion = typeof req.body?.observacion === 'string' ? req.body.observacion.trim().slice(0, 300) : '';
+    return res.json(await repo.cambiarEstado(id, estado, { cambiadoPor: req.usuario.email, observacion }));
+  }));
+
+  router.get('/admin/afiliados/:id/historial', conSesion, requiereAdmin, manejar(async (req, res) => {
+    const id = idValido(req.params.id);
+    if (!id) return res.status(404).json({ error: 'El afiliado no existe.' });
+    return res.json({ historial: await repo.historial(id) });
+  }));
 
   app.use('/api/registro', router);
+
+  // eslint-disable-next-line no-unused-vars
+  app.use((error, req, res, next) => {
+    if (error.type === 'entity.parse.failed') return res.status(400).json({ error: 'El cuerpo de la petición no es un JSON válido.' });
+    console.error('[registro-service] Error no controlado:', error);
+    return res.status(500).json({ error: 'Error interno en el servidor.' });
+  });
 
   return app;
 }

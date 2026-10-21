@@ -7,11 +7,10 @@ function requiereSesion(jwtSecret) {
     if (tipo !== 'Bearer' || !token) {
       return res.status(401).json({ error: 'Debes iniciar sesión para solicitar medicamentos.' });
     }
-
     try {
       const payload = jwt.verify(token, jwtSecret);
       if (!payload.id || !payload.email) throw new Error('payload incompleto');
-      req.usuario = { id: payload.id, email: payload.email, rol: payload.rol };
+      req.usuario = { id: payload.id, email: payload.email, doc: payload.doc, rol: String(payload.rol || '').toUpperCase() };
       return next();
     } catch {
       return res.status(401).json({ error: 'Tu sesión expiró o no es válida. Inicia sesión de nuevo.' });
@@ -19,4 +18,12 @@ function requiereSesion(jwtSecret) {
   };
 }
 
-module.exports = { requiereSesion };
+// Solo deja pasar usuarios con rol ADMIN (usar después de requiereSesion)
+function requiereAdmin(req, res, next) {
+  if (req.usuario?.rol !== 'ADMIN') {
+    return res.status(403).json({ error: 'Solo un administrador puede acceder a esta información.' });
+  }
+  return next();
+}
+
+module.exports = { requiereSesion, requiereAdmin };
