@@ -254,8 +254,16 @@ function ServiciosSalud() {
       <nav className="salud-nav" aria-label="Menú de servicios de salud">
         <button
           type="button"
-          className={`salud-nav__btn ${seccionActiva === 'citas' ? 'salud-nav__btn--active' : ''}`}
-          onClick={() => { setSeccionActiva('citas'); setMensajeAlerta({ tipo: '', texto: '' }); }}
+          className={`salud-nav__btn ${seccionActiva === 'agendar' ? 'salud-nav__btn--active' : ''}`}
+          onClick={() => { setSeccionActiva('agendar'); setMensajeAlerta({ tipo: '', texto: '' }); }}
+        >
+          📅 Agendar Cita
+        </button>
+
+        <button
+          type="button"
+          className={`salud-nav__btn ${seccionActiva === 'consultar' ? 'salud-nav__btn--active' : ''}`}
+          onClick={() => { setSeccionActiva('consultar'); setMensajeAlerta({ tipo: '', texto: '' }); }}
         >
           CC Consultar Citas ({citasProgramadas.length})
         </button>
@@ -400,7 +408,10 @@ function ServiciosSalud() {
                     <tr key={c.id}>
                       <td><strong>{c.especialidad}</strong></td>
                       <td>{c.medico}</td>
-                      <td>{fechaLegible(c.fecha)} - <span className="badge-hora">{horaLegible(c.hora)}</span></td>
+                      <td>
+                        {fechaLegible(c.fecha)}{' '}
+                        <span className="badge-hora">{horaLegible(c.hora)}</span>
+                      </td>
                       <td>{c.sede}</td>
                       <td><span className={`badge-estado badge-estado--${c.estado.toLowerCase()}`}>{ETIQUETAS_ESTADO_CITA[c.estado] || c.estado}</span></td>
                       <td>
@@ -550,4 +561,5 @@ function ServiciosSalud() {
     </section>
   );
 }
+
 export default ServiciosSalud;

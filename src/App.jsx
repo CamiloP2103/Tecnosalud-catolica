@@ -19,6 +19,7 @@ const Medicamentos = lazy(() => import('./components/pages/Afiliados/Medicamento
 const Triage = lazy(() => import('./components/pages/Afiliados/Triage'));
 const NotFound = lazy(() => import('./components/pages/NotFound/NotFound'));
 const RestablecerClave = lazy(() => import('./components/pages/Acceso/RestablecerClave'));
+const PanelAdmin = lazy(() => import('./components/pages/admin/PanelAdmin'));
 
 const baseNavItems = [
   { id: 'inicio', label: 'Inicio' },
@@ -48,7 +49,7 @@ const baseNavItems = [
 const accesoItem = { id: 'acceso', label: 'Acceso' };
 
 // Páginas que exigen sesión iniciada (RutaProtegida valida el JWT)
-const PAGINAS_PROTEGIDAS = ['servicios', 'farmacias', 'documentos'];
+const PAGINAS_PROTEGIDAS = ['servicios', 'farmacias', 'documentos', 'admin'];
 
 // Mapeo único y global de páginas
 const pages = {
@@ -66,7 +67,9 @@ const pages = {
   'muerte-digna': MuerteDigna,
   medicamentos: Medicamentos,
   triage: Triage,
+  admin: PanelAdmin, 
   'restablecer-clave': RestablecerClave, // <- Ruta registrada
+  
 };
 
 // Función limpia para extraer solo la ruta y descartar el '?token=...'

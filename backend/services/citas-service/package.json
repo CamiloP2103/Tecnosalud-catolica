@@ -20,26 +20,3 @@
     "vitest": "^4.1.12"
   }
 }
-
-{
-  "name": "citas-service",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "description": "Microservicio de disponibilidad y gestión de citas médicas",
-  "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js",
-    "test": "vitest run"
-  },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.6.1",
-    "express": "^4.18.2",
-    "jsonwebtoken": "^9.0.2"
-  },
-  "devDependencies": {
-    "supertest": "^6.3.4",
-    "vitest": "^1.0.0"
-  }
-}
