@@ -6,6 +6,9 @@ const crypto = require('crypto');
 const { plantillaAlertaLogin, plantillaRecuperacion } = require('./plantillas');
 const { crearLimitador } = require('./limitador');
 const { errorBaseDatos } = require('./errores');
+const { crearRutasAdmin } = require('./admin');
+const { requiereSesion } = require('./autenticacion');
+const { crearEnvioConstancias } = require('./envioConstancias');
 
 const LARGO_MINIMO_CLAVE = 8;
 const MAX_INTENTOS_CUENTA = 5; // fallos seguidos antes de bloquear la cuenta 15 minutos
@@ -66,7 +69,6 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
     const emailIngresado = usuario.trim().toLowerCase();
     const claveLimite = `${ipCliente}|${emailIngresado}`;
 
-    // Límite en memoria por IP + correo: frena ataques aunque el correo no exista
     if (limiteLogin.bloqueado(claveLimite)) {
       registrarIntento({ email: emailIngresado, ipCliente, exitoso: false, motivo: 'LIMITE_IP' });
       return res.status(429).json({ error: 'Demasiados intentos fallidos. Intenta de nuevo en 15 minutos.' });
@@ -83,7 +85,6 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
         [emailIngresado]
       );
 
-      // Caso A: Si el usuario ni siquiera existe, no enviamos correo para evitar spam a correos ajenos
       if (rows.length === 0) {
         limiteLogin.registrar(claveLimite);
         registrarIntento({ email: emailIngresado, ipCliente, exitoso: false, motivo: 'USUARIO_NO_EXISTE' });
@@ -92,7 +93,6 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
 
       const user = rows[0];
 
-      // Cuenta bloqueada en la base de datos (persiste aunque se reinicie el servicio)
       if (Number(user.esta_bloqueado)) {
         registrarIntento({ usuarioId: user.id, email: emailIngresado, ipCliente, exitoso: false, motivo: 'CUENTA_BLOQUEADA' });
         return res.status(429).json({
@@ -100,12 +100,8 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
         });
       }
 
-      // Validar contraseña antes de revelar si la cuenta está inactiva
       const esValida = await bcrypt.compare(contrasena, user.contrasena_hash);
 
-      // Caso B: El usuario existe pero colocó la contraseña errada -> suma el intento y dispara alerta.
-      // Al quinto fallo se bloquea la cuenta 15 minutos y el contador vuelve a 0.
-      // (bloqueado_hasta se asigna primero porque MySQL evalúa las asignaciones de izquierda a derecha)
       if (!esValida) {
         limiteLogin.registrar(claveLimite);
         await pool.query(
@@ -134,7 +130,6 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
       await pool.query('UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL WHERE id = ?', [user.id]);
       registrarIntento({ usuarioId: user.id, email: emailIngresado, ipCliente, exitoso: true });
 
-      // Caso C: Inicio de sesión correcto -> Dispara Notificación de Acceso
       notificarSeguridadLogin({
         destinatario: user.email,
         nombreUsuario: user.nombre,
@@ -170,8 +165,7 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
     }
   });
 
-  // 2. SOLICITUD DE RECUPERACIÓN: Generar token y delegar envío al Notification Service.
-  // Responde lo mismo exista o no el correo, para no revelar qué cuentas están registradas.
+  // 2. SOLICITUD DE RECUPERACIÓN
   router.post('/recuperar-clave/solicitar', async (req, res) => {
     const { email } = req.body || {};
 
@@ -207,8 +201,7 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
         'INSERT INTO tokens_recuperacion (usuario_id, token, expira_en) VALUES (?, ?, ?)',
         [usuario.id, tokenRecuperacion, fechaExpiracion]
       );
-      console.log(`[auth-service] Token guardado en db_auth para usuario: ${usuario.id}`);
-
+      
       const enlaceRestablecer = `${frontendUrl}/#restablecer-clave?token=${tokenRecuperacion}`;
 
       try {
@@ -217,7 +210,6 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
           subject: 'Recuperación de Contraseña - Tecnosalud Católica',
           html: plantillaRecuperacion({ nombreUsuario: usuario.nombre, enlaceRestablecer }),
         });
-        console.log('[auth-service] Notificación enviada con éxito vía notification-service.');
       } catch (notifError) {
         console.error('[auth-service] Error comunicando con notification-service:', notifError.message);
       }
@@ -226,15 +218,13 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
     } catch (error) {
       const mensajeBD = errorBaseDatos(error);
       if (mensajeBD) {
-        console.error('[auth-service] Base de datos no disponible:', error.code);
         return res.status(503).json({ error: mensajeBD });
       }
-      console.error('Error general en /recuperar-clave/solicitar:', error);
       return res.status(500).json({ error: 'Error interno en el servidor.' });
     }
   });
 
-  // 3. RESTABLECER CONTRASEÑA: Validar token y cambiar hash
+  // 3. RESTABLECER CONTRASEÑA
   router.post('/recuperar-clave/restablecer', async (req, res) => {
     const { token, nuevaContrasena } = req.body || {};
 
@@ -283,14 +273,78 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
     } catch (error) {
       const mensajeBD = errorBaseDatos(error);
       if (mensajeBD) {
-        console.error('[auth-service] Base de datos no disponible:', error.code);
         return res.status(503).json({ error: mensajeBD });
       }
-      console.error('Error al restablecer contraseña:', error);
       return res.status(500).json({ error: 'Error interno al actualizar contraseña.' });
     }
   });
 
+  // =========================================================================
+  // 4. REGISTRO INTERNO (Integración con el microservicio de Registro)
+  // =========================================================================
+  router.post('/registro-interno', async (req, res) => {
+    const { tipo_doc, documento, email, nombre, rol_id } = req.body || {};
+  
+    try {
+      const [resultadoUsuario] = await pool.query(
+        `INSERT INTO usuarios (tipo_doc, documento, email, contrasena_hash, nombre, rol_id, activo)
+         VALUES (?, ?, ?, '$2a$10$GcXq.R.QWp3F6H.VUzrHZug.qmzSIHE.BxDyK3ChI7UB5pWC71Fri', ?, ?, 0)`,
+        [tipo_doc, documento, email, nombre, rol_id]
+      );
+  
+      const usuarioId = resultadoUsuario.insertId;
+      const tokenConfiguracion = crypto.randomBytes(32).toString('hex');
+      const fechaExpiracion = new Date(Date.now() + 24 * 3600000); // 24h
+  
+      await pool.query(
+        'INSERT INTO tokens_recuperacion (usuario_id, token, expira_en) VALUES (?, ?, ?)',
+        [usuarioId, tokenConfiguracion, fechaExpiracion]
+      );
+  
+      const enlaceConfiguracion = `${frontendUrl}/#restablecer-clave?token=${tokenConfiguracion}`;
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <h2 style="color: #145da0; text-align: center;">Bienvenido a Tecnosalud Católica</h2>
+          <p>Hola, <strong>${nombre}</strong>.</p>
+          <p>Tu registro ha sido exitoso. Para activar tu cuenta e ingresar al portal, debes crear tu contraseña haciendo clic en el siguiente botón:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${enlaceConfiguracion}" style="background-color: #145da0; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Activar cuenta y crear contraseña</a>
+          </div>
+          <p style="font-size: 14px; color: #475569;">O copia este enlace en tu navegador:<br><a href="${enlaceConfiguracion}" style="color: #145da0;">${enlaceConfiguracion}</a></p>
+        </div>`;
+  
+      await notificar({ to: email, subject: 'Activa tu cuenta - Tecnosalud Católica', html });
+  
+      return res.status(201).json({ exito: true });
+    } catch (error) {
+      console.error('[auth-service] Error en /registro-interno:', error);
+      return res.status(500).json({ error: 'Error interno creando el usuario.' });
+    }
+  });
+
+  // Constancia de registro: cada usuario puede pedir que se la envíen a su propio correo
+  const constancias = crearEnvioConstancias({ pool, notificar });
+  const limiteConstancias = crearLimitador({ maximo: 3, ventanaMs: QUINCE_MINUTOS * 4 });
+  router.post('/mi-constancia', requiereSesion(jwtSecret), async (req, res) => {
+    const clave = String(req.usuario.id);
+    if (limiteConstancias.bloqueado(clave)) {
+      return res.status(429).json({ error: 'Ya pediste tu constancia varias veces. Intenta de nuevo en una hora.' });
+    }
+    limiteConstancias.registrar(clave);
+    try {
+      const resultado = await constancias.enviar(req.usuario.id, req.usuario.email);
+      if (resultado.estado === 'NO_EXISTE') return res.status(404).json({ error: resultado.error });
+      if (resultado.estado === 'FALLIDA') return res.status(502).json({ error: resultado.error });
+      return res.json({ mensaje: `Enviamos tu constancia a ${resultado.email}. Ábrela con tu número de identificación.`, email: resultado.email });
+    } catch (error) {
+      const mensajeBD = errorBaseDatos(error);
+      if (mensajeBD) return res.status(503).json({ error: mensajeBD });
+      console.error('Error en /mi-constancia:', error);
+      return res.status(500).json({ error: 'Error interno en el servidor.' });
+    }
+  });
+
+  router.use('/admin', crearRutasAdmin({ pool, jwtSecret, constancias }));
   app.use('/api/auth', router);
 
   return app;

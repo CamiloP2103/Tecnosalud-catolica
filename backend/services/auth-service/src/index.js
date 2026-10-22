@@ -354,3 +354,76 @@ router.post('/registro-interno', async (req, res) => {
     return res.status(500).json({ error: 'Error interno creando el usuario.' });
   }
 });
+// 4. SOLICITUD DE CONSTANCIA DE REGISTRO (Orquestador)
+router.post('/mi-constancia', async (req, res) => {
+  try {
+    const emailUsuario = req.body.email || req.user?.email;
+
+    if (!emailUsuario) {
+      return res.status(400).json({ error: 'No se pudo identificar el correo del usuario.' });
+    }
+
+    console.log(`[auth-service] Orquestando constancia para: ${emailUsuario}`);
+
+    // PASO 1: Buscar datos completos
+    const [usuarios] = await pool.query(
+      `SELECT u.id, u.nombre, u.email, u.tipo_doc AS tipoDoc, u.documento, r.nombre AS rol, u.activo, u.creado_en AS creadoEn
+       FROM usuarios u INNER JOIN roles r ON r.id = u.rol_id WHERE u.email = ?`,
+      [emailUsuario]
+    );
+
+    if (usuarios.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado en la base de datos.' });
+    }
+    const usuarioCompleto = usuarios[0];
+
+    // PASO 2: Pedir el PDF a Documentos
+    const baseUrlDoc = (process.env.DOCUMENTOS_SERVICE_URL || 'http://localhost:3006').replace(/\/+$/, '');
+    const respuestaDoc = await fetch(`${baseUrlDoc}/api/documentos/generar-pdf-constancia`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(usuarioCompleto)
+    });
+
+    if (!respuestaDoc.ok) {
+      const errorReal = await respuestaDoc.text();
+      console.error(`[auth-service] DOCUMENTOS FALLÓ - Status: ${respuestaDoc.status} | Detalle: ${errorReal}`);
+      throw new Error(`Error en Documentos: ${respuestaDoc.status}`);
+    }
+
+    const datosPdf = await respuestaDoc.json(); 
+    console.log(`[auth-service] PDF generado con éxito. Longitud Base64:`, datosPdf.base64 ? datosPdf.base64.length : 0);
+
+  
+    // PASO 3: Pedir el envío a Notificaciones de forma ligera
+    const baseUrlNotif = (process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3005').replace(/\/+$/, '');
+    const respuestaNotif = await fetch(`${baseUrlNotif}/api/notifications/email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: emailUsuario,
+        subject: 'Tu Constancia de Registro - Tecnosalud Católica',
+        html: '<p>Hola, adjunto encontrarás tu constancia oficial de registro protegida con tu número de documento.</p>',
+        attachments: [{
+          filename: `Constancia_Tecnosalud_${usuarioCompleto.documento}.pdf`,
+          content: datosPdf.base64,
+          encoding: 'base64',
+          contentType: 'application/pdf'
+        }]
+      })
+    });
+
+    if (!respuestaNotif.ok) {
+      const errorRealNotif = await respuestaNotif.text();
+      console.error(`[auth-service] NOTIFICACIONES FALLÓ - Status: ${respuestaNotif.status} | Detalle: ${errorRealNotif}`);
+      throw new Error(`Error en Notificaciones: ${respuestaNotif.status}`);
+    }
+
+    console.log(`[auth-service] Constancia despachada con éxito a ${emailUsuario}`);
+    return res.json({ mensaje: 'Constancia generada y enviada a tu correo exitosamente.' });
+
+  } catch (error) {
+    console.error('[auth-service] Error crítico en orquestación:', error.message);
+    return res.status(500).json({ error: 'Error al generar o despachar el documento.' });
+  }
+});

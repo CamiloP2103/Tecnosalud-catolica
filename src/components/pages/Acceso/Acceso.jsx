@@ -3,7 +3,7 @@ import './Acceso.css';
 import { llamarServicio, mensajeDeError, SERVICIO_AUTH } from '../../../utils/servicios';
 
 // URL del Microservicio de Autenticación (/api/auth según diagrama)
-const API_AUTH = import.meta.env.VITE_API_AUTH_URL || 'http://localhost:3002/api/auth';
+const API_AUTH = import.meta.env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2026-grgzcsa5ajhje5f8.brazilsouth-01.azurewebsites.net/api/auth';
 
 const enmascararCorreo = (email) => {
   if (!email || email.length <= 7) return email;
@@ -349,7 +349,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
   };
 
   // Pide a auth-service que envíe la constancia de registro (PDF con contraseña) al correo del usuario
-  const enviarMiConstancia = async () => {
+const enviarMiConstancia = async () => {
     setEnviandoConstancia(true);
     setConstanciaMsg({ tipo: '', texto: '' });
     try {
@@ -357,7 +357,10 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
       const { ok, datos } = await llamarServicio(`${API_AUTH}/mi-constancia`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        // 👇 AGREGA ESTA LÍNEA EXACTAMENTE AQUÍ 👇
+        body: JSON.stringify({ email: usuarioLogueado.email, documento: usuarioLogueado.documento })
       }, SERVICIO_AUTH);
+      
       setConstanciaMsg(ok
         ? { tipo: 'exito', texto: datos.mensaje }
         : { tipo: 'error', texto: datos.error || 'No se pudo enviar la constancia.' });

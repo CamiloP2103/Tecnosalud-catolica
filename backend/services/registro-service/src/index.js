@@ -47,17 +47,21 @@ router.post('/', async (req, res) => {
   try {
     await conexion.beginTransaction();
 
-    // PASO 1: Guardar en la base de datos de registro (db_registro)
+    
+// PASO 1: Guardar en la base de datos de registro (db_registro)
+    // Extraemos el salario del req.body; si no es contributivo, forzamos null
+    const salarioGuardar = req.body.regimen === 'contributivo' ? (req.body.salario || null) : null;
+
     const [resultadoAfiliado] = await conexion.execute(
       `INSERT INTO afiliados
         (nombres, apellidos, tipo_doc, documento, fecha_nacimiento, genero, correo, telefono,
-         direccion, ciudad, tipo_afiliacion, eps, regimen,
+         direccion, ciudad, tipo_afiliacion, eps, regimen, salario,
          contacto_emergencia_nombre, contacto_emergencia_telefono, acepta_tratamiento_datos)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
       [
         datos.nombres, datos.apellidos, datos.tipoDocumento, datos.documento, datos.fechaNacimiento,
         datos.genero, datos.correo, datos.telefono, datos.direccion, datos.ciudad,
-        datos.tipoAfiliacion, datos.eps, datos.regimen,
+        datos.tipoAfiliacion, datos.eps, datos.regimen, salarioGuardar,
         datos.contactoEmergenciaNombre, datos.contactoEmergenciaTelefono,
       ]
     );

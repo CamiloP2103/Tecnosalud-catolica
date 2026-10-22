@@ -9,7 +9,8 @@ const app = express();
 const PORT = process.env.PORT || 3005;
 
 app.use(cors());
-app.use(express.json());
+// Aumentamos el límite de JSON para que el PDF no sature la petición
+app.use(express.json({ limit: '1mb' }));
 
 // Configuración del transporter Nodemailer
 const transporter = nodemailer.createTransport({
@@ -22,9 +23,11 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Endpoint transversal para envío de correos
+// Endpoint transversal para envío de correos con soporte de adjuntos
 app.post('/api/notifications/email', async (req, res) => {
-  const { to, subject, html, text } = req.body;
+  console.log('[Notification-Service] RECIBIDO REQ.BODY con adjuntos:', Object.keys(req.body));
+
+  const { to, subject, html, text, attachments, adjuntos } = req.body || {};
 
   if (!to || !subject || (!html && !text)) {
     return res.status(400).json({
@@ -34,15 +37,33 @@ app.post('/api/notifications/email', async (req, res) => {
   }
 
   try {
+    // Preparamos los archivos adjuntos de forma robusta
+    let listaAdjuntos = [];
+    const fuenteAdjuntos = attachments || adjuntos;
+    
+    if (Array.isArray(fuenteAdjuntos)) {
+      listaAdjuntos = fuenteAdjuntos.map(adj => {
+        const contenidoBuffer = Buffer.from(adj.content || adj.contenidoBase64, 'base64');
+        console.log(`[Notification-Service] Procesando adjunto: ${adj.filename || adj.nombre} | Tamaño: ${contenidoBuffer.length} bytes`);
+
+        return {
+          filename: adj.filename || adj.nombre || 'constancia-registro.pdf',
+          content: contenidoBuffer,
+          contentType: adj.contentType || adj.tipo || 'application/pdf'
+        };
+      });
+    }
+
     const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.SMTP_USER,
       to,
       subject,
       text: text || '',
       html: html || `<p>${text}</p>`,
+      attachments: listaAdjuntos,
     });
 
-    console.log(`[Notification-Service] Correo enviado a ${to}. ID: ${info.messageId}`);
+    console.log(`[Notification-Service] Correo enviado a ${to} con ${listaAdjuntos.length} adjuntos. ID: ${info.messageId}`);
     return res.json({
       exito: true,
       mensaje: 'Notificación enviada satisfactoriamente',

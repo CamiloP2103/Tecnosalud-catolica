@@ -26,7 +26,7 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
   }
 
   // Servicio interno: solo lo llaman los otros microservicios, nunca el navegador (sin CORS)
-  app.use(express.json({ limit: '200kb' }));
+  app.use(express.json({ limit: '1mb' }));
 
   // Health check
   app.get('/health', (req, res) => {
@@ -42,8 +42,11 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
   });
 
   // Endpoint transversal para envío de correos
+
   app.post('/api/notifications/email', async (req, res) => {
-    const { to, subject, html, text } = req.body || {};
+    console.log('[Notification-Service] RECIBIDO REQ.BODY:', JSON.stringify(req.body)); // <-- ¡AQUÍ VEREMOS QUÉ LLEGÓ REALMENTE!
+
+    const { to, subject, html, text, attachments, adjuntos } = req.body || {};
 
     if (!to || !subject || (!html && !text)) {
       return res.status(400).json({
@@ -53,12 +56,33 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
     }
 
     try {
+      // Preparamos los archivos adjuntos soportando ambos nombres (inglés / español)
+// Preparamos los archivos adjuntos de forma robusta
+      let listaAdjuntos = [];
+      const fuenteAdjuntos = attachments || adjuntos;
+      
+      if (Array.isArray(fuenteAdjuntos)) {
+        listaAdjuntos = fuenteAdjuntos.map(adj => {
+          const contenidoBuffer = Buffer.from(adj.content || adj.contenidoBase64, 'base64');
+          
+          // 👇 ¡AGREGA ESTE LOG PARA VERIFICAR EL TAMAÑO REAL EN NOTIFICACIONES!
+          console.log(`[Notification-Service] Procesando adjunto: ${adj.filename || adj.nombre} | Tamaño del Buffer: ${contenidoBuffer.length} bytes`);
+
+          return {
+            filename: adj.filename || adj.nombre || 'constancia-registro.pdf',
+            content: contenidoBuffer,
+            contentType: adj.contentType || adj.tipo || 'application/pdf'
+          };
+        });
+      }
+
       const info = await transporter.sendMail({
         from: emailFrom,
         to,
         subject,
         text: text || '',
         html: html || `<p>${text}</p>`,
+        attachments: listaAdjuntos, // <-- Lista convertida a Buffer
       });
 
       console.log(`[Notification-Service] Correo enviado a ${to}. ID: ${info.messageId}`);

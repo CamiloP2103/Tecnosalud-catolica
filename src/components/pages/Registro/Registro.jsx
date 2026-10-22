@@ -38,6 +38,7 @@ const estadoInicial = {
   tipoAfiliacion: '',
   eps: '',
   regimen: '',
+  salario: '',
   contactoEmergenciaNombre: '',
   contactoEmergenciaTelefono: '',
   aceptaTratamientoDatos: false,
@@ -141,6 +142,10 @@ function Registro() {
       if (!form[campo] || String(form[campo]).trim() === '') {
         return `Por favor completa el campo: ${etiqueta}`;
       }
+    }
+
+    if (form.regimen === 'contributivo' && (!form.salario || String(form.salario).trim() === '')) {
+      return 'Debes ingresar tu salario básico mensual para calcular la tarifa del régimen contributivo.';
     }
 
     const diaNum = Number(form.nacimientoDia);
@@ -434,7 +439,7 @@ function Registro() {
               </select>
             </label>
 
-            <label className="form__col-full">
+<label className={form.regimen === 'contributivo' ? '' : 'form__col-full'}>
               Régimen de salud *
               <select name="regimen" value={form.regimen} onChange={handleChange} required>
                 <option value="">Selecciona una opción</option>
@@ -444,6 +449,24 @@ function Registro() {
                 <option value="particular">Particular / Póliza de Salud</option>
               </select>
             </label>
+
+            {/* --- NUEVO CAMPO CONDICIONAL DE SALARIO --- */}
+            {form.regimen === 'contributivo' && (
+              <label>
+                Salario base (COP) *
+                <input
+                  type="text"
+                  name="salario"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={form.salario}
+                  onChange={handleNumericChange}
+                  placeholder="Ej. 1300000"
+                  required={form.regimen === 'contributivo'}
+                />
+              </label>
+            )}
+            {/* ------------------------------------------ */}
           </div>
         </fieldset>
 
@@ -536,7 +559,7 @@ function Registro() {
       {modalExito && (
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-content">
-            <div className="modal-icon">E</div>            <h3>¡Registro Exitoso!</h3>
+              <h3>¡Registro Exitoso!</h3>
             <p>Hemos procesado tu afiliación a <strong>Tecnosalud</strong>.</p>
             <div className="modal-info-box">
               <p>Se ha enviado un mensaje con tu <strong>contraseña temporal autogenerada</strong> a:</p>

@@ -6,6 +6,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const { errorBaseDatos } = require('./errores');
+const { generarConstancia } = require('./constancia');
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const DOCUMENT_PATTERN = /^[A-Za-z0-9.-]{5,20}$/;
@@ -173,6 +174,29 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
 
   app.get('/api/documentos/health', (req, res) => {
     res.json({ servicio: 'documentos-service', estado: 'activo' });
+  });
+
+  // Endpoint para generar la constancia en PDF solicitada por Autenticación
+  app.post('/api/documentos/generar-pdf-constancia', async (req, res) => {
+    try {
+      const usuario = req.body;
+
+      if (!usuario || !usuario.documento) {
+        return res.status(400).json({ error: 'Faltan los datos del usuario para generar el PDF.' });
+      }
+
+      const pdfBuffer = await generarConstancia(usuario);
+      const pdfBase64 = pdfBuffer.toString('base64');
+
+      return res.json({ 
+        mensaje: 'PDF generado exitosamente',
+        base64: pdfBase64 
+      });
+
+    } catch (error) {
+      console.error('[documentos-service] Error generando constancia PDF:', error);
+      return res.status(500).json({ error: 'Error interno generando el documento PDF.' });
+    }
   });
 
   app.get('/api/documentos', autenticar, async (req, res) => {
