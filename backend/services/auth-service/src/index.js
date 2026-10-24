@@ -303,6 +303,10 @@ router.post('/recuperar-clave/restablecer', async (req, res) => {
 
 app.use('/api/auth', router);
 
+app.get('/api/auth/health', (req, res) => {
+  res.json({ servicio: 'auth', estado: 'activo' });
+});
+
 app.listen(PORT, () => {
   console.log(`Microservicio de Autenticación activo en el puerto ${PORT} (/api/auth)`);
 });

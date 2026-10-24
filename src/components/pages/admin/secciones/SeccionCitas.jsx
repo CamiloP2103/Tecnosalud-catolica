@@ -12,7 +12,10 @@ function SeccionCitas({ resumen, recargar }) {
   const [aviso, setAviso] = useState('');
 
   const cargarAgenda = useCallback(async () => {
-    if (!datos) return;
+    if (!datos || !datos.hoy) {
+      setAgenda({ citas: [], error: '', cargando: false });
+      return;
+    }
     setAgenda((a) => ({ ...a, cargando: true }));
     const dias = rango === 'hoy' ? 0 : 6;
     const hasta = new Date(`${datos.hoy}T12:00:00`);
@@ -20,7 +23,7 @@ function SeccionCitas({ resumen, recargar }) {
     const hastaTexto = hasta.toISOString().slice(0, 10);
     try {
       const r = await pedir('citas', `/admin/citas?desde=${datos.hoy}&hasta=${hastaTexto}`);
-      setAgenda({ citas: r.citas, error: '', cargando: false });
+      setAgenda({ citas: r.citas || [], error: '', cargando: false });
     } catch (error) {
       setAgenda({ citas: [], error: error.message, cargando: false });
     }
@@ -41,29 +44,33 @@ function SeccionCitas({ resumen, recargar }) {
     }
   };
 
+  const porcentajeOcupacion = datos?.ocupacion?.porcentaje || 0;
+
   return (
     <div className="adm-seccion">
       {aviso && <p className="adm-aviso" role="status">{aviso}</p>}
       <div className="adm-rejilla">
         <Tarjeta titulo="Ocupación de la semana" error={resumen?.error}>
-          {datos && (
+          {datos ? (
             <>
-              <p className="adm-cifra-grande">{datos.ocupacion.porcentaje}%</p>
-              <Barra porcentaje={datos.ocupacion.porcentaje} etiqueta="Ocupación de la semana" />
+              <p className="adm-cifra-grande">{porcentajeOcupacion}%</p>
+              <Barra porcentaje={porcentajeOcupacion} etiqueta="Ocupación de la semana" />
               <dl className="adm-datos">
-                <div><dt>Reservadas</dt><dd>{numero(datos.ocupacion.reservadas)}</dd></div>
-                <div><dt>Horarios libres</dt><dd>{numero(datos.ocupacion.libres)}</dd></div>
-                <div><dt>Atendidas</dt><dd>{numero(datos.semana.porEstado.ATENDIDA)}</dd></div>
-                <div><dt>No asistió</dt><dd>{numero(datos.semana.porEstado.NO_ASISTIO)}</dd></div>
-                <div><dt>Canceladas</dt><dd>{numero(datos.semana.porEstado.CANCELADA)}</dd></div>
-                <div><dt>Médicos activos</dt><dd>{datos.medicos}</dd></div>
+                <div><dt>Reservadas</dt><dd>{numero(datos.ocupacion?.reservadas || 0)}</dd></div>
+                <div><dt>Horarios libres</dt><dd>{numero(datos.ocupacion?.libres || 0)}</dd></div>
+                <div><dt>Atendidas</dt><dd>{numero(datos.semana?.porEstado?.ATENDIDA || 0)}</dd></div>
+                <div><dt>No asistió</dt><dd>{numero(datos.semana?.porEstado?.NO_ASISTIO || 0)}</dd></div>
+                <div><dt>Canceladas</dt><dd>{numero(datos.semana?.porEstado?.CANCELADA || 0)}</dd></div>
+                <div><dt>Médicos activos</dt><dd>{datos.medicos || 0}</dd></div>
               </dl>
             </>
+          ) : (
+            <p className="adm-vacio">Cargando datos de ocupación...</p>
           )}
         </Tarjeta>
 
         <Tarjeta titulo="Disponibilidad por especialidad" error={resumen?.error}>
-          {datos && (
+          {datos?.porEspecialidad ? (
             <Tabla
               claveFila="id"
               filas={datos.porEspecialidad}
@@ -78,6 +85,8 @@ function SeccionCitas({ resumen, recargar }) {
                 },
               ]}
             />
+          ) : (
+            <p className="adm-vacio">No hay datos de especialidades disponibles.</p>
           )}
         </Tarjeta>
       </div>
@@ -103,7 +112,7 @@ function SeccionCitas({ resumen, recargar }) {
               { clave: 'especialidad', titulo: 'Especialidad' },
               { clave: 'medico', titulo: 'Médico' },
               { clave: 'sede', titulo: 'Sede' },
-              { clave: 'estado', titulo: 'Estado', render: (c) => <Insignia estado={c.estado} texto={ETIQUETAS[c.estado]} /> },
+              { clave: 'estado', titulo: 'Estado', render: (c) => <Insignia estado={c.estado} texto={ETIQUETAS[c.estado] || c.estado} /> },
               {
                 clave: 'acciones',
                 titulo: 'Acciones',
@@ -111,7 +120,7 @@ function SeccionCitas({ resumen, recargar }) {
                   <div className="adm-acciones">
                     <button type="button" className="adm-btn adm-btn--verde" onClick={() => cambiarEstado(c, 'ATENDIDA')}>Atendida</button>
                     <button type="button" className="adm-btn" onClick={() => cambiarEstado(c, 'NO_ASISTIO')}>No asistió</button>
-                    <button type="button" className="adm-btn adm-btn--rojo" onClick={() => cambiarEstado(c, 'CANCELADA')}>Cancelar</button>
+                    <button type="button" className="adm-btn adm-btn--rojo" onClick={() => cambiarState(c, 'CANCELADA')}>Cancelar</button>
                   </div>
                 ) : '—'),
               },

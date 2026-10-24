@@ -4,12 +4,12 @@ import {
 import { Barra, Indicador, Tarjeta, numero, pesos } from '../componentes';
 
 const NOMBRES_SERVICIO = {
-  auth: 'Autenticación (3002)',
-  registro: 'Registro (3003)',
-  farmacias: 'Farmacias (3004)',
-  notificaciones: 'Notificaciones (3005)',
-  documentos: 'Documentos (3006)',
-  citas: 'Citas (3007)',
+  auth: 'Autenticación',
+  registro: 'Registro',
+  farmacias: 'Farmacias',
+  notificaciones: 'Notificaciones',
+  documentos: 'Documentos',
+  citas: 'Citas',
 };
 
 /** Vista inicial: indicadores clave de todos los servicios (clic para ir al detalle) y estado de cada microservicio. */
@@ -20,8 +20,9 @@ function ResumenGeneral({ resumenes, irA }) {
   const citas = resumenes.citas?.datos;
   const documentos = resumenes.documentos?.datos;
   const correos = resumenes.notificaciones?.datos;
-  const pedidosPendientes = farmacias?.solicitudes.porEstado.PENDIENTE?.total || 0;
-  const pedidosListos = farmacias?.solicitudes.porEstado.LISTA?.total || 0;
+  
+  const pedidosPendientes = farmacias?.solicitudes?.porEstado?.PENDIENTE?.total || 0;
+  const pedidosListos = farmacias?.solicitudes?.porEstado?.LISTA?.total || 0;
 
   return (
     <div className="adm-seccion">
@@ -29,55 +30,55 @@ function ResumenGeneral({ resumenes, irA }) {
         <Indicador
           icono={IconoCalendario}
           titulo="Citas de hoy"
-          valor={citas ? numero(citas.citasHoy.length) : '—'}
-          detalle={citas ? `Ocupación de la semana: ${citas.ocupacion.porcentaje}%` : resumenes.citas?.error && 'Servicio sin respuesta'}
+          valor={citas?.citasHoy ? numero(citas.citasHoy.length) : '—'}
+          detalle={citas?.ocupacion ? `Ocupación de la semana: ${citas.ocupacion?.porcentaje || 0}%` : resumenes.citas?.error && 'Servicio sin respuesta'}
           tono="azul"
           onClick={() => irA('citas')}
         />
         <Indicador
           icono={IconoMedicamento}
           titulo="Unidades en inventario"
-          valor={farmacias ? numero(farmacias.inventario.unidades) : '—'}
-          detalle={farmacias ? `${farmacias.inventario.productosAgotados} agotados · ${farmacias.inventario.productosBajos} con pocas unidades` : undefined}
-          tono={farmacias?.inventario.productosAgotados ? 'alerta' : 'verde'}
+          valor={farmacias?.inventario ? numero(farmacias.inventario?.unidades || 0) : '—'}
+          detalle={farmacias?.inventario ? `${farmacias.inventario?.productosAgotados || 0} agotados · ${farmacias.inventario?.productosBajos || 0} con pocas unidades` : undefined}
+          tono={farmacias?.inventario?.productosAgotados ? 'alerta' : 'verde'}
           onClick={() => irA('farmacias')}
         />
         <Indicador
           icono={IconoPedido}
           titulo="Pedidos por despachar"
-          valor={farmacias ? numero(pedidosPendientes + pedidosListos) : '—'}
-          detalle={farmacias ? `${pedidosPendientes} pendientes · ${pedidosListos} listos · ventas ${pesos(farmacias.solicitudes.ventas)}` : undefined}
+          valor={farmacias?.solicitudes ? numero(pedidosPendientes + pedidosListos) : '—'}
+          detalle={farmacias?.solicitudes ? `${pedidosPendientes} pendientes · ${pedidosListos} listos · ventas ${pesos(farmacias.solicitudes?.ventas || 0)}` : undefined}
           tono={pedidosPendientes ? 'alerta' : 'neutro'}
           onClick={() => irA('pedidos')}
         />
         <Indicador
           icono={IconoAfiliacion}
           titulo="Afiliaciones por revisar"
-          valor={registro ? numero(registro.pendientes) : '—'}
-          detalle={registro ? `${registro.total} en total · ${registro.ultimos7Dias} en los últimos 7 días` : undefined}
+          valor={registro ? numero(registro?.pendientes || 0) : '—'}
+          detalle={registro ? `${registro?.total || 0} en total · ${registro?.ultimos7Dias || 0} en los últimos 7 días` : undefined}
           tono={registro?.pendientes ? 'alerta' : 'neutro'}
           onClick={() => irA('afiliaciones')}
         />
         <Indicador
           icono={IconoUsuarios}
           titulo="Usuarios registrados"
-          valor={auth ? numero(auth.usuarios.total) : '—'}
-          detalle={auth ? `${auth.usuarios.bloqueados} bloqueados · ${auth.accesos24h.fallidos} accesos fallidos en 24 h` : undefined}
-          tono={auth?.usuarios.bloqueados ? 'alerta' : 'azul'}
+          valor={auth?.usuarios ? numero(auth.usuarios?.total || 0) : '—'}
+          detalle={auth?.usuarios ? `${auth.usuarios?.bloqueados || 0} bloqueados · ${auth.accesos24h?.fallidos || 0} accesos fallidos en 24 h` : undefined}
+          tono={auth?.usuarios?.bloqueados ? 'alerta' : 'azul'}
           onClick={() => irA('usuarios')}
         />
         <Indicador
           icono={IconoDocumento}
           titulo="Documentos clínicos"
-          valor={documentos ? numero(documentos.documentos.total) : '—'}
-          detalle={documentos ? `${documentos.descargas.ultimas24h} descargas en 24 h` : undefined}
+          valor={documentos?.documentos ? numero(documentos.documentos?.total || 0) : '—'}
+          detalle={documentos?.descargas ? `${documentos.descargas?.ultimas24h || 0} descargas en 24 h` : undefined}
           onClick={() => irA('documentos')}
         />
         <Indicador
           icono={IconoCorreo}
           titulo="Correos enviados"
-          valor={correos ? numero(correos.enviadas) : '—'}
-          detalle={correos ? `${correos.fallidas} fallidos · ${correos.ultimas24h} en 24 h` : undefined}
+          valor={correos ? numero(correos?.enviadas || 0) : '—'}
+          detalle={correos ? `${correos?.fallidas || 0} fallidos · ${correos?.ultimas24h || 0} en 24 h` : undefined}
           tono={correos?.fallidas ? 'alerta' : 'verde'}
           onClick={() => irA('correos')}
         />
@@ -101,11 +102,11 @@ function ResumenGeneral({ resumenes, irA }) {
         </Tarjeta>
 
         <Tarjeta titulo="Ocupación de citas (próximos 7 días)" error={resumenes.citas?.error}>
-          {citas && (
+          {citas?.ocupacion && (
             <>
-              <p className="adm-cifra-grande">{citas.ocupacion.porcentaje}%</p>
-              <Barra porcentaje={citas.ocupacion.porcentaje} etiqueta="Ocupación de citas" />
-              <p className="adm-nota">{numero(citas.ocupacion.reservadas)} citas reservadas y {numero(citas.ocupacion.libres)} horarios libres con {citas.medicos} médicos.</p>
+              <p className="adm-cifra-grande">{citas.ocupacion?.porcentaje || 0}%</p>
+              <Barra porcentaje={citas.ocupacion?.porcentaje || 0} etiqueta="Ocupación de citas" />
+              <p className="adm-nota">{numero(citas.ocupacion?.reservadas || 0)} citas reservadas y {numero(citas.ocupacion?.libres || 0)} horarios libres con {citas?.medicos || 0} médicos.</p>
             </>
           )}
         </Tarjeta>

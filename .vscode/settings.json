@@ -1,4 +1,4 @@
 {
-    "appService.defaultWebAppToDeploy": "/subscriptions/2b5b76d2-b7a9-4413-9c55-f22830186400/resourceGroups/Tecnosalud-notification-2026_group/providers/Microsoft.Web/sites/Tecnosalud-notification-2026",
-    "appService.deploySubpath": "backend\\services\\notification-service"
+    "appService.defaultWebAppToDeploy": "/subscriptions/2b5b76d2-b7a9-4413-9c55-f22830186400/resourceGroups/tecnosalud-auth-2026_group/providers/Microsoft.Web/sites/tecnosalud-auth-2026",
+    "appService.deploySubpath": "backend\\services\\auth-service"
 }

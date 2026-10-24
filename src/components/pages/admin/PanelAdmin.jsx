@@ -19,33 +19,33 @@ const SECCIONES = [
   {
     id: 'citas', titulo: 'Citas médicas', icono: IconoCalendario, servicio: 'citas',
     descripcion: 'Ocupación, disponibilidad por especialidad y agenda.',
-    contador: (r) => r.citas?.datos?.citasHoy.filter((c) => c.estado === 'PROGRAMADA').length,
+    contador: (r) => r.citas?.datos?.citasHoy?.filter?.((c) => c.estado === 'PROGRAMADA')?.length || 0,
   },
   {
     id: 'farmacias', titulo: 'Farmacias e inventario', icono: IconoFarmacia, servicio: 'farmacias',
     descripcion: 'Existencias por sede, productos agotados y reabastecimiento.',
-    contador: (r) => r.farmacias?.datos?.inventario.productosAgotados, tonoContador: 'alerta',
+    contador: (r) => r.farmacias?.datos?.inventario?.productosAgotados || 0, tonoContador: 'alerta',
   },
   {
     id: 'pedidos', titulo: 'Pedidos de medicamentos', icono: IconoPedido, servicio: 'farmacias',
     descripcion: 'Despacho de pedidos: marcar listos, entregados o rechazar.',
-    contador: (r) => r.farmacias?.datos?.solicitudes.porEstado.PENDIENTE?.total, tonoContador: 'alerta',
+    contador: (r) => r.farmacias?.datos?.solicitudes?.porEstado?.PENDIENTE?.total || 0, tonoContador: 'alerta',
   },
   {
     id: 'afiliaciones', titulo: 'Afiliaciones', icono: IconoAfiliacion, servicio: 'registro',
     descripcion: 'Solicitudes de afiliación, distribución y aprobación.',
-    contador: (r) => r.registro?.datos?.pendientes, tonoContador: 'alerta',
+    contador: (r) => r.registro?.datos?.pendientes || 0, tonoContador: 'alerta',
   },
   {
     id: 'usuarios', titulo: 'Usuarios y accesos', icono: IconoUsuarios, servicio: 'auth',
     descripcion: 'Cuentas, roles, bloqueos y bitácora de accesos.',
-    contador: (r) => r.auth?.datos?.usuarios.bloqueados, tonoContador: 'alerta',
+    contador: (r) => r.auth?.datos?.usuarios?.bloqueados || 0, tonoContador: 'alerta',
   },
   { id: 'documentos', titulo: 'Documentos clínicos', icono: IconoDocumento, servicio: 'documentos', descripcion: 'Archivos cifrados y bitácora de descargas.' },
   {
     id: 'correos', titulo: 'Correos', icono: IconoCorreo, servicio: 'notificaciones',
     descripcion: 'Notificaciones enviadas y fallidas por servicio.',
-    contador: (r) => r.notificaciones?.datos?.fallidas, tonoContador: 'alerta',
+    contador: (r) => r.notificaciones?.datos?.fallidas || 0, tonoContador: 'alerta',
   },
 ];
 
@@ -57,7 +57,7 @@ function esAdministrador() {
   }
 }
 
-/** Panel de administración: lee los endpoints /admin de los seis microservicios. */
+/** Panel de administración: lee los estados de los microservicios. */
 function PanelAdmin() {
   const [seccion, setSeccion] = useState('resumen');
   const [resumenes, setResumenes] = useState({});
@@ -95,7 +95,7 @@ function PanelAdmin() {
     );
   }
 
-  const actual = SECCIONES.find((s) => s.id === seccion);
+  const actual = SECCIONES.find((s) => s.id === seccion) || SECCIONES[0];
   const irA = (id) => {
     setSeccion(id);
     setMenuAbierto(false);

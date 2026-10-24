@@ -7,77 +7,90 @@ const ESTADOS_PEDIDO = { PENDIENTE: 'Pendiente', LISTA: 'Lista', ENTREGADA: 'Ent
 /** Inventario: totales, detalle por farmacia, productos con pocas unidades, más pedidos y reabastecimiento. */
 export function SeccionInventario({ resumen }) {
   const datos = resumen?.datos;
-  const maxUnidades = datos ? Math.max(...datos.porFarmacia.map((f) => f.unidades), 1) : 1;
+  const porFarmacia = datos?.porFarmacia || [];
+  const maxUnidades = porFarmacia.length > 0 ? Math.max(...porFarmacia.map((f) => f.unidades || 0), 1) : 1;
   const r = datos?.reabastecimiento;
+  const inventario = datos?.inventario || {};
+  const catalogo = datos?.catalogo || {};
 
   return (
     <div className="adm-seccion">
       <div className="adm-rejilla">
         <Tarjeta titulo="Inventario total" error={resumen?.error}>
-          {datos && (
+          {datos ? (
             <dl className="adm-datos">
-              <div><dt>Unidades disponibles</dt><dd>{numero(datos.inventario.unidades)}</dd></div>
-              <div><dt>Valor estimado</dt><dd>{pesos(datos.inventario.valorEstimado)}</dd></div>
-              <div><dt>Productos agotados</dt><dd className={datos.inventario.productosAgotados ? 'adm-texto-alerta' : ''}>{datos.inventario.productosAgotados}</dd></div>
-              <div><dt>{`Con menos de ${datos.inventario.umbralBajo} unidades`}</dt><dd>{datos.inventario.productosBajos}</dd></div>
-              <div><dt>Medicamentos en catálogo</dt><dd>{datos.catalogo.medicamentos}</dd></div>
-              <div><dt>Con fórmula / control especial</dt><dd>{datos.catalogo.conFormula} / {datos.catalogo.controlEspecial}</dd></div>
+              <div><dt>Unidades disponibles</dt><dd>{numero(inventario.unidades || 0)}</dd></div>
+              <div><dt>Valor estimado</dt><dd>{pesos(inventario.valorEstimado || 0)}</dd></div>
+              <div><dt>Productos agotados</dt><dd className={inventario.productosAgotados ? 'adm-texto-alerta' : ''}>{inventario.productosAgotados || 0}</dd></div>
+              <div><dt>{`Con menos de ${inventario.umbralBajo || 5} unidades`}</dt><dd>{inventario.productosBajos || 0}</dd></div>
+              <div><dt>Medicamentos en catálogo</dt><dd>{catalogo.medicamentos || 0}</dd></div>
+              <div><dt>Con fórmula / control especial</dt><dd>{catalogo.conFormula || 0} / {catalogo.controlEspecial || 0}</dd></div>
             </dl>
+          ) : (
+            <p className="adm-vacio">Cargando inventario total...</p>
           )}
         </Tarjeta>
 
         <Tarjeta titulo="Reabastecimiento semanal (lunes)" error={resumen?.error}>
-          {r && (
+          {r ? (
             <dl className="adm-datos">
-              <div><dt>Próximo</dt><dd>{new Date(`${r.proximo}T12:00:00`).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}</dd></div>
+              <div><dt>Próximo</dt><dd>{r.proximo ? new Date(`${r.proximo}T12:00:00`).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' }) : '—'}</dd></div>
               <div><dt>Esta semana</dt><dd>{r.hechoEstaSemana ? 'Ya se hizo' : 'Pendiente'}</dd></div>
-              <div><dt>Objetivo por producto</dt><dd>{r.objetivo} unidades</dd></div>
+              <div><dt>Objetivo por producto</dt><dd>{r.objetivo || 0} unidades</dd></div>
               <div>
                 <dt>Último</dt>
-                <dd>{r.ultimo ? `${r.ultimo.semana} · ${numero(r.ultimo.unidadesAgregadas)} unidades (${r.ultimo.origen === 'AUTOMATICO' ? 'automático' : 'manual'})` : 'Todavía no se ha hecho'}</dd>
+                <dd>{r.ultimo ? `${r.ultimo.semana} · ${numero(r.ultimo.unidadesAgregadas || 0)} unidades (${r.ultimo.origen === 'AUTOMATICO' ? 'automático' : 'manual'})` : 'Todavía no se ha hecho'}</dd>
               </div>
             </dl>
+          ) : (
+            <p className="adm-vacio">Sin datos de reabastecimiento.</p>
           )}
         </Tarjeta>
       </div>
 
       <Tarjeta ancho titulo="Existencias por farmacia" error={resumen?.error}>
-        {datos && (
+        {porFarmacia.length > 0 ? (
           <Tabla
-            filas={datos.porFarmacia}
+            filas={porFarmacia}
             columnas={[
-              { clave: 'nombre', titulo: 'Farmacia', render: (f) => <><strong>{f.nombre}</strong><span className="adm-sub">{f.municipio}{f.abierta24h ? ' · 24 horas' : ''}</span></> },
-              { clave: 'unidades', titulo: 'Unidades', render: (f) => <div className="adm-celda-barra"><Barra porcentaje={(f.unidades / maxUnidades) * 100} etiqueta={f.nombre} /><span>{numero(f.unidades)}</span></div> },
-              { clave: 'productos', titulo: 'Productos' },
-              { clave: 'agotados', titulo: 'Agotados', render: (f) => <span className={f.agotados ? 'adm-texto-alerta' : ''}>{f.agotados}</span> },
-              { clave: 'bajos', titulo: 'Pocas unidades' },
+              { clave: 'nombre', titulo: 'Farmacia', render: (f) => <><strong>{f.nombre || '—'}</strong><span className="adm-sub">{f.municipio || ''}{f.abierta24h ? ' · 24 horas' : ''}</span></> },
+              { clave: 'unidades', titulo: 'Unidades', render: (f) => <div className="adm-celda-barra"><Barra porcentaje={(((f.unidades || 0) / maxUnidades)) * 100} etiqueta={f.nombre || ''} /><span>{numero(f.unidades || 0)}</span></div> },
+              { clave: 'productos', titulo: 'Productos', render: (f) => f.productos || 0 },
+              { clave: 'agotados', titulo: 'Agotados', render: (f) => <span className={f.agotados ? 'adm-texto-alerta' : ''}>{f.agotados || 0}</span> },
+              { clave: 'bajos', titulo: 'Pocas unidades', render: (f) => f.bajos || 0 },
             ]}
           />
+        ) : (
+          <p className="adm-vacio">No hay datos de farmacias registrados.</p>
         )}
       </Tarjeta>
 
       <div className="adm-rejilla">
         <Tarjeta titulo="Productos con menos unidades" error={resumen?.error}>
-          {datos && (
+          {datos?.bajoStock ? (
             <Tabla
               claveFila="clave"
-              filas={datos.bajoStock.map((f, i) => ({ ...f, clave: i }))}
+              filas={(datos.bajoStock || []).map((f, i) => ({ ...f, clave: i }))}
               vacio="Ningún producto está bajo el umbral."
               columnas={[
-                { clave: 'medicamento', titulo: 'Medicamento', render: (f) => `${f.medicamento} ${f.concentracion}` },
-                { clave: 'farmacia', titulo: 'Farmacia' },
-                { clave: 'cantidad', titulo: 'Unidades', render: (f) => <Insignia estado={f.cantidad === 0 ? 'agotado' : 'bajo'} texto={f.cantidad === 0 ? 'Agotado' : String(f.cantidad)} /> },
+                { clave: 'medicamento', titulo: 'Medicamento', render: (f) => `${f.medicamento || ''} ${f.concentracion || ''}` },
+                { clave: 'farmacia', titulo: 'Farmacia', render: (f) => f.farmacia || '—' },
+                { clave: 'cantidad', titulo: 'Unidades', render: (f) => <Insignia estado={f.cantidad === 0 ? 'agotado' : 'bajo'} texto={f.cantidad === 0 ? 'Agotado' : String(f.cantidad || 0)} /> },
               ]}
             />
+          ) : (
+            <p className="adm-vacio">Cargando productos con bajo stock...</p>
           )}
         </Tarjeta>
 
         <Tarjeta titulo="Medicamentos más pedidos" error={resumen?.error}>
-          {datos && (
+          {datos?.masPedidos ? (
             <Distribucion
-              filas={datos.masPedidos.map((m) => ({ nombre: `${m.nombre} ${m.concentracion}`, total: m.unidades }))}
+              filas={(datos.masPedidos || []).map((m) => ({ nombre: `${m.nombre || ''} ${m.concentracion || ''}`, total: m.unidades || 0 }))}
               vacio="Todavía no hay pedidos."
             />
+          ) : (
+            <p className="adm-vacio">Cargando medicamentos más pedidos...</p>
           )}
         </Tarjeta>
       </div>
@@ -90,13 +103,13 @@ export function SeccionPedidos({ resumen, recargar }) {
   const [estado, setEstado] = useState('PENDIENTE');
   const [lista, setLista] = useState({ solicitudes: [], error: '', cargando: true });
   const [aviso, setAviso] = useState('');
-  const conteo = resumen?.datos?.solicitudes.porEstado || {};
+  const conteo = resumen?.datos?.solicitudes?.porEstado || {};
 
   const cargar = useCallback(async () => {
     setLista((l) => ({ ...l, cargando: true }));
     try {
       const r = await pedir('farmacias', `/admin/solicitudes${estado ? `?estado=${estado}` : ''}`);
-      setLista({ solicitudes: r.solicitudes, error: '', cargando: false });
+      setLista({ solicitudes: r.solicitudes || [], error: '', cargando: false });
     } catch (error) {
       setLista({ solicitudes: [], error: error.message, cargando: false });
     }
@@ -129,7 +142,7 @@ export function SeccionPedidos({ resumen, recargar }) {
           <div className="adm-segmentado" role="group" aria-label="Filtrar pedidos por estado">
             {['PENDIENTE', 'LISTA', 'ENTREGADA', 'RECHAZADA', 'CANCELADA', ''].map((e) => (
               <button key={e || 'todos'} type="button" aria-pressed={estado === e} onClick={() => setEstado(e)}>
-                {e ? ESTADOS_PEDIDO[e] : 'Todos'}{e && conteo[e] ? ` (${conteo[e].total})` : ''}
+                {e ? ESTADOS_PEDIDO[e] : 'Todos'}{e && conteo[e]?.total ? ` (${conteo[e].total})` : ''}
               </button>
             ))}
           </div>
