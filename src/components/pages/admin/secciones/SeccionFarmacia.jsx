@@ -108,7 +108,7 @@ export function SeccionPedidos({ resumen, recargar }) {
   const cargar = useCallback(async () => {
     setLista((l) => ({ ...l, cargando: true }));
     try {
-      const r = await pedir('farmacias', `/admin/solicitudes${estado ? `?estado=${estado}` : ''}`);
+      const r = await pedir('farmacias', `/solicitudes${estado ? `?estado=${estado}` : ''}`);
       setLista({ solicitudes: r.solicitudes || [], error: '', cargando: false });
     } catch (error) {
       setLista({ solicitudes: [], error: error.message, cargando: false });
@@ -122,7 +122,7 @@ export function SeccionPedidos({ resumen, recargar }) {
   const cambiar = async (pedido, nuevo) => {
     if (nuevo === 'RECHAZADA' && !window.confirm(`¿Rechazar el pedido #${pedido.id}? Las unidades vuelven al inventario.`)) return;
     try {
-      await pedir('farmacias', `/admin/solicitudes/${pedido.id}/estado`, { method: 'PATCH', cuerpo: { estado: nuevo } });
+      await pedir('farmacias', `/solicitudes/${pedido.id}/estado`, { method: 'PATCH', cuerpo: { estado: nuevo } });
       setAviso(`Pedido #${pedido.id} actualizado a "${ESTADOS_PEDIDO[nuevo]}". Se avisó por correo a ${pedido.usuarioEmail} si correspondía.`);
       cargar();
       recargar();

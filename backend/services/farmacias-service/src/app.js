@@ -64,8 +64,12 @@ function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reabasteced
       <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
       <p style="color: #94a3b8; font-size: 12px; text-align: center;">Tecnosalud Católica - Portal Institucional de Salud</p>
     </div>`;
-    notificar({ to: usuario.email, subject: `Recibimos tu solicitud de medicamentos #${solicitud.id} - Tecnosalud Católica`, html })
-      .catch((err) => console.error('[farmacias-service] No se pudo notificar:', err.message));
+    
+    notificar({
+      to: usuario.email,
+      subject: `Recibimos tu solicitud de medicamentos #${solicitud.id} - Tecnosalud Católica`,
+      html
+    }).catch((err) => console.error('[farmacias-service] No se pudo notificar:', err.message));
   }
 
   const router = express.Router();
@@ -149,9 +153,41 @@ function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reabasteced
     return res.status(201).json(solicitud);
   }));
 
+  // Lógica inteligente: Si es ADMIN, lista todas las solicitudes (con filtro opcional de estado). Si es usuario normal, lista solo las suyas.
   router.get('/solicitudes', conSesion, manejar(async (req, res) => {
+    const rolUsuario = String(req.usuario.rol || '').toUpperCase();
+    
+    if (rolUsuario === 'ADMIN' || rolUsuario === 'ADMINISTRADOR') {
+      const estado = textoConsulta(req.query.estado);
+      const solicitudes = repo.listarSolicitudesAdmin 
+        ? await repo.listarSolicitudesAdmin(estado) 
+        : await repo.listarTodasLasSolicitudes ? await repo.listarTodasLasSolicitudes(estado) : [];
+      return res.json({ total: solicitudes.length, solicitudes });
+    }
+
     const solicitudes = await repo.listarSolicitudesUsuario(req.usuario.id);
     res.json({ total: solicitudes.length, solicitudes });
+  }));
+
+  // Endpoint para que el administrador actualice el estado de un pedido (ej. LISTA, ENTREGADA, RECHAZADA)
+  router.patch('/solicitudes/:id/estado', conSesion, manejar(async (req, res) => {
+    const rolUsuario = String(req.usuario.rol || '').toUpperCase();
+    if (rolUsuario !== 'ADMIN' && rolUsuario !== 'ADMINISTRADOR') {
+      return res.status(403).json({ error: 'No autorizado para realizar esta acción.' });
+    }
+
+    const id = idValido(req.params.id);
+    const { estado } = req.body || {};
+
+    if (!id) return res.status(404).json({ error: 'La solicitud no existe.' });
+    if (!estado) return res.status(400).json({ error: 'El estado es obligatorio.' });
+
+    if (repo.actualizarEstadoSolicitud) {
+      const resultado = await repo.actualizarEstadoSolicitud(id, estado);
+      return res.json({ exito: true, resultado });
+    }
+
+    return res.status(501).json({ error: 'Función de actualización no implementada en el repositorio.' });
   }));
 
   router.patch('/solicitudes/:id/cancelar', conSesion, manejar(async (req, res) => {

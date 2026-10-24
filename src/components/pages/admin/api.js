@@ -9,8 +9,8 @@ const env = import.meta.env;
 // Raíces limpias para consultar el estado /health de los App Services
 export const URLS_RAIZ = {
   auth: env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2026-grgzcsa5ajhje5f8.brazilsouth-01.azurewebsites.net',
-  registro: env.VITE_API_REGISTRO_URL || 'https://tecnosalud-registro-2026.azurewebsites.net',
-  farmacias: env.VITE_API_FARMACIAS_URL || 'https://tecnosalud-farmacias-2026.azurewebsites.net',
+  registro: env.VITE_API_REGISTRO_URL || 'https://tecnosalud-registro-2026-bcfjf5gndedjfmd9.brazilsouth-01.azurewebsites.net',
+  farmacias: env.VITE_API_FARMACIAS_URL+'/api/farmacias' || 'https://tecnosalud-farmacias-2026.azurewebsites.net'+'/api/farmacias',
   notificaciones: env.VITE_API_NOTIFICACIONES_URL || 'https://tecnosalud-notification-2026-hvbrbmd2afarabak.brazilsouth-01.azurewebsites.net',
   documentos: env.VITE_API_DOCUMENTOS_URL || 'https://tecnosalud-documentos-2026.azurewebsites.net',
   citas: env.VITE_API_CITAS_URL || 'https://tecnosalud-citas-2026.azurewebsites.net',
@@ -19,7 +19,7 @@ export const URLS_RAIZ = {
 // URLs con prefijo para el funcionamiento normal de los módulos de administración y botones
 export const URLS = {
   auth: (env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2026-grgzcsa5ajhje5f8.brazilsouth-01.azurewebsites.net') + '/api/auth',
-  registro: (env.VITE_API_REGISTRO_URL || 'https://tecnosalud-registro-2026.azurewebsites.net') + '/api/registro',
+  registro: (env.VITE_API_REGISTRO_URL || 'https://tecnosalud-registro-2026-bcfjf5gndedjfmd9.brazilsouth-01.azurewebsites.net') ,
   farmacias: (env.VITE_API_FARMACIAS_URL || 'https://tecnosalud-farmacias-2026.azurewebsites.net') + '/api/farmacias',
   notificaciones: (env.VITE_API_NOTIFICACIONES_URL || 'https://tecnosalud-notification-2026-hvbrbmd2afarabak.brazilsouth-01.azurewebsites.net') + '/api/notifications',
   documentos: (env.VITE_API_DOCUMENTOS_URL || 'https://tecnosalud-documentos-2026.azurewebsites.net') + '/api/documentos',
