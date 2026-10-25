@@ -18,7 +18,7 @@ export const URLS_RAIZ = {
 
 // URLs con prefijo para el funcionamiento normal de los módulos de administración y botones
 export const URLS = {
-  auth: (env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2026-grgzcsa5ajhje5f8.brazilsouth-01.azurewebsites.net') + '/api/auth',
+  auth: (env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2026-grgzcsa5ajhje5f8.brazilsouth-01.azurewebsites.net') ,
   registro: (env.VITE_API_REGISTRO_URL || 'https://tecnosalud-registro-2026-bcfjf5gndedjfmd9.brazilsouth-01.azurewebsites.net') ,
   farmacias: (env.VITE_API_FARMACIAS_URL || 'https://tecnosalud-farmacias-2026.azurewebsites.net') + '/api/farmacias',
   notificaciones: (env.VITE_API_NOTIFICACIONES_URL || 'https://tecnosalud-notification-2026-hvbrbmd2afarabak.brazilsouth-01.azurewebsites.net') + '/api/notifications',

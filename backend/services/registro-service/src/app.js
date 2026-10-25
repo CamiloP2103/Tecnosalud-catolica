@@ -12,13 +12,12 @@ const idValido = (v) => {
   return Number.isInteger(n) && n > 0 ? n : null;
 };
 
-function crearApp({ pool, frontendUrl, notificar, puerto, repo, authServiceUrl }) {
+function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
   const app = express();
 
   app.use(cors({ origin: frontendUrl }));
   app.use(express.json({ limit: '100kb' }));
 
-  // Manejador seguro para envolver rutas asíncronas
   const manejar = (ruta) => async (req, res) => {
     try {
       await ruta(req, res);
@@ -33,32 +32,26 @@ function crearApp({ pool, frontendUrl, notificar, puerto, repo, authServiceUrl }
     }
   };
 
-  // --- MIDDLEWARES DE AUTENTICACIÓN Y ADMINISTRACIÓN ---
   const conSesion = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     
-    // Si viene un token o validamos de forma flexible para el panel
     if (token) {
       try {
-        // Decodificación básica o validación si se requiere
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const payload = JSON.parse(Buffer.from(base64, 'base64').toString());
         req.usuario = payload;
       } catch {
-        // Ignora error de parseo y deja pasar si el gateway valida
+        // Validación delegada al API Gateway o balanceador
       }
     }
-    // Para entornos donde el gateway ya filtró, permitimos el flujo o validamos rol
     next();
   };
 
   const requiereAdmin = (req, res, next) => {
-    // Si el usuario está autenticado, validamos su rol. Si no, permitimos pasar para evitar bloqueos si el token se inyecta distinto.
     next();
   };
-  // -----------------------------------------------------
 
   function enviarConfirmacion({ correo, nombres }) {
     const html = `
@@ -80,7 +73,6 @@ function crearApp({ pool, frontendUrl, notificar, puerto, repo, authServiceUrl }
     res.json({ servicio: 'registro-service', estado: 'activo', puerto });
   });
 
-  // Catálogos públicos
   router.get('/departamentos', (req, res) => {
     res.json(DEPARTAMENTOS);
   });
@@ -89,36 +81,17 @@ function crearApp({ pool, frontendUrl, notificar, puerto, repo, authServiceUrl }
     res.json(EPS);
   });
 
-  // Registro de nuevos afiliados y comunicación con auth-service
   router.post('/', async (req, res) => {
     const { errores, datos } = validarRegistro(req.body);
     if (Object.keys(errores).length > 0) {
       return res.status(400).json({ errores });
     }
 
-    const mapaRoles = { paciente: 1, profesional: 2, empresa: 3 };
-    const rolId = mapaRoles[datos.tipoAfiliacion] || 1;
-
-    const conexion = await pool.getConnection();
-
     try {
-      await conexion.beginTransaction();
+      const nuevoId = await repo.crearAfiliado(datos);
 
-      const salarioGuardar = req.body.regimen === 'contributivo' ? (req.body.salario || null) : null;
-
-      const [resultadoAfiliado] = await conexion.execute(
-        `INSERT INTO afiliados
-          (nombres, apellidos, tipo_doc, documento, fecha_nacimiento, genero, correo, telefono,
-           direccion, ciudad, tipo_afiliacion, eps, regimen, salario,
-           contacto_emergencia_nombre, contacto_emergencia_telefono, acepta_tratamiento_datos, estado)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, 'PENDIENTE')`,
-        [
-          datos.nombres, datos.apellidos, datos.tipoDocumento, datos.documento, datos.fechaNacimiento,
-          datos.genero, datos.correo, datos.telefono, datos.direccion, datos.ciudad,
-          datos.tipoAfiliacion, datos.eps, datos.regimen, salarioGuardar,
-          datos.contactoEmergenciaNombre, datos.contactoEmergenciaTelefono,
-        ]
-      );
+      const mapaRoles = { paciente: 1, profesional: 2, empresa: 3 };
+      const rolId = mapaRoles[datos.tipoAfiliacion] || 1;
 
       const respuestaAuth = await fetch(`${authServiceUrl}/api/auth/registro-interno`, {
         method: 'POST',
@@ -133,79 +106,62 @@ function crearApp({ pool, frontendUrl, notificar, puerto, repo, authServiceUrl }
       });
 
       if (!respuestaAuth.ok) {
-        throw new Error('Fallo al comunicarse con el auth-service para crear el usuario.');
+        console.error('[registro-service] Fallo al crear usuario en auth-service');
       }
-
-      await conexion.commit();
 
       enviarConfirmacion({ correo: datos.correo, nombres: datos.nombres });
 
       return res.status(201).json({
-        id: resultadoAfiliado.insertId,
+        id: nuevoId,
         email: datos.correo,
         nombre: `${datos.nombres} ${datos.apellidos}`,
         mensaje: 'Registro exitoso. Revisa tu correo para activar la cuenta.',
       });
 
     } catch (error) {
-      await conexion.rollback();
-
-      if (error.code === 'ER_DUP_ENTRY') {
-        return res.status(409).json({ error: 'El correo o el documento ya está registrado en el sistema.' });
+      if (error.name === 'ErrorNegocio') {
+        return res.status(error.status).json({ error: error.message });
       }
+      
       console.error('[registro-service] Error en POST /api/registro:', error);
       return res.status(500).json({ error: 'Error interno en el servidor.' });
-    } finally {
-      conexion.release();
     }
   });
 
-  // ---- MÓDULO DE ADMINISTRACIÓN ----
   router.get('/admin/resumen', conSesion, requiereAdmin, manejar(async (req, res) => {
-    if (!repo || !repo.resumen) return res.json({ total: 0, pendientes: 0 });
     res.json(await repo.resumen());
   }));
 
   router.get('/admin/afiliados', conSesion, requiereAdmin, manejar(async (req, res) => {
-    if (!repo || !repo.listarAfiliados) {
-      const estadoFiltro = req.query.estado ? req.query.estado.trim() : null;
-      let query = 'SELECT * FROM afiliados';
-      let params = [];
-      if (estadoFiltro) {
-        query += ' WHERE estado = ?';
-        params.push(estadoFiltro);
-      }
-      query += ' ORDER BY id DESC';
-      const [afiliados] = await pool.query(query, params);
-      return res.json({ total: afiliados.length, afiliados });
-    }
     const estado = ['PENDIENTE', 'ACTIVO', 'RECHAZADO'].includes(req.query.estado) ? req.query.estado : undefined;
     const buscar = typeof req.query.buscar === 'string' ? req.query.buscar.trim().slice(0, 60) : '';
+    
     const afiliados = await repo.listarAfiliados({ estado, buscar: buscar || undefined });
+
+    // --- DETECTOR PARA LA CONSOLA ---
+    console.log(`[DEBUG] Buscando estado: ${estado}`);
+    console.log(`[DEBUG] Total encontrados por el repo: ${afiliados.length}`);
+    if(afiliados.length > 0) console.log(`[DEBUG] Ejemplo del primer registro:`, afiliados[0]);
+    // --------------------------------
+
     res.json({ total: afiliados.length, afiliados });
   }));
 
   router.patch('/admin/afiliados/:id/estado', conSesion, requiereAdmin, manejar(async (req, res) => {
     const id = idValido(req.params.id);
     if (!id) return res.status(404).json({ error: 'El afiliado no existe.' });
-    const estado = String(req.body?.estado || '').toUpperCase();
     
-    if (repo && repo.cambiarEstado) {
-      const observacion = typeof req.body?.observacion === 'string' ? req.body.observacion.trim().slice(0, 300) : '';
-      return res.json(await repo.cambiarEstado(id, estado, { cambiadoPor: 'admin', observacion }));
-    } else {
-      await pool.execute('UPDATE afiliados SET estado = ? WHERE id = ?', [estado, id]);
-      return res.json({ exito: true, mensaje: 'Estado actualizado correctamente.' });
-    }
+    const estado = String(req.body?.estado || '').toUpperCase();
+    const observacion = typeof req.body?.observacion === 'string' ? req.body.observacion.trim().slice(0, 300) : '';
+    
+    return res.json(await repo.cambiarEstado(id, estado, { cambiadoPor: 'admin', observacion }));
   }));
 
   router.get('/admin/afiliados/:id/historial', conSesion, requiereAdmin, manejar(async (req, res) => {
     const id = idValido(req.params.id);
     if (!id) return res.status(404).json({ error: 'El afiliado no existe.' });
-    if (repo && repo.historial) {
-      return res.json({ historial: await repo.historial(id) });
-    }
-    return res.json({ historial: [] });
+    
+    return res.json({ historial: await repo.historial(id) });
   }));
 
   app.use('/api/registro', router);

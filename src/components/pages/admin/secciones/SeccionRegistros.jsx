@@ -12,15 +12,15 @@ export function SeccionDocumentos({ resumen }) {
     <div className="adm-seccion">
       {datos && (
         <div className="adm-indicadores adm-indicadores--compactos">
-          <Indicador titulo="Documentos" valor={numero(datos.documentos.total)} tono="azul" />
-          <Indicador titulo="Pacientes con documentos" valor={numero(datos.documentos.pacientes)} />
-          <Indicador titulo="Espacio usado (cifrado)" valor={tamanoArchivo(datos.documentos.bytes)} />
-          <Indicador titulo="Descargas" valor={numero(datos.descargas.total)} detalle={`${datos.descargas.ultimas24h} en 24 h`} />
+          <Indicador titulo="Documentos" valor={numero(datos.documentos?.total)} tono="azul" />
+          <Indicador titulo="Pacientes con documentos" valor={numero(datos.documentos?.pacientes)} />
+          <Indicador titulo="Espacio usado (cifrado)" valor={tamanoArchivo(datos.documentos?.bytes)} />
+          <Indicador titulo="Descargas" valor={numero(datos.descargas?.total)} detalle={`${datos.descargas?.ultimas24h} en 24 h`} />
         </div>
       )}
       <div className="adm-rejilla">
         <Tarjeta titulo="Tipos de archivo" error={resumen?.error}>
-          {datos && <Distribucion filas={datos.porTipo.map((t) => ({ nombre: TIPOS[t.tipo] || t.tipo, total: t.total }))} vacio="Todavía no hay documentos." />}
+          {datos && <Distribucion filas={datos.porTipo?.map((t) => ({ nombre: TIPOS[t.tipo] || t.tipo, total: t.total }))} vacio="Todavía no hay documentos." />}
         </Tarjeta>
         <Tarjeta titulo="Últimos documentos" error={resumen?.error}>
           {datos && (
@@ -40,7 +40,7 @@ export function SeccionDocumentos({ resumen }) {
         {datos && (
           <Tabla
             claveFila="clave"
-            filas={datos.descargasRecientes.map((d, i) => ({ ...d, clave: i }))}
+            filas={datos.descargasRecientes?.map((d, i) => ({ ...d, clave: i }))}
             vacio="No hay descargas registradas."
             columnas={[
               { clave: 'titulo', titulo: 'Documento' },
@@ -70,7 +70,7 @@ export function SeccionCorreos({ resumen }) {
       )}
       <div className="adm-rejilla">
         <Tarjeta titulo="Por servicio de origen" error={resumen?.error}>
-          {datos && <Distribucion filas={datos.porServicio.map((s) => ({ nombre: SERVICIOS[s.servicio] || s.servicio, total: s.total }))} vacio="Todavía no se han enviado correos." />}
+          {datos && <Distribucion filas={datos.porServicio?.map((s) => ({ nombre: SERVICIOS[s.servicio] || s.servicio, total: s.total }))} vacio="Todavía no se han enviado correos." />}
         </Tarjeta>
         <Tarjeta titulo="Correos recientes" error={resumen?.error}>
           {datos && (

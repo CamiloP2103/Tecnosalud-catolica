@@ -1,12 +1,10 @@
 require('dotenv').config();
 const { crearApp } = require('./app');
 const pool = require('./config/db');
-let repo = null;
-try {
-  repo = require('./repositorio');
-} catch {
-  // Si no existe repositorio externo, funciona con consultas directas al pool
-}
+const { crearRepositorio } = require('./repositorio'); // Importamos la fábrica del repo de Juan
+
+// Instanciamos el repositorio inyectándole la conexión a la base de datos
+const repo = crearRepositorio(pool);
 
 const PORT = process.env.PORT || 3004;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
