@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { pedir } from '../api';
 import { Distribucion, Indicador, Insignia, Tarjeta, Tabla, fechaHora, numero, tamanoArchivo } from '../componentes';
 
 const TIPOS = { 'application/pdf': 'PDF', 'image/png': 'Imagen PNG', 'image/jpeg': 'Imagen JPG', 'text/plain': 'Texto generado' };
@@ -5,27 +7,40 @@ const SERVICIOS = {
   'auth-service': 'Autenticación', 'registro-service': 'Registro', 'farmacias-service': 'Farmacias', 'citas-service': 'Citas', desconocido: 'Sin identificar',
 };
 
-/** Documentos clínicos: totales, tipos de archivo, últimos cargados y bitácora de descargas. */
-export function SeccionDocumentos({ resumen }) {
-  const datos = resumen?.datos;
+/** Documentos clínicos: totales, tipos de archivo, últimos cargados y bitácora de descargas (Ruta corregida). */
+export function SeccionDocumentos() {
+  const [estado, setEstado] = useState({ datos: null, error: '', cargando: true });
+
+  useEffect(() => {
+    // Ajustado para evitar duplicar /api/documentos
+    pedir('documentos', '/admin/resumen')
+      .then(data => setEstado({ datos: data, error: '', cargando: false }))
+      .catch(err => setEstado({ datos: null, error: err.message, cargando: false }));
+  }, []);
+
+  const datos = estado.datos;
+
   return (
     <div className="adm-seccion">
+      {estado.cargando && <p className="adm-vacio">Cargando documentos clínicos...</p>}
+      {estado.error && <p className="adm-error" role="alert">{estado.error}</p>}
+      
       {datos && (
         <div className="adm-indicadores adm-indicadores--compactos">
           <Indicador titulo="Documentos" valor={numero(datos.documentos?.total)} tono="azul" />
           <Indicador titulo="Pacientes con documentos" valor={numero(datos.documentos?.pacientes)} />
           <Indicador titulo="Espacio usado (cifrado)" valor={tamanoArchivo(datos.documentos?.bytes)} />
-          <Indicador titulo="Descargas" valor={numero(datos.descargas?.total)} detalle={`${datos.descargas?.ultimas24h} en 24 h`} />
+          <Indicador titulo="Descargas" valor={numero(datos.descargas?.total)} detalle={`${datos.descargas?.ultimas24h || 0} en 24 h`} />
         </div>
       )}
       <div className="adm-rejilla">
-        <Tarjeta titulo="Tipos de archivo" error={resumen?.error}>
-          {datos && <Distribucion filas={datos.porTipo?.map((t) => ({ nombre: TIPOS[t.tipo] || t.tipo, total: t.total }))} vacio="Todavía no hay documentos." />}
+        <Tarjeta titulo="Tipos de archivo" error={estado.error}>
+          {datos ? <Distribucion filas={datos.porTipo?.map((t) => ({ nombre: TIPOS[t.tipo] || t.tipo, total: t.total }))} vacio="Todavía no hay documentos." /> : <p className="adm-vacio">Sin datos.</p>}
         </Tarjeta>
-        <Tarjeta titulo="Últimos documentos" error={resumen?.error}>
-          {datos && (
+        <Tarjeta titulo="Últimos documentos" error={estado.error}>
+          {datos ? (
             <Tabla
-              filas={datos.recientes}
+              filas={datos.recientes || []}
               vacio="Todavía no hay documentos."
               columnas={[
                 { clave: 'titulo', titulo: 'Documento', render: (d) => <>{d.titulo}<span className="adm-sub">{TIPOS[d.tipo] || d.tipo} · {tamanoArchivo(d.tamano)}</span></> },
@@ -33,14 +48,14 @@ export function SeccionDocumentos({ resumen }) {
                 { clave: 'creadoEn', titulo: 'Fecha', render: (d) => fechaHora(d.creadoEn) },
               ]}
             />
-          )}
+          ) : <p className="adm-vacio">Cargando...</p>}
         </Tarjeta>
       </div>
-      <Tarjeta ancho titulo="Bitácora de descargas" error={resumen?.error}>
-        {datos && (
+      <Tarjeta ancho titulo="Bitácora de descargas" error={estado.error}>
+        {datos ? (
           <Tabla
             claveFila="clave"
-            filas={datos.descargasRecientes?.map((d, i) => ({ ...d, clave: i }))}
+            filas={(datos.descargasRecientes || []).map((d, i) => ({ ...d, clave: i }))}
             vacio="No hay descargas registradas."
             columnas={[
               { clave: 'titulo', titulo: 'Documento' },
@@ -49,17 +64,30 @@ export function SeccionDocumentos({ resumen }) {
               { clave: 'fecha', titulo: 'Fecha', render: (d) => fechaHora(d.fecha) },
             ]}
           />
-        )}
+        ) : <p className="adm-vacio">Cargando...</p>}
       </Tarjeta>
     </div>
   );
 }
 
-/** Correos: enviados y fallidos, por servicio de origen y los más recientes. */
-export function SeccionCorreos({ resumen }) {
-  const datos = resumen?.datos;
+/** Correos: enviados y fallidos, por servicio de origen y los más recientes (Ruta corregida). */
+export function SeccionCorreos() {
+  const [estado, setEstado] = useState({ datos: null, error: '', cargando: true });
+
+  useEffect(() => {
+    // Ajustado para evitar duplicar prefijos en notificaciones
+    pedir('notificaciones', '/admin/resumen')
+      .then(data => setEstado({ datos: data, error: '', cargando: false }))
+      .catch(err => setEstado({ datos: null, error: err.message, cargando: false }));
+  }, []);
+
+  const datos = estado.datos;
+
   return (
     <div className="adm-seccion">
+      {estado.cargando && <p className="adm-vacio">Cargando bitácora de correos...</p>}
+      {estado.error && <p className="adm-error" role="alert">{estado.error}</p>}
+
       {datos && (
         <div className="adm-indicadores adm-indicadores--compactos">
           <Indicador titulo="Correos registrados" valor={numero(datos.total)} tono="azul" />
@@ -69,13 +97,13 @@ export function SeccionCorreos({ resumen }) {
         </div>
       )}
       <div className="adm-rejilla">
-        <Tarjeta titulo="Por servicio de origen" error={resumen?.error}>
-          {datos && <Distribucion filas={datos.porServicio?.map((s) => ({ nombre: SERVICIOS[s.servicio] || s.servicio, total: s.total }))} vacio="Todavía no se han enviado correos." />}
+        <Tarjeta titulo="Por servicio de origen" error={estado.error}>
+          {datos ? <Distribucion filas={datos.porServicio?.map((s) => ({ nombre: SERVICIOS[s.servicio] || s.servicio, total: s.total }))} vacio="Todavía no se han enviado correos." /> : <p className="adm-vacio">Sin datos.</p>}
         </Tarjeta>
-        <Tarjeta titulo="Correos recientes" error={resumen?.error}>
-          {datos && (
+        <Tarjeta titulo="Correos recientes" error={estado.error}>
+          {datos ? (
             <Tabla
-              filas={datos.recientes}
+              filas={datos.recientes || []}
               vacio="Todavía no se han enviado correos."
               columnas={[
                 { clave: 'destinatario', titulo: 'Destinatario', render: (c) => <>{c.destinatario}<span className="adm-sub">{c.asunto}</span></> },
@@ -84,7 +112,7 @@ export function SeccionCorreos({ resumen }) {
                 { clave: 'creadoEn', titulo: 'Fecha', render: (c) => fechaHora(c.creadoEn) },
               ]}
             />
-          )}
+          ) : <p className="adm-vacio">Cargando...</p>}
         </Tarjeta>
       </div>
     </div>

@@ -1,4 +1,6 @@
 import express from 'express';
+import cors from 'cors';
+import jwt from 'jsonwebtoken';
 import { timingSafeEqual } from 'node:crypto';
 import { errorBaseDatos } from './errores.js';
 
@@ -13,8 +15,7 @@ function claveValida(recibida, esperada) {
 // Nombre del microservicio que pide el correo (cabecera x-servicio-origen), saneado para el historial
 const servicioOrigen = (req) => String(req.get('x-servicio-origen') || 'desconocido').replace(/[^a-z0-9-]/gi, '').slice(0, 40) || 'desconocido';
 
-// `historial` (ver historial.js) guarda cada envío en db_notificaciones; es opcional y nunca bloquea el correo
-export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = null }) {
+export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = null, jwtSecret, frontendUrl = 'http://localhost:5173' }) {
   const app = express();
 
   // Guarda el resultado del envío sin afectar la respuesta si la base de datos falla
@@ -25,7 +26,6 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
     });
   }
 
-  // Servicio interno: solo lo llaman los otros microservicios, nunca el navegador (sin CORS)
   app.use(express.json({ limit: '1mb' }));
 
   // Health check
@@ -33,7 +33,33 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
     res.json({ servicio: 'notification-service', estado: 'activo', puerto });
   });
 
-  // Solo los microservicios que conocen NOTIFICATION_API_KEY pueden enviar correos
+  // 1. Panel de administración: lo llama el navegador con el JWT de auth-service (rol ADMIN).
+  // Se registra ANTES de la verificación de x-api-key y tiene CORS abierto para el frontend.
+  app.get('/api/notifications/admin/resumen', cors({ origin: frontendUrl }), async (req, res) => {
+    const [tipo, token] = String(req.get('authorization') || '').split(' ');
+    if (!jwtSecret || !historial) return res.status(503).json({ error: 'El panel de notificaciones no está configurado (JWT_SECRET o base de datos).' });
+    if (tipo !== 'Bearer' || !token) return res.status(401).json({ error: 'Debes iniciar sesión.' });
+    let usuario;
+    try {
+      usuario = jwt.verify(token, jwtSecret);
+    } catch {
+      return res.status(401).json({ error: 'Tu sesión expiró o no es válida. Inicia sesión de nuevo.' });
+    }
+    if (String(usuario.rol || '').toUpperCase() !== 'ADMIN') {
+      return res.status(403).json({ error: 'Solo un administrador puede acceder a esta información.' });
+    }
+    try {
+      return res.json(await historial.resumen());
+    } catch (error) {
+      const mensajeBD = errorBaseDatos(error);
+      if (mensajeBD) return res.status(503).json({ error: mensajeBD });
+      console.error('[Notification-Service] Error en el resumen:', error);
+      return res.status(500).json({ error: 'Error interno en el servidor.' });
+    }
+  });
+  app.options('/api/notifications/admin/resumen', cors({ origin: frontendUrl }));
+
+  // 2. Middleware de seguridad: Solo los microservicios internos que conocen NOTIFICATION_API_KEY pueden acceder a las rutas siguientes
   app.use('/api/notifications', (req, res, next) => {
     if (!claveValida(req.get('x-api-key'), apiKey)) {
       return res.status(401).json({ exito: false, mensaje: 'No autorizado' });
@@ -41,10 +67,9 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
     return next();
   });
 
-  // Endpoint transversal para envío de correos
-
+  // 3. Endpoint transversal para envío de correos
   app.post('/api/notifications/email', async (req, res) => {
-    console.log('[Notification-Service] RECIBIDO REQ.BODY:', JSON.stringify(req.body)); // <-- ¡AQUÍ VEREMOS QUÉ LLEGÓ REALMENTE!
+    console.log('[Notification-Service] RECIBIDO REQ.BODY:', JSON.stringify(req.body));
 
     const { to, subject, html, text, attachments, adjuntos } = req.body || {};
 
@@ -56,16 +81,12 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
     }
 
     try {
-      // Preparamos los archivos adjuntos soportando ambos nombres (inglés / español)
-// Preparamos los archivos adjuntos de forma robusta
       let listaAdjuntos = [];
       const fuenteAdjuntos = attachments || adjuntos;
       
       if (Array.isArray(fuenteAdjuntos)) {
         listaAdjuntos = fuenteAdjuntos.map(adj => {
           const contenidoBuffer = Buffer.from(adj.content || adj.contenidoBase64, 'base64');
-          
-          // 👇 ¡AGREGA ESTE LOG PARA VERIFICAR EL TAMAÑO REAL EN NOTIFICACIONES!
           console.log(`[Notification-Service] Procesando adjunto: ${adj.filename || adj.nombre} | Tamaño del Buffer: ${contenidoBuffer.length} bytes`);
 
           return {
@@ -82,7 +103,7 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
         subject,
         text: text || '',
         html: html || `<p>${text}</p>`,
-        attachments: listaAdjuntos, // <-- Lista convertida a Buffer
+        attachments: listaAdjuntos,
       });
 
       console.log(`[Notification-Service] Correo enviado a ${to}. ID: ${info.messageId}`);
@@ -102,7 +123,7 @@ export function crearApp({ transporter, apiKey, emailFrom, puerto, historial = n
     }
   });
 
-  // Historial de envíos (solo para servicios con la clave): ?limite=50&destinatario=&estado=ENVIADA|FALLIDA
+  // 4. Historial de envíos interno
   app.get('/api/notifications/historial', async (req, res) => {
     if (!historial) return res.status(503).json({ exito: false, mensaje: 'El historial no está configurado.' });
     const limite = Math.min(Math.max(Number.parseInt(req.query.limite, 10) || 50, 1), 200);

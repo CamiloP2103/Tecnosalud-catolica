@@ -130,7 +130,23 @@ function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reabasteced
     return res.json({ farmacia, total: inventario.length, inventario });
   }));
 
-  // ---- Solicitudes (requieren sesión) ----
+  // ==========================================================
+  // RUTAS DE ADMINISTRACIÓN
+  // ==========================================================
+
+  // Resumen del panel de control
+  router.get('/admin/resumen', conSesion, manejar(async (req, res) => {
+    const rolUsuario = String(req.usuario.rol || '').toUpperCase();
+    if (rolUsuario !== 'ADMIN' && rolUsuario !== 'ADMINISTRADOR') {
+      return res.status(403).json({ error: 'No autorizado.' });
+    }
+    res.json(await repo.resumen());
+  }));
+
+  // ==========================================================
+  // SOLICITUDES (Usuarios y Administradores)
+  // ==========================================================
+
   router.post('/solicitudes', conSesion, manejar(async (req, res) => {
     const { errores, datos } = validarSolicitud(req.body);
     if (Object.keys(errores).length > 0) return res.status(400).json({ errores });
@@ -149,19 +165,17 @@ function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reabasteced
       formula: reglas.formula,
       observaciones: datos.observaciones,
     });
-    enviarConfirmacion(req.usuario, solicitud); // segundo plano
+    enviarConfirmacion(req.usuario, solicitud); 
     return res.status(201).json(solicitud);
   }));
 
-  // Lógica inteligente: Si es ADMIN, lista todas las solicitudes (con filtro opcional de estado). Si es usuario normal, lista solo las suyas.
+  // Lista solicitudes. Si es ADMIN trae todas, si es PACIENTE trae solo las suyas.
   router.get('/solicitudes', conSesion, manejar(async (req, res) => {
     const rolUsuario = String(req.usuario.rol || '').toUpperCase();
     
     if (rolUsuario === 'ADMIN' || rolUsuario === 'ADMINISTRADOR') {
       const estado = textoConsulta(req.query.estado);
-      const solicitudes = repo.listarSolicitudesAdmin 
-        ? await repo.listarSolicitudesAdmin(estado) 
-        : await repo.listarTodasLasSolicitudes ? await repo.listarTodasLasSolicitudes(estado) : [];
+      const solicitudes = await repo.listarTodasSolicitudes({ estado: estado || undefined });
       return res.json({ total: solicitudes.length, solicitudes });
     }
 
@@ -169,7 +183,7 @@ function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reabasteced
     res.json({ total: solicitudes.length, solicitudes });
   }));
 
-  // Endpoint para que el administrador actualice el estado de un pedido (ej. LISTA, ENTREGADA, RECHAZADA)
+  // Administrador actualiza el estado (PENDIENTE, LISTA, ENTREGADA...)
   router.patch('/solicitudes/:id/estado', conSesion, manejar(async (req, res) => {
     const rolUsuario = String(req.usuario.rol || '').toUpperCase();
     if (rolUsuario !== 'ADMIN' && rolUsuario !== 'ADMINISTRADOR') {
@@ -182,14 +196,11 @@ function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reabasteced
     if (!id) return res.status(404).json({ error: 'La solicitud no existe.' });
     if (!estado) return res.status(400).json({ error: 'El estado es obligatorio.' });
 
-    if (repo.actualizarEstadoSolicitud) {
-      const resultado = await repo.actualizarEstadoSolicitud(id, estado);
-      return res.json({ exito: true, resultado });
-    }
-
-    return res.status(501).json({ error: 'Función de actualización no implementada en el repositorio.' });
+    const resultado = await repo.actualizarEstadoSolicitud(id, estado);
+    return res.json({ exito: true, resultado });
   }));
 
+  // Paciente cancela su propia solicitud
   router.patch('/solicitudes/:id/cancelar', conSesion, manejar(async (req, res) => {
     const id = idValido(req.params.id);
     if (!id) return res.status(404).json({ error: 'La solicitud no existe.' });

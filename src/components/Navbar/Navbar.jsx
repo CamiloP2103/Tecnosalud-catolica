@@ -29,6 +29,9 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Fusionamos ctaItem dentro de los ítems del menú para que se comporte como uno más
+  const allNavItems = ctaItem ? [...navItems, ctaItem] : navItems;
+
   return (
     <nav className={`navbar ${menuOpen ? 'navbar--open' : ''}`} ref={navRef} aria-label="Navegación principal">
       <div
@@ -63,7 +66,7 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
       </button>
 
       <div className={`navbar__menu ${menuOpen ? 'navbar__menu--open' : ''}`}>
-        {navItems.map((item) =>
+        {allNavItems.map((item) =>
           item.children ? (
             <div className="navbar__dropdown" key={item.id}>
               <button
@@ -113,33 +116,24 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
             <button
               key={item.id}
               type="button"
-              className={`navbar__link ${currentPage === item.id ? 'navbar__link--active' : ''}`}
+              className={`navbar__link ${item === ctaItem ? 'navbar__link--cta' : ''} ${currentPage === item.id ? 'navbar__link--active' : ''}`}
               onClick={() => {
                 handleNavigate(item.id);
                 setMenuOpen(false);
               }}
               aria-current={currentPage === item.id ? 'page' : undefined}
             >
+              {item === ctaItem && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ marginRight: '4px' }}>
+                  <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              )}
               {item.label}
             </button>
           )
         )}
       </div>
-
-      {ctaItem && (
-        <button
-          type="button"
-          className="navbar__cta"
-          onClick={() => handleNavigate(ctaItem.id)}
-          aria-current={currentPage === ctaItem.id ? 'page' : undefined}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" />
-            <path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
-          {ctaItem.label}
-        </button>
-      )}
     </nav>
   );
 }

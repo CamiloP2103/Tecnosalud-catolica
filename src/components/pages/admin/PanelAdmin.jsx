@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import './PanelAdmin.css';
-import { cargarResumenes } from './api';
+import { pedir } from './api';
 import {
   IconoActualizar, IconoAfiliacion, IconoCalendario, IconoCorreo, IconoDocumento, IconoFarmacia, IconoMenu, IconoPedido,
   IconoPulso, IconoResumen, IconoUsuarios,
@@ -13,7 +13,6 @@ import { SeccionCorreos, SeccionDocumentos } from './secciones/SeccionRegistros'
 
 const INTERVALO_AUTOMATICO = 60 * 1000;
 
-// Menú lateral: cada sección, su ícono, de qué servicio lee y qué contador muestra
 const SECCIONES = [
   { id: 'resumen', titulo: 'Resumen general', icono: IconoResumen, descripcion: 'Indicadores de todos los servicios y su estado.' },
   {
@@ -41,7 +40,7 @@ const SECCIONES = [
     descripcion: 'Cuentas, roles, bloqueos y bitácora de accesos.',
     contador: (r) => r.auth?.datos?.usuarios?.bloqueados || 0, tonoContador: 'alerta',
   },
-  { id: 'documentos', titulo: 'Documentos clínicos', icono: IconoDocumento, servicio: 'documentos', descripcion: 'Archivos cifrados y bitácora de descargas.' },
+  { id: 'documentos', titulo: 'Documentos clínicos', icono: IconoDocumento, descripcion: 'Archivos cifrados y bitácora de descargas.' },
   {
     id: 'correos', titulo: 'Correos', icono: IconoCorreo, servicio: 'notificaciones',
     descripcion: 'Notificaciones enviadas y fallidas por servicio.',
@@ -57,7 +56,6 @@ function esAdministrador() {
   }
 }
 
-/** Panel de administración: lee los estados de los microservicios. */
 function PanelAdmin() {
   const [seccion, setSeccion] = useState('resumen');
   const [resumenes, setResumenes] = useState({});
@@ -67,9 +65,24 @@ function PanelAdmin() {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const admin = esAdministrador();
 
+  // Carga simultánea enfocada en los servicios que proveen resumen administrativo
   const recargar = useCallback(async () => {
     setCargando(true);
-    setResumenes(await cargarResumenes());
+    const servicios = ['auth', 'registro', 'farmacias', 'citas'];
+    const nuevosResumenes = {};
+
+    await Promise.all(
+      servicios.map(async (serv) => {
+        try {
+          const datos = await pedir(serv, '/admin/resumen');
+          nuevosResumenes[serv] = { datos, error: null };
+        } catch (err) {
+          nuevosResumenes[serv] = { datos: null, error: err.message };
+        }
+      })
+    );
+
+    setResumenes(nuevosResumenes);
     setActualizado(new Date());
     setCargando(false);
   }, []);
@@ -78,7 +91,6 @@ function PanelAdmin() {
     if (admin) recargar();
   }, [admin, recargar]);
 
-  // Actualización automática cada minuto (opcional)
   useEffect(() => {
     if (!automatico) return undefined;
     const t = setInterval(recargar, INTERVALO_AUTOMATICO);

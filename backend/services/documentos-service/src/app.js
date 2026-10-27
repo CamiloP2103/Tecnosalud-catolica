@@ -365,6 +365,45 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
     }
   });
 
+  // Resumen para el panel de administración (solo rol ADMIN)
+  app.get('/api/documentos/admin/resumen', autenticar, async (req, res) => {
+    if (req.usuario.rol !== 'ADMIN') {
+      return res.status(403).json({ error: 'Solo un administrador puede acceder a esta información.' });
+    }
+    try {
+      const [[totales]] = await pool.execute(
+        `SELECT COUNT(*) AS total, COALESCE(SUM(tamano), 0) AS bytes, COUNT(DISTINCT paciente_doc) AS pacientes,
+                SUM(creado_en >= NOW() - INTERVAL 7 DAY) AS ultimos7Dias
+         FROM documentos`
+      );
+      const [porTipo] = await pool.execute('SELECT content_type AS tipo, COUNT(*) AS total FROM documentos GROUP BY content_type ORDER BY total DESC');
+      const [[descargas]] = await pool.execute(
+        'SELECT COUNT(*) AS total, SUM(descargado_en >= NOW() - INTERVAL 1 DAY) AS ultimas24h FROM bitacora_descargas'
+      );
+      const [recientes] = await pool.execute(
+        `SELECT id, titulo, paciente_doc AS pacienteDoc, content_type AS tipo, tamano, creado_por_doc AS creadoPor, creado_en AS creadoEn
+         FROM documentos ORDER BY creado_en DESC LIMIT 10`
+      );
+      const [descargasRecientes] = await pool.execute(
+        `SELECT d.titulo, b.usuario_doc AS usuarioDoc, b.rol_usuario AS rol, b.ip_origen AS ip, b.descargado_en AS fecha
+         FROM bitacora_descargas b INNER JOIN documentos d ON d.id = b.documento_id
+         ORDER BY b.id DESC LIMIT 10`
+      );
+      const numero = (v) => Number(v || 0);
+      return res.json({
+        documentos: { total: numero(totales.total), bytes: numero(totales.bytes), pacientes: numero(totales.pacientes), ultimos7Dias: numero(totales.ultimos7Dias) },
+        porTipo: porTipo.map((f) => ({ tipo: f.tipo, total: numero(f.total) })),
+        descargas: { total: numero(descargas.total), ultimas24h: numero(descargas.ultimas24h) },
+        recientes: recientes.map((f) => ({ ...f, tamano: numero(f.tamano) })),
+        descargasRecientes,
+      });
+    } catch (error) {
+      if (responderErrorBaseDatos(res, error)) return undefined;
+      console.error('[documentos-service] Error al preparar el resumen:', error);
+      return res.status(500).json({ error: 'No fue posible preparar el resumen.' });
+    }
+  });
+
   app.use((error, req, res, next) => {
     if (error instanceof multer.MulterError) {
       const status = error.code === 'LIMIT_FILE_SIZE' ? 413 : 400;

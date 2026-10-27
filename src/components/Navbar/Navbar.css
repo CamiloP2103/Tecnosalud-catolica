@@ -86,6 +86,11 @@
   transition: color 0.2s ease;
 }
 
+/* Empuja el último elemento (Acceso) hacia la derecha en escritorio */
+.navbar__menu > .navbar__link:last-child {
+  margin-left: auto;
+}
+
 .navbar__link::after {
   content: '';
   position: absolute;
@@ -168,31 +173,6 @@
   font-weight: 600;
 }
 
-/* ---------- Botón Acceso (CTA) ---------- */
-
-.navbar__cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
-  padding: 0.68rem 1.3rem;  border: 1.5px solid #1d4ed8;
-  border-radius: 999px;
-  background: transparent;
-  color: #1d4ed8;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 700;  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.navbar__cta:hover,
-.navbar__cta[aria-current='page'] {
-  background: #1d4ed8;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.2);
-}
-
 /* ---------- Responsive ---------- */
 
 .navbar__toggle {
@@ -248,6 +228,11 @@
     width: 100%;
   }
 
+  /* Restablecemos el margen en móvil para que quede alineado como el resto */
+  .navbar__menu > .navbar__link:last-child {
+    margin-left: 0;
+  }
+
   .navbar__dropdown {
     display: block;
   }
@@ -257,9 +242,5 @@
     transform: none;
     width: 100%;
     margin-top: 0.5rem;
-  }
-
-  .navbar__cta {
-    display: none;
   }
 }

@@ -200,9 +200,6 @@ function crearRepositorio(pool) {
       }));
     },
 
-    // Descuenta existencias y registra la solicitud en una sola transacción.
-    // FOR UPDATE bloquea las filas de inventario para que dos solicitudes simultáneas no vendan
-    // las mismas unidades.
     async crearSolicitud({ usuario, farmaciaId, items, formula, observaciones }) {
       return enTransaccion(async (conexion) => {
         const [farmacias] = await conexion.query(
@@ -340,7 +337,6 @@ function crearRepositorio(pool) {
       }));
     },
 
-    // Cancela una solicitud PENDIENTE del usuario y devuelve las unidades al inventario
     async cancelarSolicitud(id, usuarioId) {
       return enTransaccion(async (conexion) => {
         const [filas] = await conexion.query(
@@ -366,6 +362,111 @@ function crearRepositorio(pool) {
         return { id, estado: 'CANCELADA' };
       });
     },
+
+    // ==========================================
+    // MÓDULO DE ADMINISTRACIÓN (Panel Frontend)
+    // ==========================================
+
+    async resumen() {
+      // 1. Totales de inventario
+      const [[inv]] = await pool.query(`
+        SELECT 
+          COALESCE(SUM(i.cantidad), 0) AS unidadesDisponibles,
+          COALESCE(SUM(i.cantidad * i.precio), 0) AS valorEstimado,
+          SUM(CASE WHEN i.cantidad = 0 THEN 1 ELSE 0 END) AS productosAgotados,
+          SUM(CASE WHEN i.cantidad > 0 AND i.cantidad < 5 THEN 1 ELSE 0 END) AS menosDe5
+        FROM inventario i
+      `);
+
+      // 2. Totales de catálogo
+      const [[cat]] = await pool.query(`
+        SELECT 
+          COUNT(*) AS totalCatalogo,
+          SUM(requiere_formula = TRUE) AS conFormula,
+          SUM(control_especial = TRUE) AS controlEspecial
+        FROM medicamentos WHERE activo = TRUE
+      `);
+
+      // 3. Distribución por farmacia
+      const [porFarmacia] = await pool.query(`
+        SELECT f.nombre, f.municipio, COALESCE(SUM(i.cantidad), 0) AS total 
+        FROM farmacias f LEFT JOIN inventario i ON i.farmacia_id = f.id 
+        WHERE f.activa = TRUE GROUP BY f.id
+      `);
+
+      // 4. Alertas de bajo stock
+      const [bajoStock] = await pool.query(`
+        SELECT m.nombre, i.cantidad, f.nombre AS farmacia 
+        FROM inventario i 
+        JOIN medicamentos m ON m.id = i.medicamento_id 
+        JOIN farmacias f ON f.id = i.farmacia_id 
+        WHERE i.cantidad > 0 AND i.cantidad < 5 
+        ORDER BY i.cantidad ASC LIMIT 10
+      `);
+
+      // 5. Los más pedidos
+      const [masPedidos] = await pool.query(`
+        SELECT m.nombre, SUM(si.cantidad) AS total 
+        FROM solicitud_items si 
+        JOIN medicamentos m ON m.id = si.medicamento_id 
+        GROUP BY m.id ORDER BY total DESC LIMIT 10
+      `);
+
+      return {
+        inventario: {
+          unidadesDisponibles: numero(inv.unidadesDisponibles),
+          valorEstimado: numero(inv.valorEstimado),
+          productosAgotados: numero(inv.productosAgotados),
+          menosDe5: numero(inv.menosDe5),
+          totalCatalogo: numero(cat.totalCatalogo),
+          conFormula: numero(cat.conFormula),
+          controlEspecial: numero(cat.controlEspecial),
+        },
+        porFarmacia: porFarmacia.map(f => ({ nombre: f.nombre, total: numero(f.total) })),
+        bajoStock: bajoStock.map(f => ({ nombre: f.nombre, cantidad: numero(f.cantidad), farmacia: f.farmacia })),
+        masPedidos: masPedidos.map(f => ({ nombre: f.nombre, total: numero(f.total) })),
+        reabastecimiento: [] 
+      };
+    },
+
+    async listarTodasSolicitudes({ estado } = {}) {
+      const condiciones = [];
+      const parametros = [];
+      
+      if (estado) {
+        condiciones.push('s.estado = ?');
+        parametros.push(estado);
+      }
+
+      const [solicitudes] = await pool.query(
+        `SELECT s.*, f.nombre AS farmacia_nombre 
+         FROM solicitudes s 
+         JOIN farmacias f ON f.id = s.farmacia_id 
+         ${condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : ''} 
+         ORDER BY s.creado_en DESC LIMIT 200`,
+        parametros
+      );
+      
+      return solicitudes.map(s => ({
+        id: s.id,
+        usuarioEmail: s.usuario_email,
+        estado: s.estado,
+        creadoEn: s.creado_en,
+        total: numero(s.total),
+        farmacia: s.farmacia_nombre,
+        formula: s.formula_numero ? 'Sí' : 'No'
+      }));
+    },
+
+    async actualizarEstadoSolicitud(id, nuevoEstado) {
+      const estadosValidos = ['PENDIENTE', 'LISTA', 'ENTREGADA', 'RECHAZADA', 'CANCELADA'];
+      if (!estadosValidos.includes(nuevoEstado)) {
+        throw new ErrorNegocio(400, 'Estado inválido.');
+      }
+      const [resultado] = await pool.query('UPDATE solicitudes SET estado = ? WHERE id = ?', [nuevoEstado, id]);
+      if (resultado.affectedRows === 0) throw new ErrorNegocio(404, 'La solicitud no existe.');
+      return { id, estado: nuevoEstado };
+    }
   };
 }
 

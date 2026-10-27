@@ -19,6 +19,28 @@ export function crearHistorial(pool) {
       );
     },
 
+    // Totales para el panel de administración
+    async resumen() {
+      const [[totales]] = await pool.query(
+        `SELECT COUNT(*) AS total, SUM(estado = 'ENVIADA') AS enviadas, SUM(estado = 'FALLIDA') AS fallidas,
+                SUM(creado_en >= NOW() - INTERVAL 1 DAY) AS ultimas24h
+         FROM notificaciones`
+      );
+      const [porServicio] = await pool.query(
+        `SELECT servicio_origen AS servicio, COUNT(*) AS total, SUM(estado = 'FALLIDA') AS fallidas
+         FROM notificaciones GROUP BY servicio_origen ORDER BY total DESC`
+      );
+      const numero = (v) => Number(v || 0);
+      return {
+        total: numero(totales.total),
+        enviadas: numero(totales.enviadas),
+        fallidas: numero(totales.fallidas),
+        ultimas24h: numero(totales.ultimas24h),
+        porServicio: porServicio.map((f) => ({ servicio: f.servicio, total: numero(f.total), fallidas: numero(f.fallidas) })),
+        recientes: await this.listar({ limite: 15 }),
+      };
+    },
+
     async listar({ limite = 50, destinatario, estado } = {}) {
       const condiciones = [];
       const parametros = [];

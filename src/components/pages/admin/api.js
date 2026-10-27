@@ -10,20 +10,20 @@ const env = import.meta.env;
 export const URLS_RAIZ = {
   auth: env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2026-grgzcsa5ajhje5f8.brazilsouth-01.azurewebsites.net',
   registro: env.VITE_API_REGISTRO_URL || 'https://tecnosalud-registro-2026-bcfjf5gndedjfmd9.brazilsouth-01.azurewebsites.net',
-  farmacias: env.VITE_API_FARMACIAS_URL+'/api/farmacias' || 'https://tecnosalud-farmacias-2026.azurewebsites.net'+'/api/farmacias',
+  farmacias: env.VITE_API_FARMACIAS_URL || 'https://tecnosalud-farmacias-2026.azurewebsites.net',
   notificaciones: env.VITE_API_NOTIFICACIONES_URL || 'https://tecnosalud-notification-2026-hvbrbmd2afarabak.brazilsouth-01.azurewebsites.net',
   documentos: env.VITE_API_DOCUMENTOS_URL || 'https://tecnosalud-documentos-2026.azurewebsites.net',
-  citas: env.VITE_API_CITAS_URL || 'https://tecnosalud-citas-2026.azurewebsites.net',
+  citas: env.VITE_API_CITAS_URL || 'https://tecnosalud-citas-2026-exaxf8etbceve9cs.brazilsouth-01.azurewebsites.net',
 };
 
 // URLs con prefijo para el funcionamiento normal de los módulos de administración y botones
 export const URLS = {
   auth: (env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2026-grgzcsa5ajhje5f8.brazilsouth-01.azurewebsites.net') ,
   registro: (env.VITE_API_REGISTRO_URL || 'https://tecnosalud-registro-2026-bcfjf5gndedjfmd9.brazilsouth-01.azurewebsites.net') ,
-  farmacias: (env.VITE_API_FARMACIAS_URL || 'https://tecnosalud-farmacias-2026.azurewebsites.net') + '/api/farmacias',
+  farmacias: (env.VITE_API_FARMACIAS_URL || 'https://tecnosalud-farmacias-2026.azurewebsites.net') ,
   notificaciones: (env.VITE_API_NOTIFICACIONES_URL || 'https://tecnosalud-notification-2026-hvbrbmd2afarabak.brazilsouth-01.azurewebsites.net') + '/api/notifications',
-  documentos: (env.VITE_API_DOCUMENTOS_URL || 'https://tecnosalud-documentos-2026.azurewebsites.net') + '/api/documentos',
-  citas: (env.VITE_API_CITAS_URL || 'https://tecnosalud-citas-2026.azurewebsites.net') + '/api/citas',
+  documentos: (env.VITE_API_DOCUMENTOS_URL || 'https://tecnosalud-documentos-2026-edezhnahhsfdbfds.brazilsouth-01.azurewebsites.net'),
+  citas: (env.VITE_API_CITAS_URL || 'https://tecnosalud-citas-2026-exaxf8etbceve9cs.brazilsouth-01.azurewebsites.net') ,
 };
 
 export const SERVICIO_NOTIFICACIONES = { nombre: 'el servicio de notificaciones', carpeta: 'notification-service' };

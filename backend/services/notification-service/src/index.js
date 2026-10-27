@@ -1,16 +1,29 @@
-import express from 'express';
-import cors from 'cors';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
+import mysql from 'mysql2/promise';
+import { crearApp } from './app.js';       // Importamos desde app_5.js
+import { crearHistorial } from './historial.js'; // Importamos desde historial_3.js
 
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 3005;
+const PORT = process.env.PORT || 8080;
 
-app.use(cors());
-// Aumentamos el límite de JSON para que el PDF no sature la petición
-app.use(express.json({ limit: '1mb' }));
+// Configuración de la Base de Datos para el historial de notificaciones
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME || 'db_notificaciones',
+  port: parseInt(process.env.DB_PORT || '3306', 10),
+  // 👇 ESTO ES LO QUE FALTA PARA CUMPLIR CON EL REQUISITO DE AZURE
+  ssl: {
+    rejectUnauthorized: false
+  },
+  waitForConnections: true,
+  connectionLimit: 10,
+});
+
+const historial = crearHistorial(pool);
 
 // Configuración del transporter Nodemailer
 const transporter = nodemailer.createTransport({
@@ -23,67 +36,17 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Endpoint transversal para envío de correos con soporte de adjuntos
-app.post('/api/notifications/email', async (req, res) => {
-  console.log('[Notification-Service] RECIBIDO REQ.BODY con adjuntos:', Object.keys(req.body));
-
-  const { to, subject, html, text, attachments, adjuntos } = req.body || {};
-
-  if (!to || !subject || (!html && !text)) {
-    return res.status(400).json({
-      exito: false,
-      mensaje: 'Los campos to, subject y html/text son obligatorios',
-    });
-  }
-
-  try {
-    // Preparamos los archivos adjuntos de forma robusta
-    let listaAdjuntos = [];
-    const fuenteAdjuntos = attachments || adjuntos;
-    
-    if (Array.isArray(fuenteAdjuntos)) {
-      listaAdjuntos = fuenteAdjuntos.map(adj => {
-        const contenidoBuffer = Buffer.from(adj.content || adj.contenidoBase64, 'base64');
-        console.log(`[Notification-Service] Procesando adjunto: ${adj.filename || adj.nombre} | Tamaño: ${contenidoBuffer.length} bytes`);
-
-        return {
-          filename: adj.filename || adj.nombre || 'constancia-registro.pdf',
-          content: contenidoBuffer,
-          contentType: adj.contentType || adj.tipo || 'application/pdf'
-        };
-      });
-    }
-
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.SMTP_USER,
-      to,
-      subject,
-      text: text || '',
-      html: html || `<p>${text}</p>`,
-      attachments: listaAdjuntos,
-    });
-
-    console.log(`[Notification-Service] Correo enviado a ${to} con ${listaAdjuntos.length} adjuntos. ID: ${info.messageId}`);
-    return res.json({
-      exito: true,
-      mensaje: 'Notificación enviada satisfactoriamente',
-      messageId: info.messageId,
-    });
-  } catch (error) {
-    console.error('[Notification-Service] Error enviando correo:', error);
-    return res.status(500).json({
-      exito: false,
-      mensaje: 'Fallo al despachar el correo electrónico',
-      error: error.message,
-    });
-  }
-});
-
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ servicio: 'notification-service', estado: 'activo', puerto: PORT });
+// Creamos la aplicación Express usando la fábrica de app_5.js que incluye /api/notifications/admin/resumen
+const app = crearApp({
+  transporter,
+  apiKey: process.env.NOTIFICATION_API_KEY,
+  emailFrom: process.env.EMAIL_FROM || process.env.SMTP_USER,
+  puerto: PORT,
+  historial,
+  jwtSecret: process.env.JWT_SECRET,
+  frontendUrl: process.env.FRONTEND_URL || 'https://tecnosaludweb2026.z15.web.core.windows.net',
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Notification Service activo en http://localhost:${PORT}`);
+  console.log(`🚀 Notification Service activo tecnosalud en el puerto ${PORT}`);
 });
