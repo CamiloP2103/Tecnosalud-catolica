@@ -21,7 +21,7 @@ const fechaLegible = (fecha) =>
 // `reloj` permite fijar la fecha en las pruebas.
 function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reloj = () => new Date() }) {
   const app = express();
-  app.use(cors({ origin: frontendUrl }));
+  app.use(cors({ origin: '*' }));
   app.use(express.json({ limit: '20kb' }));
 
   const manejar = (ruta) => async (req, res) => {

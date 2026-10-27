@@ -21,7 +21,7 @@ const idValido = (v) => {
 function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reabastecedor = null }) {
   const app = express();
 
-  app.use(cors({ origin: frontendUrl }));
+  app.use(cors({ origin: '*' }));
   app.use(express.json({ limit: '50kb' }));
 
   // Envuelve cada ruta: errores de negocio, base de datos caída y errores inesperados

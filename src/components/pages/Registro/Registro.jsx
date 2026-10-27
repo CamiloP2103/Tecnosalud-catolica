@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import './Registro.css';
-import { llamarServicio, mensajeDeError, SERVICIO_REGISTRO } from '../../../utils/servicios';
+import { llamarServicio, SERVICIO_REGISTRO } from '../../../utils/servicios';
 
 const DIAS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
 const MESES = [
@@ -25,43 +25,45 @@ const API_REGISTRO = import.meta.env.VITE_API_REGISTRO_URL || 'http://localhost:
 const estadoInicial = {
   nombres: '',
   apellidos: '',
-  tipoDocumento: '',
+  tipoDocumentoCodigo: '',
   documento: '',
   nacimientoDia: '',
   nacimientoMes: '',
   nacimientoAnio: '',
-  genero: '',
+  generoCodigo: '',
   correo: '',
   telefono: '',
   direccion: '',
-  ciudad: '',
-  tipoAfiliacion: '',
-  eps: '',
-  regimen: '',
+  municipioCodigo: '',
+  tipoAfiliacionCodigo: '',
+  epsCodigo: '',
+  regimenCodigo: '',
   salario: '',
   contactoEmergenciaNombre: '',
   contactoEmergenciaTelefono: '',
+  contactoEmergenciaParentescoCodigo: '',
   aceptaTratamientoDatos: false,
 };
 
 const camposRequeridos = {
   nombres: 'Nombres',
   apellidos: 'Apellidos',
-  tipoDocumento: 'Tipo de documento',
+  tipoDocumentoCodigo: 'Tipo de documento',
   documento: 'Número de documento',
   nacimientoDia: 'Día de nacimiento',
   nacimientoMes: 'Mes de nacimiento',
   nacimientoAnio: 'Año de nacimiento',
-  genero: 'Género',
+  generoCodigo: 'Género',
   correo: 'Correo electrónico',
   telefono: 'Teléfono / Celular',
   direccion: 'Dirección de residencia',
-  ciudad: 'Ciudad / Municipio',
-  tipoAfiliacion: 'Tipo de afiliación',
-  eps: 'EPS / Entidad actual',
-  regimen: 'Régimen de salud',
+  municipioCodigo: 'Ciudad / Municipio',
+  tipoAfiliacionCodigo: 'Tipo de afiliación',
+  epsCodigo: 'EPS / Entidad actual',
+  regimenCodigo: 'Régimen de salud',
   contactoEmergenciaNombre: 'Nombre de contacto de emergencia',
   contactoEmergenciaTelefono: 'Teléfono de contacto de emergencia',
+  contactoEmergenciaParentescoCodigo: 'Parentesco de emergencia',
 };
 
 function Registro() {
@@ -70,12 +72,10 @@ function Registro() {
   const [modalExito, setModalExito] = useState(false);
   const [correoEnviado, setCorreoEnviado] = useState('');
 
-  // Catálogos que entrega el servicio de Registro (antes estaban escritos en este archivo)
   const [departamentos, setDepartamentos] = useState([]);
   const [listaEps, setListaEps] = useState([]);
   const [errorCatalogos, setErrorCatalogos] = useState('');
 
-  // Captcha local
   const [captchaChallenge, setCaptchaChallenge] = useState({ num1: 0, num2: 0, resultado: 0 });
   const [captchaInput, setCaptchaInput] = useState('');
 
@@ -90,29 +90,29 @@ function Registro() {
     generarCaptchaLocal();
   }, []);
 
-  // Carga departamentos (con sus ciudades) y EPS desde el servicio de Registro
   useEffect(() => {
     let cancelado = false;
 
     const cargarCatalogos = async () => {
       try {
         const [respDeptos, respEps] = await Promise.all([
-          fetch(`${API_REGISTRO}/departamentos`),
+          fetch(`${API_REGISTRO}/departamentos`), // Esta ruta en app.js debe retornar listas.departamentos
           fetch(`${API_REGISTRO}/eps`),
         ]);
+        
         const deptos = await respDeptos.json();
         const eps = await respEps.json();
 
         if (cancelado) return;
-        if (!respDeptos.ok || !respEps.ok || !Array.isArray(deptos) || !Array.isArray(eps)) {
-          throw new Error('Respuesta inesperada del servicio de registro');
-        }
+
+       
+
         setDepartamentos(deptos);
         setListaEps(eps);
         setErrorCatalogos('');
       } catch {
         if (!cancelado) {
-          setErrorCatalogos('No se pudieron cargar las ciudades y las EPS. Verifica que el servicio de registro esté corriendo en el puerto 3004.');
+          setErrorCatalogos('No se pudieron cargar los catálogos.');
         }
       }
     };
@@ -125,10 +125,13 @@ function Registro() {
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    setForm((prev) => {
+      const nuevoForm = { ...prev, [name]: type === 'checkbox' ? checked : value };
+      if (name === 'regimenCodigo' && value.toUpperCase() !== 'CONTRIBUTIVO') {
+        nuevoForm.salario = '';
+      }
+      return nuevoForm;
+    });
   };
 
   const handleNumericChange = (event) => {
@@ -144,7 +147,7 @@ function Registro() {
       }
     }
 
-    if (form.regimen === 'contributivo' && (!form.salario || String(form.salario).trim() === '')) {
+    if (form.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' && (!form.salario || String(form.salario).trim() === '')) {
       return 'Debes ingresar tu salario básico mensual para calcular la tarifa del régimen contributivo.';
     }
 
@@ -199,11 +202,42 @@ function Registro() {
       return;
     }
 
+    const fechaNacimiento = `${form.nacimientoAnio}-${form.nacimientoMes}-${form.nacimientoDia}`;
+    console.log('[FRONTEND-STATE] form actual:', form);
+    const datosEnviar = {
+      nombres: form.nombres,
+      apellidos: form.apellidos,
+      tipoDocumentoCodigo: form.tipoDocumentoCodigo,
+      tipoDocumento: form.tipoDocumentoCodigo,
+      documento: form.documento,
+      fechaNacimiento,
+      generoCodigo: form.generoCodigo,
+      genero: form.generoCodigo,
+      correo: form.correo,
+      telefono: form.telefono,
+      direccion: form.direccion,
+      municipioCodigo: form.municipioCodigo,
+      ciudad: form.municipioCodigo,
+      municipio: form.municipioCodigo,
+      tipoAfiliacionCodigo: form.tipoAfiliacionCodigo,
+      tipoAfiliacion: form.tipoAfiliacionCodigo,
+      epsCodigo: form.epsCodigo,
+      eps: form.epsCodigo,
+      regimenCodigo: form.regimenCodigo,
+      regimen: form.regimenCodigo,
+      salario: form.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' ? form.salario : null,
+      contactoEmergenciaNombre: form.contactoEmergenciaNombre,
+      contactoEmergenciaTelefono: form.contactoEmergenciaTelefono,
+      contactoEmergenciaParentescoCodigo: form.contactoEmergenciaParentescoCodigo,
+      contactoEmergenciaParentesco: form.contactoEmergenciaParentescoCodigo,
+      aceptaTratamientoDatos: form.aceptaTratamientoDatos,
+    };
+    
     try {
       const { ok, datos } = await llamarServicio(API_REGISTRO, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(datosEnviar),
       }, SERVICIO_REGISTRO);
 
       if (!ok) {
@@ -273,12 +307,14 @@ function Registro() {
 
             <label>
               Tipo de documento *
-              <select name="tipoDocumento" value={form.tipoDocumento} onChange={handleChange} required>
+              <select name="tipoDocumentoCodigo" value={form.tipoDocumentoCodigo} onChange={handleChange} required>
                 <option value="">Selecciona una opción</option>
                 <option value="CC">Cédula de Ciudadanía (CC)</option>
                 <option value="TI">Tarjeta de Identidad (TI)</option>
                 <option value="CE">Cédula de Extranjería (CE)</option>
                 <option value="PA">Pasaporte (PA)</option>
+                <option value="RC">Registro Civil (RC)</option>
+                <option value="PPT">Permiso por Protección Temporal (PPT)</option>
               </select>
             </label>
 
@@ -342,11 +378,11 @@ function Registro() {
 
             <label>
               Género *
-              <select name="genero" value={form.genero} onChange={handleChange} required>
+              <select name="generoCodigo" value={form.generoCodigo} onChange={handleChange} required>
                 <option value="">Selecciona una opción</option>
                 <option value="M">Masculino</option>
                 <option value="F">Femenino</option>
-                <option value="Otro">Otro / Prefiero no decir</option>
+                <option value="OTRO">Otro / Prefiero no decir</option>
               </select>
             </label>
           </div>
@@ -397,13 +433,13 @@ function Registro() {
 
             <label>
               Ciudad / Municipio (Colombia) *
-              <select name="ciudad" value={form.ciudad} onChange={handleChange} required>
+              <select name="municipioCodigo" value={form.municipioCodigo} onChange={handleChange} required>
                 <option value="">Selecciona tu municipio...</option>
                 {departamentos.map((depto) => (
-                  <optgroup key={depto.id} label={depto.nombre}>
-                    {depto.ciudades.map((ciudad) => (
-                      <option key={ciudad.id} value={ciudad.nombre}>
-                        {ciudad.nombre}
+                  <optgroup key={depto.codigo} label={depto.nombre}>
+                    {(depto.municipios || []).map((mun) => (
+                      <option key={mun.codigo} value={mun.codigo}>
+                        {mun.nombre}
                       </option>
                     ))}
                   </optgroup>
@@ -419,39 +455,42 @@ function Registro() {
           <div className="form__grid">
             <label>
               Tipo de afiliación requerida *
-              <select name="tipoAfiliacion" value={form.tipoAfiliacion} onChange={handleChange} required>
+              <select name="tipoAfiliacionCodigo" value={form.tipoAfiliacionCodigo} onChange={handleChange} required>
                 <option value="">Selecciona una opción</option>
-                <option value="paciente">Paciente / Afiliado General</option>
-                <option value="profesional">Profesional de la salud</option>
-                <option value="empresa">Empresa / Convenio Institucional</option>
+                <option value="PACIENTE">Paciente / Afiliado General</option>
+                <option value="PROFESIONAL">Profesional de la salud</option>
+                <option value="EMPRESA">Empresa / Convenio Institucional</option>
               </select>
             </label>
 
             <label>
               EPS / Entidad actual *
-              <select name="eps" value={form.eps} onChange={handleChange} required>
+              <select name="epsCodigo" value={form.epsCodigo} onChange={handleChange} required>
                 <option value="">Selecciona tu EPS...</option>
-                {listaEps.map((eps) => (
-                  <option key={eps.id} value={eps.nombre}>
-                    {eps.nombre}
-                  </option>
-                ))}
+                {listaEps.map((eps) => {
+                  const valEps = eps.codigo || eps.id || eps.nit || eps.nombre;
+                  return (
+                    <option key={valEps} value={valEps}>
+                      {eps.nombre}
+                    </option>
+                  );
+                })}
               </select>
             </label>
 
-<label className={form.regimen === 'contributivo' ? '' : 'form__col-full'}>
+            <label className={form.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' ? '' : 'form__col-full'}>
               Régimen de salud *
-              <select name="regimen" value={form.regimen} onChange={handleChange} required>
+              <select name="regimenCodigo" value={form.regimenCodigo} onChange={handleChange} required>
                 <option value="">Selecciona una opción</option>
-                <option value="contributivo">Contributivo</option>
-                <option value="subsidiado">Subsidiado</option>
-                <option value="especial">Especial / Régimen de Excepción</option>
-                <option value="particular">Particular / Póliza de Salud</option>
+                <option value="CONTRIBUTIVO">Contributivo</option>
+                <option value="SUBSIDIADO">Subsidiado</option>
+                <option value="ESPECIAL">Especial / Régimen de Excepción</option>
+                <option value="PARTICULAR">Particular / Póliza de Salud</option>
               </select>
             </label>
 
-            {/* --- NUEVO CAMPO CONDICIONAL DE SALARIO --- */}
-            {form.regimen === 'contributivo' && (
+            {/* --- CAMPO CONDICIONAL DE SALARIO --- */}
+            {form.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' && (
               <label>
                 Salario base (COP) *
                 <input
@@ -462,11 +501,10 @@ function Registro() {
                   value={form.salario}
                   onChange={handleNumericChange}
                   placeholder="Ej. 1300000"
-                  required={form.regimen === 'contributivo'}
+                  required={form.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO'}
                 />
               </label>
             )}
-            {/* ------------------------------------------ */}
           </div>
         </fieldset>
 
@@ -499,6 +537,22 @@ function Registro() {
                 maxLength={10}
                 required
               />
+            </label>
+
+            <label className="form__col-full">
+              Parentesco del contacto de emergencia *
+              <select name="contactoEmergenciaParentescoCodigo" value={form.contactoEmergenciaParentescoCodigo} onChange={handleChange} required>
+                <option value="">Selecciona el parentesco...</option>
+                <option value="conyuge">Cónyuge o compañero(a)</option>
+                <option value="padre">Padre</option>
+                <option value="madre">Madre</option>
+                <option value="hijo">Hijo(a)</option>
+                <option value="hermano">Hermano(a)</option>
+                <option value="abuelo">Abuelo(a)</option>
+                <option value="tio">Tío(a)</option>
+                <option value="amigo">Amigo(a)</option>
+                <option value="otro">Otro</option>
+              </select>
             </label>
           </div>
         </fieldset>
@@ -548,7 +602,8 @@ function Registro() {
                 title="Generar nueva operación"
                 style={{ background: 'none', border: 'none', color: '#1d4ed8', cursor: 'pointer', fontWeight: 600 }}
               >
-                Cambiar              </button>
+                Cambiar
+              </button>
             </div>
           </label>
         </div>
@@ -559,7 +614,7 @@ function Registro() {
       {modalExito && (
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-content">
-              <h3>¡Registro Exitoso!</h3>
+            <h3>¡Registro Exitoso!</h3>
             <p>Hemos procesado tu afiliación a <strong>Tecnosalud</strong>.</p>
             <div className="modal-info-box">
               <p>Se ha enviado un mensaje con tu <strong>contraseña temporal autogenerada</strong> a:</p>

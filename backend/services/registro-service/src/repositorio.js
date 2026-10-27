@@ -62,10 +62,12 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
         listas: {
           tiposDocumento,
           generos,
-          // Departamentos con sus municipios, para la lista dependiente del formulario
+          // Departamentos con sus municipios, con comparación robusta de tipos y espacios
           departamentos: departamentos.map((d) => ({
             ...d,
-            municipios: municipios.filter((m) => m.departamento === d.codigo).map(({ codigo, nombre }) => ({ codigo, nombre })),
+            municipios: municipios
+              .filter((m) => String(m.departamento || '').trim() === String(d.codigo || '').trim())
+              .map(({ codigo, nombre }) => ({ codigo, nombre })),
           })).filter((d) => d.municipios.length > 0),
           eps,
           regimenes,
@@ -82,42 +84,91 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
           parentescos: codigos(parentescos),
         },
       };
+// ---- COLOCA ESTO TEMPORALMENTE AQUÍ ----
+      console.log('[DEBUG CATALOGOS] Primer departamento:', departamentos[0]);
+      console.log('[DEBUG CATALOGOS] Primer municipio:', municipios[0]);
+      console.log('[DEBUG CATALOGOS] Resultado mapeado:', JSON.stringify(valor.listas.departamentos[0], null, 2));
+      // ----------------------------------------
+
       cache = { valor, cargado: reloj() };
       return valor;
     },
 
     async crearAfiliado(datos) {
       try {
+        if (!datos) {
+          throw new ErrorNegocio(400, 'No se recibieron datos para el registro.');
+        }
+
+        // Extracción estricta de códigos
+        const tipoDoc = datos.tipoDocumentoCodigo || datos.tipoDocumento || null;
+        const documento = datos.documento || null;
+        const fechaNacimiento = datos.fechaNacimiento || null;
+        const genero = datos.generoCodigo || datos.genero || null;
+        const correo = datos.correo || null;
+        const telefono = datos.telefono || null;
+        const direccion = datos.direccion || null;
+        
+        // --- BLINDAJE ABSOLUTO PARA MUNICIPIO ---
+        // Si por alguna razón el frontend mandó un texto largo en lugar de un código corto, 
+        // lo cortamos de emergencia a máximo 10 caracteres para que nunca vuelva a dar ER_DATA_TOO_LONG.
+        let municipio = datos.municipioCodigo || datos.municipio || datos.ciudad || null;
+        if (municipio && typeof municipio === 'string' && municipio.length > 10) {
+          console.erta?.(`[ALERTA] municipio_codigo recibió un texto largo inesperado: "${municipio}". Se ignorará o recortará.`);
+          municipio = null; 
+        }
+
+        const tipoAfiliacion = datos.tipoAfiliacionCodigo || datos.tipoAfiliacion || null;
+        const eps = datos.epsCodigo || datos.eps || null;
+        const regimen = datos.regimenCodigo || datos.regimen || null;
+        
+        const regimenTexto = regimen ? String(regimen).trim().toUpperCase() : '';
+        const esContributivo = regimenTexto === 'CONTRIBUTIVO';
+        const salarioGuardar = esContributivo && datos.salario !== undefined && datos.salario !== null && String(datos.salario).trim() !== ''
+          ? Number(datos.salario)
+          : null;
+
+        const contactoNombre = datos.contactoEmergenciaNombre || null;
+        const contactoTelefono = datos.contactoEmergenciaTelefono || null;
+        const parentesco = datos.contactoEmergenciaParentescoCodigo || datos.contactoEmergenciaParentesco || null;
+
         const parametros = [
-          datos.nombres, 
-          datos.apellidos, 
-          datos.tipoDocumento, 
-          datos.documento, 
-          datos.fechaNacimiento,
-          datos.genero, 
-          datos.correo, 
-          datos.telefono, 
-          datos.direccion, 
-          datos.ciudad,
-          datos.tipoAfiliacion, 
-          datos.eps, 
-          datos.regimen, 
-          datos.salario, // <-- Corregido: antes decía datos.salarioGuardar
-          datos.contactoEmergenciaNombre, 
-          datos.contactoEmergenciaTelefono
+          datos.nombres || null,                  // 1
+          datos.apellidos || null,                // 2
+          tipoDoc,                                // 3 -> tipo_documento_codigo
+          documento,                              // 4 -> documento
+          fechaNacimiento,                        // 5 -> fecha_nacimiento
+          genero,                                 // 6 -> genero_codigo
+          correo,                                 // 7 -> correo
+          telefono,                               // 8 -> telefono
+          direccion,                              // 9 -> direccion
+          municipio,                              // 10 -> municipio_codigo
+          tipoAfiliacion,                         // 11 -> tipo_afiliacion_codigo
+          eps,                                    // 12 -> eps_codigo
+          regimen,                                // 13 -> regimen_codigo
+          salarioGuardar,                         // 14 -> salario
+          contactoNombre,                         // 15 -> contacto_emergencia_nombre
+          contactoTelefono,                       // 16 -> contacto_emergencia_telefono
+          parentesco                              // 17 -> contacto_emergencia_parentesco_codigo
         ];
 
-        const parametrosSeguros = parametros.map(valor => valor === undefined ? null : valor);
+        const parametrosSeguros = parametros.map(valor => (valor === undefined || valor === '' ? null : valor));
+
+        // LOG DE DEPURACIÓN DEFINITIVA: Imprime en consola exactamente qué se va a insertar y en qué orden
+        console.log('[DEBUG-REGISTRO] Parámetros listos para INSERT:', JSON.stringify(parametrosSeguros, null, 2));
+
         const [resultado] = await pool.execute(
-        `INSERT INTO afiliados
-          (nombres, apellidos, tipo_doc, documento, fecha_nacimiento, genero, correo, telefono,
-           direccion, ciudad, tipo_afiliacion, eps, regimen, salario,
-           contacto_emergencia_nombre, contacto_emergencia_telefono, acepta_tratamiento_datos, estado)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, 'PENDIENTE')`,
-        parametrosSeguros
-      );
+          `INSERT INTO afiliados
+            (nombres, apellidos, tipo_documento_codigo, documento, fecha_nacimiento, genero_codigo, correo, telefono,
+             direccion, municipio_codigo, tipo_afiliacion_codigo, eps_codigo, regimen_codigo, salario,
+             contacto_emergencia_nombre, contacto_emergencia_telefono, contacto_emergencia_parentesco_codigo, acepta_tratamiento_datos, estado)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, 'PENDIENTE')`,
+          parametrosSeguros
+        );
+
         return resultado.insertId;
       } catch (error) {
+        console.error('[ERROR-SQL-INSERT]', error);
         if (error.code === 'ER_DUP_ENTRY') throw new ErrorNegocio(409, 'El correo o el documento ya está registrado.');
         throw error;
       }

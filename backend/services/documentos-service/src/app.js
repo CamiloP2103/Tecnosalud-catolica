@@ -94,7 +94,7 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
     },
   });
 
-  app.use(cors({ origin: frontendUrl }));
+  app.use(cors({ origin: '*' }));
   app.use(express.json({ limit: '30kb' }));
 
   function autenticar(req, res, next) {

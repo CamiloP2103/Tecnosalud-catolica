@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { validarRegistro } = require('./validators');
 const { errorBaseDatos } = require('./errores');
-const { DEPARTAMENTOS, EPS } = require('./data/catalogos');
+// (Se eliminó la importación de catalogos estáticos ya que se consultan vía repo)
 
 const escaparHtml = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -15,7 +15,7 @@ const idValido = (v) => {
 function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
   const app = express();
 
-  app.use(cors({ origin: frontendUrl }));
+  app.use(cors({ origin: '*' }));
   app.use(express.json({ limit: '100kb' }));
 
   const manejar = (ruta) => async (req, res) => {
@@ -73,13 +73,26 @@ function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
     res.json({ servicio: 'registro-service', estado: 'activo', puerto });
   });
 
-  router.get('/departamentos', (req, res) => {
-    res.json(DEPARTAMENTOS);
-  });
+  // --- RUTAS DE CATÁLOGOS CONECTADAS AL REPOSITORIO ---
+  // --- RUTAS DE CATÁLOGOS CORREGIDAS ---
+  router.get('/departamentos', manejar(async (req, res) => {
+    const { listas } = await repo.catalogos();
+    res.json(listas.departamentos);
+  }));
 
-  router.get('/eps', (req, res) => {
-    res.json(EPS);
-  });
+  router.get('/municipios', manejar(async (req, res) => {
+    const { listas } = await repo.catalogos();
+    // Nota: Como ya mapeaste los departamentos con sus municipios adentro, 
+    // puedes extraerlos de los departamentos o retornar un plano si prefieres.
+    // O si el frontend necesita el plano de municipios, puedes hacer un flatMap:
+    const todosLosMunicipios = listas.departamentos.flatMap(d => d.municipios);
+    res.json(todosLosMunicipios);
+  }));
+
+  router.get('/eps', manejar(async (req, res) => {
+    const { listas } = await repo.catalogos();
+    res.json(listas.eps);
+  }));
 
   router.post('/', async (req, res) => {
     const { errores, datos } = validarRegistro(req.body);
@@ -97,7 +110,7 @@ function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tipo_doc: datos.tipoDocumento,
+          tipo_doc: datos.tipoDocumentoCodigo,
           documento: datos.documento,
           email: datos.correo,
           nombre: `${datos.nombres} ${datos.apellidos}`,
@@ -138,11 +151,9 @@ function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
     
     const afiliados = await repo.listarAfiliados({ estado, buscar: buscar || undefined });
 
-    // --- DETECTOR PARA LA CONSOLA ---
     console.log(`[DEBUG] Buscando estado: ${estado}`);
     console.log(`[DEBUG] Total encontrados por el repo: ${afiliados.length}`);
     if(afiliados.length > 0) console.log(`[DEBUG] Ejemplo del primer registro:`, afiliados[0]);
-    // --------------------------------
 
     res.json({ total: afiliados.length, afiliados });
   }));
