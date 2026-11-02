@@ -226,7 +226,7 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
       await pool.query('UPDATE usuarios SET contrasena_hash = ?, intentos_fallidos = 0,activo = 1, bloqueado_hasta = NULL WHERE id = ?', [nuevoHash, registroToken.usuario_id]);
       await pool.query('UPDATE tokens_recuperacion SET usado = TRUE WHERE id = ?', [registroToken.id]);
 
-      return res.json({ mensaje: 'Contraseña actualizada correctamente.' });
+      return res.json({ mensaje: 'Contraseña actualizada correctamente. Puedes ingresar con esta contraseña' });
     } catch (error) {
       if (errorBaseDatos(error)) return res.status(503).json({ error: errorBaseDatos(error) });
       return res.status(500).json({ error: 'Error interno al actualizar contraseña.' });
