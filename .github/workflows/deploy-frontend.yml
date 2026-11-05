@@ -29,6 +29,7 @@ jobs:
           inlineScript: |
             az storage blob delete-batch \
               --source '$web' \
+              --pattern "*" \
               --connection-string "${{ secrets.AZURE_FRONTEND_CONNECTION_STRING }}"
 
       - name: Subir archivos a Azure Storage
