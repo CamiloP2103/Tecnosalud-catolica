@@ -1,4 +1,4 @@
-name: Despliegue farmacias Service en Azure
+name: Despliegue farmacias micro-Service en Azure
 
 on:
   push:
