@@ -28,7 +28,7 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
     const fechaHora = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' });
     const asunto = exito
       ? 'Inicio de sesión detectado - Tecnosalud Católica'
-      : 'Alerta de seguridad: Intento de inicio de sesión fallido - Tecnosalud Católica';
+      : 'Alerta de seguridad: Intento de inicio de sesión fallido desde tu cuenta - Tecnosalud Católica';
 
     console.log(`[auth-service] Notificando evento de seguridad a: ${destinatario}`);
     notificar({
