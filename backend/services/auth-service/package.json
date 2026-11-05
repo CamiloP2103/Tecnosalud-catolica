@@ -9,16 +9,16 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.2",
-    "pdfkit": "^0.15.0",
     "mysql2": "^3.9.7",
-    "nodemailer": "^10.0.10"
+    "nodemailer": "^10.0.10",
+    "pdfkit": "^0.15.0"
   },
   "devDependencies": {
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.3",
     "supertest": "^7.3.1",
     "vitest": "^4.1.12"
   }
