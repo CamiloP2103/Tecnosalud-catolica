@@ -1,4 +1,4 @@
-name: Despliegue farmacias micro-Service en Azure
+name: Despliegue farmacias Service en Azure
 
 on:
   push:
@@ -22,6 +22,6 @@ jobs:
       - name: Desplegar en Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'tecnosalud-farmacias-2026'
+          app-name: 'Tecnosalud-farmacias-2026'
           publish-profile: ${{ secrets.AZURE_WEBAPP_FARMACIAS_PUBLISH_PROFILE }}
           package: 'backend/services/farmacias-service'
