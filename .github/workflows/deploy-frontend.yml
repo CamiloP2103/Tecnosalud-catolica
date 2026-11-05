@@ -1,0 +1,30 @@
+name: Despliegue Frontend en Azure Storage
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Instalar dependencias y compilar
+        run: |
+          npm ci
+          npm run build
+
+      - name: Subir archivos a Azure Storage
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az storage blob upload-batch \
+              --destination '$web' \
+              --source './dist' \
+              --connection-string "${{ secrets.AZURE_FRONTEND_CONNECTION_STRING }}"
