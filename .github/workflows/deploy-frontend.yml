@@ -12,15 +12,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 26
+          node-version: 22
           cache: 'npm'
 
       - name: Instalar dependencias y compilar
         run: |
           npm ci
           npm run build
+
+      - name: Limpiar contenedor web anterior
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az storage blob delete-batch \
+              --source '$web' \
+              --pattern "*" \
+              --connection-string "${{ secrets.AZURE_FRONTEND_CONNECTION_STRING }}"
 
       - name: Subir archivos a Azure Storage
         uses: azure/CLI@v2
