@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+     paths:
+      - 'backend/services/citas-service/**' 
 
 jobs:
   deploy:

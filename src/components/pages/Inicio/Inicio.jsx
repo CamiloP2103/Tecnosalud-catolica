@@ -40,7 +40,6 @@ function Inicio({ onNavigate }) {
             </svg>
             Conoce el jesus bailarin 
           </button>
-          <p className="inicio-hero__meta">Página cargada a las {horaCarga}</p>
         </div>
       </section>
 
