@@ -22,6 +22,6 @@ jobs:
       - name: Desplegar en Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'tecnosalud-auth-2026'
+          app-name: 'tecnosalud-farmacias-2026'
           publish-profile: ${{ secrets.AZURE_WEBAPP_FARMACIAS_PUBLISH_PROFILE }}
           package: 'backend/services/farmacias-service'
