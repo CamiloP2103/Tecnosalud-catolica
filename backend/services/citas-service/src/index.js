@@ -35,16 +35,33 @@ async function notificar({ to, subject, html }) {
   if (!respuesta.ok) throw new Error(`notification-service respondió ${respuesta.status}`);
 }
 
+// Instancia del repositorio y la app
+const repo = crearRepositorio(pool);
+
+// Función requerida por las pruebas para reiniciar el estado
+function resetCitas() {
+  if (typeof repo.reset === 'function') {
+    repo.reset();
+  }
+}
+
 // 5. Inicializar la aplicación conectando todo
 const app = crearApp({
-  repo: crearRepositorio(pool),
+  repo,
   jwtSecret: JWT_SECRET,
   frontendUrl: FRONTEND_URL,
   notificar,
   puerto: PORT,
 });
 
-// 6. Arrancar el servidor
-app.listen(PORT, () => {
-  console.log(`Microservicio de Citas activo en el puerto ${PORT} (/api/citas)`);
-});
+// 6. Arrancar el servidor (si no se está ejecutando en entorno de pruebas estricto)
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Microservicio de Citas activo en el puerto ${PORT} (/api/citas)`);
+  });
+}
+
+// Exportaciones compatibles con CommonJS y ES Modules (para Vitest)
+module.exports = app;
+module.exports.JWT_SECRET = JWT_SECRET;
+module.exports.resetCitas = resetCitas;

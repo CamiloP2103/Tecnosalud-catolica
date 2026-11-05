@@ -49,6 +49,45 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
     ).catch((error) => console.error('[auth-service] Error bitacora:', error.code || error.message));
   }
 
+  router.post('/', async (req, res) => {
+    const { errores, datos } = validarRegistro(req.body);
+    if (Object.keys(errores).length > 0) {
+      return res.status(400).json({ errores });
+    }
+
+    try {
+      const nuevoId = await repo.crearAfiliado(datos);
+
+      enviarConfirmacion({ correo: datos.correo, nombres: datos.nombres });
+
+      return res.status(201).json({
+        id: nuevoId,
+        email: datos.correo,
+        nombre: `${datos.nombres} ${datos.apellidos}`,
+        estado: 'PENDIENTE',
+        mensaje: 'Registro exitoso. Revisa tu correo para activar la cuenta.',
+      });
+
+    } catch (error) {
+      const mensajeBD = errorBaseDatos(error);
+      if (mensajeBD) {
+        console.error('[registro-service] Base de datos no disponible:', error.code);
+        return res.status(503).json({ error: mensajeBD });
+      }
+
+      if (error.code === 'ER_DUP_ENTRY' || error.message?.includes('dup')) {
+        return res.status(409).json({ error: 'El correo o documento ya existe.' });
+      }
+
+      if (error.name === 'ErrorNegocio') {
+        return res.status(error.status).json({ error: error.message });
+      }
+      
+      console.error('[registro-service] Error en POST /api/registro:', error);
+      return res.status(500).json({ error: 'Error interno en el servidor.' });
+    }
+  });
+
   // 1. LOGIN
   router.post('/login', async (req, res) => {
     const { usuario, contrasena } = req.body || {};

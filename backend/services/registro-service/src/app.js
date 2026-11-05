@@ -103,35 +103,27 @@ function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
     try {
       const nuevoId = await repo.crearAfiliado(datos);
 
-      const mapaRoles = { paciente: 1, profesional: 2, empresa: 3 };
-      const rolId = mapaRoles[datos.tipoAfiliacion] || 1;
-
-      const respuestaAuth = await fetch(`${authServiceUrl}/api/auth/registro-interno`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tipo_doc: datos.tipoDocumentoCodigo,
-          documento: datos.documento,
-          email: datos.correo,
-          nombre: `${datos.nombres} ${datos.apellidos}`,
-          rol_id: rolId
-        })
-      });
-
-      if (!respuestaAuth.ok) {
-        console.error('[registro-service] Fallo al crear usuario en auth-service');
-      }
-
       enviarConfirmacion({ correo: datos.correo, nombres: datos.nombres });
 
       return res.status(201).json({
         id: nuevoId,
         email: datos.correo,
         nombre: `${datos.nombres} ${datos.apellidos}`,
+        estado: 'PENDIENTE',
         mensaje: 'Registro exitoso. Revisa tu correo para activar la cuenta.',
       });
 
     } catch (error) {
+      const mensajeBD = errorBaseDatos(error);
+      if (mensajeBD) {
+        console.error('[registro-service] Base de datos no disponible:', error.code);
+        return res.status(503).json({ error: mensajeBD });
+      }
+
+      if (error.code === 'ER_DUP_ENTRY' || error.message?.includes('dup')) {
+        return res.status(409).json({ error: 'El correo o documento ya existe.' });
+      }
+
       if (error.name === 'ErrorNegocio') {
         return res.status(error.status).json({ error: error.message });
       }

@@ -4,29 +4,42 @@ import { crearApp } from '../src/app.js';
 import { validarRegistro } from '../src/validators.js';
 
 const formularioValido = {
-  nombres: 'Ana',
-  apellidos: 'Pérez',
-  tipoDocumento: 'CC',
-  documento: '1020304050',
-  nacimientoDia: '15',
-  nacimientoMes: '06',
-  nacimientoAnio: '1990',
-  genero: 'F',
-  correo: 'Ana.Perez@Correo.com',
+  nombres: 'Carlos',
+  apellidos: 'Jimenez',
+  tipoDocumentoCodigo: 'CC',
+  documento: '72000608',
+  nacimientoDia: '05',
+  nacimientoMes: '09',
+  nacimientoAnio: '1977',
+  generoCodigo: 'M',
+  correo: 'caenjiro@yahoo.com',
   telefono: '3001234567',
   direccion: 'Calle 1 # 2-3',
-  ciudad: 'Bogotá',
-  tipoAfiliacion: 'paciente',
-  eps: 'Tecnosalud',
-  regimen: 'contributivo',
-  contactoEmergenciaNombre: 'Luis Pérez',
+  municipioCodigo: '11001',
+  tipoAfiliacionCodigo: 'paciente',
+  epsCodigo: 'EPS001',
+  regimenCodigo: 'contributivo',
+  salario: '1500000',
+  contactoEmergenciaNombre: 'Alexandra Arboleda',
   contactoEmergenciaTelefono: '3007654321',
+  contactoEmergenciaParentescoCodigo: 'Padre',
   aceptaTratamientoDatos: true,
 };
 
 function crear(execute = vi.fn().mockResolvedValue([{ insertId: 7 }])) {
   const notificar = vi.fn().mockResolvedValue();
-  const app = crearApp({ pool: { execute }, frontendUrl: 'http://localhost:5173', notificar, puerto: 3003 });
+  const repo = {
+    crearAfiliado: async (datos) => {
+      const [res] = await execute('INSERT INTO afiliados ...', [datos]);
+      return res.insertId;
+    },
+    catalogos: async () => ({ listas: { departamentos: [], eps: [] } }),
+    resumen: async () => ({}),
+    listarAfiliados: async () => [],
+    cambiarEstado: async () => ({}),
+    historial: async () => []
+  };
+  const app = crearApp({ repo, frontendUrl: 'http://localhost:5173', notificar, puerto: 3003 });
   return { app, execute, notificar };
 }
 
@@ -38,8 +51,8 @@ describe('validarRegistro', () => {
   it('acepta un formulario válido y normaliza los datos', () => {
     const { errores, datos } = validarRegistro(formularioValido);
     expect(errores).toEqual({});
-    expect(datos.correo).toBe('ana.perez@correo.com');
-    expect(datos.fechaNacimiento).toBe('1990-06-15');
+    expect(datos.correo).toBe('caenjiro@yahoo.com');
+    expect(datos.fechaNacimiento).toBe('1977-09-05');
   });
 
   it('rechaza fechas imposibles o futuras', () => {
@@ -68,8 +81,8 @@ describe('POST /api/registro', () => {
     const { app, notificar } = crear();
     const res = await request(app).post('/api/registro').send(formularioValido);
     expect(res.status).toBe(201);
-    expect(res.body).toEqual({ id: 7, email: 'ana.perez@correo.com', nombre: 'Ana Pérez', estado: 'PENDIENTE' });
-    expect(notificar).toHaveBeenCalledWith(expect.objectContaining({ to: 'ana.perez@correo.com' }));
+    expect(res.body).toMatchObject({ id: 7, email: 'caenjiro@yahoo.com', nombre: 'Carlos Jimenez', estado: 'PENDIENTE' });
+    expect(notificar).toHaveBeenCalledWith(expect.objectContaining({ to: 'caenjiro@yahoo.com' }));
   });
 
   it('escapa el nombre en el correo de confirmación', async () => {

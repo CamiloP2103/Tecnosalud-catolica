@@ -12,13 +12,19 @@ function respuestaJson(datos, ok = true) {
 }
 
 beforeEach(() => {
-  localStorage.getItem.mockImplementation((key) => {
-    if (key === 'tecnosalud_token') return 'token-de-prueba';
-    if (key === 'tecnosalud_sesion_activa') return JSON.stringify(sesionActiva);
-    return null;
+  vi.stubGlobal('localStorage', {
+    getItem: vi.fn((key) => {
+      if (key === 'tecnosalud_token') return 'token-de-prueba';
+      if (key === 'tecnosalud_sesion_activa') return JSON.stringify(sesionActiva);
+      return null;
+    }),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
   });
   sesionActiva = { nombre: 'Paciente de prueba', rol: 'PACIENTE' };
   citasServidor = [];
+  
   fetchMock = vi.fn((url, opciones = {}) => {
     const ruta = new URL(url);
     const metodo = opciones.method || 'GET';
@@ -42,7 +48,9 @@ beforeEach(() => {
       });
     }
 
-    if (ruta.pathname === '/api/citas' && metodo === 'GET') return respuestaJson(citasServidor);
+    if (ruta.pathname === '/api/citas' && metodo === 'GET') {
+      return respuestaJson(citasServidor);
+    }
 
     if (ruta.pathname === '/api/citas' && metodo === 'POST') {
       const datos = JSON.parse(opciones.body);
@@ -66,12 +74,12 @@ beforeEach(() => {
 
     return respuestaJson({ error: 'Ruta no simulada' }, false);
   });
+
   vi.stubGlobal('fetch', fetchMock);
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  localStorage.getItem.mockReset();
 });
 
 describe('Agenda de citas en Servicios Clínicos', () => {

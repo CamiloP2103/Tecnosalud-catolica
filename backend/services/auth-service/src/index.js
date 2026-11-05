@@ -8,8 +8,8 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3005';
 const NOTIFICATION_API_KEY = process.env.NOTIFICATION_API_KEY || ''; // <-- La llave maestra
 
-// Función notificar centralizada con la cabecera x-api-key
-const notificar = async ({ to, subject, html, text }) => {
+// Función notificar centralizada con soporte para adjuntos y cabecera x-api-key
+const notificar = async ({ to, subject, html, text, adjuntos }) => {
   const respuesta = await fetch(`${NOTIFICATION_SERVICE_URL}/api/notifications/email`, {
     method: 'POST',
     headers: {
@@ -17,7 +17,8 @@ const notificar = async ({ to, subject, html, text }) => {
       'x-api-key': NOTIFICATION_API_KEY, // Autorización para el microservicio de correos
       'x-servicio-origen': 'auth-service'
     },
-    body: JSON.stringify({ to, subject, html, text })
+    // SE AGREGA 'adjuntos' AQUÍ PARA QUE NO SE PIERDA EL PDF
+    body: JSON.stringify({ to, subject, html, text, adjuntos })
   });
 
   const resultado = await respuesta.json();
