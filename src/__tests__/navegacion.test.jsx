@@ -28,8 +28,8 @@ describe('Navegación', () => {
     render(<App />);
 
     expect(screen.getAllByText(/Inicio/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Telefono/i)).toBeInTheDocument();
+    expect(screen.getByText(/Urgencias 24\/7/i)).toBeInTheDocument();
     expect(screen.getByText(/contacto@tecnosalud.com/i)).toBeInTheDocument();
-    expect(screen.getByText(/© 2026 Tecnosalud/i)).toBeInTheDocument();
+    expect(screen.getByText(/© 2026 Tecnosalud EPS/i)).toBeInTheDocument();
   });
 });
