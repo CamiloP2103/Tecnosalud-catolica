@@ -27,8 +27,8 @@ function Inicio({ onNavigate }) {
             <span className="inicio-hero__title-accent">unidas por tu bienestar</span>
           </h2>
           <p className="inicio-hero__text">
-            En Tecnosalud Católica combinamos innovación y compromiso para
-            ofrecerte servicios de salud accesibles, seguros y confiables.
+            En Tecnosalud combinamos innovación y compromiso para
+            ofrecerte servicios de salud accesibles, seguros y confiables para tu agrado.
           </p>
           <button
             type="button"
