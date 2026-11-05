@@ -28,7 +28,7 @@ jobs:
       - name: ESLint
         run: npm run lint
       - name: Pruebas del frontend
-        run: npm test
+        run: npm run test:frontend
       - name: Build de producción
         run: npm run build
 
