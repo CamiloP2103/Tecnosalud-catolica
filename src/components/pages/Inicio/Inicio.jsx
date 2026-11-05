@@ -28,7 +28,8 @@ function Inicio({ onNavigate }) {
           </h2>
           <p className="inicio-hero__text">
             En Tecnosalud EPS combinamos innovación y compromiso para
-            ofrecerte servicios de salud accesibles, seguros y confiables para tu agrado.
+            ofrecerte servicios de salud accesibles, seguros y confiables para ti y tu familia
+            que pueden ser de tu agrado.
           </p>
           <button
             type="button"
