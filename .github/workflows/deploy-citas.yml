@@ -1,0 +1,27 @@
+name: Despliegue citas Service en Azure
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar dependencias y compilar
+        run: |
+          cd backend/services/citas-service
+          npm ci
+
+      - name: Desplegar en Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'tecnosalud-citas-2026'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_CITAS_PUBLISH_PROFILE }}
+          package: 'backend/services/citas-service'
