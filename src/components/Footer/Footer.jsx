@@ -5,8 +5,9 @@ const contactInfo = {
   tollFree: '01 8000 123 456',
   email: 'contacto@tecnosalud.com',
   socialLinks: [
-    { label: 'GitHub', href: 'https://github.com/CamiloP2103/Tecnosalud-catolica.git' },
+    { label: 'Facebook', href: 'https://www.facebook.com/tecnosalud' },
     { label: 'Instagram', href: 'https://www.instagram.com/tecnosalud' },
+    { label: 'X', href: 'https://x.com/Tecnosalud' },
   ],
 };
 
@@ -17,7 +18,17 @@ function Footer() {
         <div className="site-footer__brand">
           <span className="site-footer__logo">Tecnosalud EPS</span>
           <p>Innovación, salud y confianza para cada etapa de tu bienestar.</p>
-          <p className="site-footer__nit">NIT: 900.123.456-7 | Vigilado Supersalud</p>
+          <p className="site-footer__nit">
+            NIT: 900.123.456-7 | Vigilado{' '}
+            <a 
+              href="https://www.supersalud.gov.co" 
+              target="_blank" 
+              rel="noreferrer"
+              className="site-footer__external-link"
+            >
+              Superintendencia Nacional de Salud
+            </a>
+          </p>
         </div>
 
         <div className="site-footer__column">
@@ -39,7 +50,7 @@ function Footer() {
         </div>
 
         <div className="site-footer__column">
-          <h3>Redes e institucional</h3>
+          <h3>Redes sociales</h3>
           <ul className="site-footer__socials">
             {contactInfo.socialLinks.map((social) => (
               <li key={social.label}>
@@ -48,11 +59,6 @@ function Footer() {
                 </a>
               </li>
             ))}
-            <li>
-              <a href="https://www.supersalud.gov.co" target="_blank" rel="noreferrer">
-                Supersalud
-              </a>
-            </li>
           </ul>
         </div>
       </div>
