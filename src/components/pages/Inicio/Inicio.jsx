@@ -27,7 +27,7 @@ function Inicio({ onNavigate }) {
             <span className="inicio-hero__title-accent">unidas por tu bienestar</span>
           </h2>
           <p className="inicio-hero__text">
-            En Tecnosalud EPS combinamos innovación y compromiso para
+            En Tecnosalud EPS combinamos, innovación y compromiso para
             ofrecerte servicios de salud accesibles, seguros y confiables para ti y tu familia
             que pueden ser de tu agrado.
           </p>
