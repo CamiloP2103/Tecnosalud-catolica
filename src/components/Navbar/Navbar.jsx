@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import './Navbar.css';
 import IconoTecnosalud from './Images/Icono.png';
 
-function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
+function Navbar({ currentPage, onNavigate, navItems, ctaItem, userRole }) {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const navRef = useRef(null);
@@ -29,8 +29,16 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fusionamos ctaItem dentro de los ítems del menú para que se comporte como uno más
-  const allNavItems = ctaItem ? [...navItems, ctaItem] : navItems;
+  // Filtramos los ítems del menú: "afiliaciones" solo se muestra si el userRole es 'afiliaciones' o 'admin' según corresponda
+  const filteredNavItems = navItems.filter((item) => {
+    if (item.id === 'afiliaciones') {
+      return userRole === 'afiliaciones';
+    }
+    return true;
+  });
+
+  // Fusionamos ctaItem dentro de los ítems filtrados del menú
+  const allNavItems = ctaItem ? [...filteredNavItems, ctaItem] : filteredNavItems;
 
   return (
     <nav className={`navbar ${menuOpen ? 'navbar--open' : ''}`} ref={navRef} aria-label="Navegación principal">
