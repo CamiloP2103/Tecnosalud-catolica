@@ -67,7 +67,7 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
             municipios: municipios
               .filter((m) => String(m.departamento || '').trim() === String(d.codigo || '').trim())
               .map(({ codigo, nombre }) => ({ codigo, nombre })),
-          })).filter((d) => d.municipios.length > 0),
+          })),
           eps,
           regimenes,
           tiposAfiliacion,
