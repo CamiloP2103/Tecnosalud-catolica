@@ -36,17 +36,14 @@ const DESDE_AFILIADO = `FROM afiliados a
   LEFT JOIN regimenes r ON r.codigo = a.regimen_codigo
   LEFT JOIN parentescos p ON p.codigo = a.contacto_emergencia_parentesco_codigo`;
 
-
+// Caché global a nivel de módulo
 let cache = null;
   
 function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
-  
   return {
     /**
      * Catálogos para el formulario y para validar. Se guardan en memoria 10 minutos porque casi no cambian.
-     * Devuelve { listas, validos }: `listas` para el navegador y `validos` (Sets de códigos) para validar.
      */
-    
     async catalogos() {
       if (cache && reloj() - cache.cargado < DIEZ_MINUTOS) return cache.valor;
       const consulta = async (sql) => (await pool.query(sql))[0];
@@ -65,7 +62,6 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
         listas: {
           tiposDocumento,
           generos,
-          // Departamentos con sus municipios, con comparación robusta de tipos y espacios
           departamentos: departamentos.map((d) => ({
             ...d,
             municipios: municipios
@@ -87,11 +83,6 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
           parentescos: codigos(parentescos),
         },
       };
-// ---- COLOCA ESTO TEMPORALMENTE AQUÍ ----
-      console.log('[DEBUG CATALOGOS] Primer departamento:', departamentos[0]);
-      console.log('[DEBUG CATALOGOS] Primer municipio:', municipios[0]);
-      console.log('[DEBUG CATALOGOS] Resultado mapeado:', JSON.stringify(valor.listas.departamentos[0], null, 2));
-      // ----------------------------------------
 
       cache = { valor, cargado: reloj() };
       return valor;
@@ -103,7 +94,6 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
           throw new ErrorNegocio(400, 'No se recibieron datos para el registro.');
         }
 
-        // Extracción estricta de códigos
         const tipoDoc = datos.tipoDocumentoCodigo || datos.tipoDocumento || null;
         const documento = datos.documento || null;
         const fechaNacimiento = datos.fechaNacimiento || null;
@@ -112,12 +102,8 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
         const telefono = datos.telefono || null;
         const direccion = datos.direccion || null;
         
-        // --- BLINDAJE ABSOLUTO PARA MUNICIPIO ---
-        // Si por alguna razón el frontend mandó un texto largo en lugar de un código corto, 
-        // lo cortamos de emergencia a máximo 10 caracteres para que nunca vuelva a dar ER_DATA_TOO_LONG.
         let municipio = datos.municipioCodigo || datos.municipio || datos.ciudad || null;
         if (municipio && typeof municipio === 'string' && municipio.length > 10) {
-          console.erta?.(`[ALERTA] municipio_codigo recibió un texto largo inesperado: "${municipio}". Se ignorará o recortará.`);
           municipio = null; 
         }
 
@@ -136,36 +122,33 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
         const parentesco = datos.contactoEmergenciaParentescoCodigo || datos.contactoEmergenciaParentesco || null;
 
         const parametros = [
-          datos.nombres || null,                  // 1
-          datos.apellidos || null,                // 2
-          tipoDoc,                                // 3 -> tipo_documento_codigo
-          documento,                              // 4 -> documento
-          fechaNacimiento,                        // 5 -> fecha_nacimiento
-          genero,                                 // 6 -> genero_codigo
-          correo,                                 // 7 -> correo
-          telefono,                               // 8 -> telefono
-          direccion,                              // 9 -> direccion
-          municipio,                              // 10 -> municipio_codigo
-          tipoAfiliacion,                         // 11 -> tipo_afiliacion_codigo
-          eps,                                    // 12 -> eps_codigo
-          regimen,                                // 13 -> regimen_codigo
-          salarioGuardar,                         // 14 -> salario
-          contactoNombre,                         // 15 -> contacto_emergencia_nombre
-          contactoTelefono,                       // 16 -> contacto_emergencia_telefono
-          parentesco                              // 17 -> contacto_emergencia_parentesco_codigo
+          datos.nombres || null,              // 1
+          datos.apellidos || null,            // 2
+          tipoDoc,                            // 3
+          documento,                          // 4
+          fechaNacimiento,                    // 5
+          genero,                             // 6
+          correo,                             // 7
+          telefono,                           // 8
+          direccion,                          // 9
+          municipio,                          // 10
+          tipoAfiliacion,                     // 11
+          eps,                                // 12
+          regimen,                            // 13
+          salarioGuardar,                     // 14
+          contactoNombre,                     // 15
+          contactoTelefono,                   // 16
+          parentesco                          // 17
         ];
 
         const parametrosSeguros = parametros.map(valor => (valor === undefined || valor === '' ? null : valor));
-
-        // LOG DE DEPURACIÓN DEFINITIVA: Imprime en consola exactamente qué se va a insertar y en qué orden
-        console.log('[DEBUG-REGISTRO] Parámetros listos para INSERT:', JSON.stringify(parametrosSeguros, null, 2));
 
         const [resultado] = await pool.execute(
           `INSERT INTO afiliados
             (nombres, apellidos, tipo_documento_codigo, documento, fecha_nacimiento, genero_codigo, correo, telefono,
              direccion, municipio_codigo, tipo_afiliacion_codigo, eps_codigo, regimen_codigo, salario,
              contacto_emergencia_nombre, contacto_emergencia_telefono, contacto_emergencia_parentesco_codigo, acepta_tratamiento_datos, estado)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, 'PENDIENTE')`,
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, 'PENDIENTE')`,
           parametrosSeguros
         );
 
@@ -229,9 +212,6 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
         parametros.push(patron, patron, patron, patron);
       }
       
-      // Eliminamos el parametros.push(limite) para evitar el bug de mysql2
-      // e inyectamos Number(limite) directamente en la cadena SQL de forma segura.
-      
       const [filas] = await pool.query(
         `SELECT ${COLUMNAS_AFILIADO} ${DESDE_AFILIADO}
          ${condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : ''}
@@ -244,30 +224,31 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
 
     // --- Gestión Geográfica ---
     async crearDepartamento(nombre) {
-      // Generamos un código automático basado en el nombre (ej. BOG, ANT) o minúsculas sin espacios
-      const codigo = nombre.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5) + Math.floor(Math.random() * 90 + 10);
-      const [resultado] = await pool.execute(
-        'INSERT INTO departamentos (codigo, nombre) VALUES (?, ?)',
-        [codigo, nombre.trim()]
-      );
-      // Limpiamos la caché de catálogos para que los cambios se reflejen de inmediato
-      cache = null; 
-      return resultado.insertId;
-    },
-
-    async crearDepartamento(nombre) {
-      // Tomamos solo las primeras 2 o 3 letras del nombre en mayúsculas y un número de 1 dígito para que sea corto (ej. CUND1)
       const base = nombre.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
       const aleatorio = Math.floor(Math.random() * 9) + 1;
-      const codigo = `${base}${aleatorio}`.slice(0, 5); // Garantiza un máximo de 5 caracteres
+      const codigo = `${base}${aleatorio}`.slice(0, 5);
 
       const [resultado] = await pool.execute(
         'INSERT INTO departamentos (codigo, nombre) VALUES (?, ?)',
         [codigo, nombre.trim()]
       );
-      cache = null; // Limpiamos la caché de catálogos
+      cache = null; // Limpiamos la caché global para forzar la recarga
       return resultado.insertId;
     },
+
+    async crearMunicipio(departamentoCodigo, nombre) {
+      const base = nombre.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+      const aleatorio = Math.floor(Math.random() * 90) + 10;
+      const codigo = `${base}${aleatorio}`.slice(0, 6);
+
+      const [resultado] = await pool.execute(
+        'INSERT INTO municipios (codigo, nombre, departamento_codigo) VALUES (?, ?, ?)',
+        [codigo, nombre.trim(), departamentoCodigo]
+      );
+      cache = null; // Limpiamos la caché global para forzar la recarga
+      return resultado.insertId;
+    },
+
     async cambiarEstado(id, estadoNuevo, { cambiadoPor, observacion }) {
       if (!ESTADOS.includes(estadoNuevo)) throw new ErrorNegocio(400, `Estado inválido. Usa: ${ESTADOS.join(', ')}.`);
       const conexion = await pool.getConnection();
@@ -301,8 +282,6 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
       return filas;
     },
   };
-
-  
 }
 
 module.exports = { crearRepositorio, ErrorNegocio, ESTADOS };
