@@ -8,7 +8,6 @@ class ErrorNegocio extends Error {
   }
 }
 
-const DIEZ_MINUTOS = 10 * 60 * 1000;
 const ESTADOS = ['PENDIENTE', 'ACTIVO', 'RECHAZADO'];
 
 const COLUMNAS_AFILIADO = `a.id, a.nombres, a.apellidos, 
@@ -36,16 +35,9 @@ const DESDE_AFILIADO = `FROM afiliados a
   LEFT JOIN regimenes r ON r.codigo = a.regimen_codigo
   LEFT JOIN parentescos p ON p.codigo = a.contacto_emergencia_parentesco_codigo`;
 
-// Caché global a nivel de módulo
-let cache = null;
-  
 function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
   return {
-    /**
-     * Catálogos para el formulario y para validar. Se guardan en memoria 10 minutos porque casi no cambian.
-     */
     async catalogos() {
-      if (cache && reloj() - cache.cargado < DIEZ_MINUTOS) return cache.valor;
       const consulta = async (sql) => (await pool.query(sql))[0];
       const [tiposDocumento, generos, departamentos, municipios, eps, regimenes, tiposAfiliacion, parentescos] = await Promise.all([
         consulta('SELECT codigo, nombre, descripcion FROM tipos_documento ORDER BY FIELD(codigo, "CC", "TI", "RC", "CE", "PA", "PPT")'),
@@ -58,7 +50,8 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
         consulta('SELECT codigo, nombre FROM parentescos'),
       ]);
       const codigos = (filas) => new Set(filas.map((f) => f.codigo));
-      const valor = {
+      
+      return {
         listas: {
           tiposDocumento,
           generos,
@@ -83,9 +76,6 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
           parentescos: codigos(parentescos),
         },
       };
-
-      cache = { valor, cargado: reloj() };
-      return valor;
     },
 
     async crearAfiliado(datos) {
@@ -122,23 +112,23 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
         const parentesco = datos.contactoEmergenciaParentescoCodigo || datos.contactoEmergenciaParentesco || null;
 
         const parametros = [
-          datos.nombres || null,              // 1
-          datos.apellidos || null,            // 2
-          tipoDoc,                            // 3
-          documento,                          // 4
-          fechaNacimiento,                    // 5
-          genero,                             // 6
-          correo,                             // 7
-          telefono,                           // 8
-          direccion,                          // 9
-          municipio,                          // 10
-          tipoAfiliacion,                     // 11
-          eps,                                // 12
-          regimen,                            // 13
-          salarioGuardar,                     // 14
-          contactoNombre,                     // 15
-          contactoTelefono,                   // 16
-          parentesco                          // 17
+          datos.nombres || null,
+          datos.apellidos || null,
+          tipoDoc,
+          documento,
+          fechaNacimiento,
+          genero,
+          correo,
+          telefono,
+          direccion,
+          municipio,
+          tipoAfiliacion,
+          eps,
+          regimen,
+          salarioGuardar,
+          contactoNombre,
+          contactoTelefono,
+          parentesco
         ];
 
         const parametrosSeguros = parametros.map(valor => (valor === undefined || valor === '' ? null : valor));
@@ -160,7 +150,6 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
       }
     },
 
-    // ---- Administración ----
     async resumen() {
       const [[totales]] = await pool.query(
         `SELECT COUNT(*) AS total,
@@ -222,7 +211,6 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
       return filas;
     },
 
-    // --- Gestión Geográfica ---
     async crearDepartamento(nombre) {
       const base = nombre.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
       const aleatorio = Math.floor(Math.random() * 9) + 1;
@@ -232,7 +220,6 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
         'INSERT INTO departamentos (codigo, nombre) VALUES (?, ?)',
         [codigo, nombre.trim()]
       );
-      cache = null; // Limpiamos la caché global para forzar la recarga
       return resultado.insertId;
     },
 
@@ -245,7 +232,6 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
         'INSERT INTO municipios (codigo, nombre, departamento_codigo) VALUES (?, ?, ?)',
         [codigo, nombre.trim(), departamentoCodigo]
       );
-      cache = null; // Limpiamos la caché global para forzar la recarga
       return resultado.insertId;
     },
 
