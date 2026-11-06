@@ -69,7 +69,7 @@ const pages = {
   medicamentos: Medicamentos,
   triage: Triage,
   admin: PanelAdmin,
-  Afiliaciones: PanelAfiliaciones, // Panel afiliaciones  
+  afiliaciones: PanelAfiliaciones, // Panel afiliaciones  
   'restablecer-clave': RestablecerClave, // <- Ruta registrada
   
 };
