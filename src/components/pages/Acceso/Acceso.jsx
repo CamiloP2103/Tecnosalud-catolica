@@ -149,7 +149,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
       localStorage.setItem('tecnosalud_sesion_activa', JSON.stringify(datos.usuario));
       const rolUsuario = datos.usuario?.rol || '';
       localStorage.setItem('tecnosalud_rol', rolUsuario);
-      
+
       setUsuarioLogueado(datos.usuario);
 
       if (form.recordarUsuario) {
@@ -158,8 +158,9 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
         localStorage.removeItem('tecnosalud_usuario_recordado');
       }
 
+      // ✅ Pasamos el rol capturado hacia App.jsx para que el Navbar lo renderice de inmediato  
       if (onLoginExitoso) {
-        onLoginExitoso();
+        onLoginExitoso(rolUsuario);
       }
 
       setMensajeExito(`¡Bienvenido de nuevo, ${datos.usuario.nombre}! Has ingresado correctamente.`);
