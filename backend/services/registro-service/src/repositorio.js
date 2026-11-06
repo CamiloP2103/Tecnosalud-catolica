@@ -225,8 +225,8 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
 
     async crearMunicipio(departamentoCodigo, nombre) {
       const base = nombre.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
-      const aleatorio = Math.floor(Math.random() * 90) + 10;
-      const codigo = `${base}${aleatorio}`.slice(0, 6);
+      const aleatorio = Math.floor(Math.random() * 90) + 1;
+      const codigo = `${base}${aleatorio}`.slice(0, 5);
 
       const [resultado] = await pool.execute(
         'INSERT INTO municipios (codigo, nombre, departamento_codigo) VALUES (?, ?, ?)',
