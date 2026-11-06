@@ -36,14 +36,17 @@ const DESDE_AFILIADO = `FROM afiliados a
   LEFT JOIN regimenes r ON r.codigo = a.regimen_codigo
   LEFT JOIN parentescos p ON p.codigo = a.contacto_emergencia_parentesco_codigo`;
 
-function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
-  let cache = null;
 
+let cache = null;
+  
+function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
+  
   return {
     /**
      * Catálogos para el formulario y para validar. Se guardan en memoria 10 minutos porque casi no cambian.
      * Devuelve { listas, validos }: `listas` para el navegador y `validos` (Sets de códigos) para validar.
      */
+    
     async catalogos() {
       if (cache && reloj() - cache.cargado < DIEZ_MINUTOS) return cache.valor;
       const consulta = async (sql) => (await pool.query(sql))[0];
@@ -238,6 +241,7 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
       
       return filas;
     },
+
     // --- Gestión Geográfica ---
     async crearDepartamento(nombre) {
       // Generamos un código automático basado en el nombre (ej. BOG, ANT) o minúsculas sin espacios
