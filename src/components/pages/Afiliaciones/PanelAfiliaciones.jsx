@@ -1,168 +1,157 @@
 import { useState } from 'react';
-import './PanelAfiliaciones.css';
+import './PanelAdmin.css'; // Reutilizamos los estilos institucionales
 
 function PanelAfiliaciones() {
-  const [activeTab, setActiveTab] = useState('solicitudes');
-
-  // Estado simulado de solicitudes pendientes
+  const [seccionActiva, setSeccionActiva] = useState('solicitudes');
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  
+  // Estados de ejemplo para las solicitudes y gestión
   const [solicitudes, setSolicitudes] = useState([
-    { id: 1, tipo: 'Usuario EPS', nombre: 'Carlos Jiménez', documento: '72000607', estado: 'Pendiente' },
-    { id: 2, tipo: 'Médico', nombre: 'Dra. Ana María Pérez', especialidad: 'Cardiología', estado: 'Pendiente' },
+    { id: 1, tipo: 'Usuario EPS', nombre: 'Carlos Jiménez', detalle: '72000607', estado: 'Pendiente' },
+    { id: 2, tipo: 'Médico', nombre: 'Dra. Ana María Pérez', detalle: 'Cardología', estado: 'Pendiente' },
   ]);
 
-  // Estado para gestión geográfica
-  const [departamentos, setDepartamentos] = useState(['Cundinamarca', 'Antioquia', 'Atlántico']);
-  const [ciudades, setCiudades] = useState(['Bogotá D.C.', 'Medellín', 'Barranquilla']);
-  
-  // Estados para creación manual de Usuario EPS por parte del operador
-  const [nuevoUsuario, setNuevoUsuario] = useState({
-    nombres: '',
-    apellidos: '',
-    tipoDocumento: 'CC',
-    numeroDocumento: '',
-    correo: '',
-    telefono: '',
-    direccion: '',
-    eps: 'Tecnosalud EPS', // Fijo y bloqueado
-  });
-
-  const handleAprobar = (id) => {
-    setSolicitudes(solicitudes.map(s => s.id === id ? { ...s, estado: 'Aprobado' } : s));
-  };
-
-  const handleCrearUsuarioEps = (e) => {
-    e.preventDefault();
-    alert(`Usuario EPS ${nuevoUsuario.nombres} registrado exitosamente con EPS Tecnosalud.`);
-    setNuevoUsuario({ nombres: '', apellidos: '', tipoDocumento: 'CC', numeroDocumento: '', correo: '', telefono: '', direccion: '', eps: 'Tecnosalud EPS' });
+  const aprobarSolicitud = (id) => {
+    setSolicitudes(solicitudes.map(s => s.id === id ? { ...s, estado: 'Aprobada' } : s));
   };
 
   return (
-    <div className="panel-afiliaciones">
-      <header className="panel-header">
-        <h2>Panel de Gestión - Perfil Afiliaciones</h2>
-        <p>Administración de solicitudes, padrón de usuarios y cobertura geográfica.</p>
-      </header>
-
-      <div className="panel-tabs">
-        <button 
-          className={activeTab === 'solicitudes' ? 'active' : ''} 
-          onClick={() => setActiveTab('solicitudes')}
+    <div className="adm-panel">
+      {/* Botón para desplegar menú en móviles */}
+      <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <button
+          type="button"
+          className="adm-menu__alternar"
+          onClick={() => setMenuAbierto(!menuAbierto)}
+          aria-label="Abrir menú de afiliaciones"
         >
-          Aprobación de Solicitudes
-        </button>
-        <button 
-          className={activeTab === 'crear-eps' ? 'active' : ''} 
-          onClick={() => setActiveTab('crear-eps')}
-        >
-          Crear Usuario EPS
-        </button>
-        <button 
-          className={activeTab === 'geografia' ? 'active' : ''} 
-          onClick={() => setActiveTab('geografia')}
-        >
-          Gestión Geográfica
+          ☰
         </button>
       </div>
 
-      <div className="panel-content">
-        {activeTab === 'solicitudes' && (
-          <div className="section-solicitudes">
-            <h3>Bandeja de Solicitudes Pendientes (Médicos y Usuarios)</h3>
-            <table className="tabla-gestion">
-              <thead>
-                <tr>
-                  <th>Tipo</th>
-                  <th>Nombre</th>
-                  <th>Detalle</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {solicitudes.map((sol) => (
-                  <tr key={sol.id}>
-                    <td>{sol.tipo}</td>
-                    <td>{sol.nombre}</td>
-                    <td>{sol.especialidad || sol.documento}</td>
-                    <td><span className={`badge ${sol.estado.toLowerCase()}`}>{sol.estado}</span></td>
-                    <td>
-                      {sol.estado === 'Pendiente' ? (
-                        <button className="btn-aprobar" onClick={() => handleAprobar(sol.id)}>Aprobar</button>
-                      ) : (
-                        <span>Completado</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      {/* Menú lateral de navegación del perfil */}
+      <aside className={`adm-menu ${menuAbierto ? 'adm-menu--abierto' : ''}`}>
+        <p className="adm-menu__titulo">Gestión de Afiliaciones</p>
+        <nav>
+          <button
+            type="button"
+            className={`adm-menu__opcion ${seccionActiva === 'solicitudes' ? 'adm-menu__opcion--activa' : ''}`}
+            onClick={() => { setSeccionActiva('solicitudes'); setMenuAbierto(false); }}
+          >
+            <span>Aprobación de Solicitudes</span>
+            <span className="adm-menu__contador adm-menu__contador--alerta">
+              {solicitudes.filter(s => s.estado === 'Pendiente').length}
+            </span>
+          </button>
 
-        {activeTab === 'crear-eps' && (
-          <div className="section-crear-eps">
-            <h3>Alta de Usuario de la EPS (Campos Completos)</h3>
-            <form onSubmit={handleCrearUsuarioEps} className="form-afiliacion-admin">
-              <div className="form-row">
-                <label>Nombres:
-                  <input type="text" value={nuevoUsuario.nombres} onChange={e => setNuevoUsuario({...nuevoUsuario, nombres: e.target.value})} required />
-                </label>
-                <label>Apellidos:
-                  <input type="text" value={nuevoUsuario.apellidos} onChange={e => setNuevoUsuario({...nuevoUsuario, apellidos: e.target.value})} required />
-                </label>
-              </div>
-              <div className="form-row">
-                <label>Tipo Documento:
-                  <select value={nuevoUsuario.tipoDocumento} onChange={e => setNuevoUsuario({...nuevoUsuario, tipoDocumento: e.target.value})}>
-                    <option value="CC">Cédula de Ciudadanía</option>
-                    <option value="CE">Cédula de Extranjería</option>
-                  </select>
-                </label>
-                <label>Número de Documento:
-                  <input type="text" value={nuevoUsuario.numeroDocumento} onChange={e => setNuevoUsuario({...nuevoUsuario, numeroDocumento: e.target.value})} required />
-                </label>
-              </div>
-              <div className="form-row">
-                <label>Correo Electrónico:
-                  <input type="email" value={nuevoUsuario.correo} onChange={e => setNuevoUsuario({...nuevoUsuario, correo: e.target.value})} required />
-                </label>
-                <label>Teléfono:
-                  <input type="text" value={nuevoUsuario.telefono} onChange={e => setNuevoUsuario({...nuevoUsuario, telefono: e.target.value})} required />
-                </label>
-              </div>
-              <div className="form-row">
-                <label>EPS Asignada (Fija):
-                  <input type="text" value={nuevoUsuario.eps} disabled className="input-bloqueado" />
-                </label>
-                <label>Dirección:
-                  <input type="text" value={nuevoUsuario.direccion} onChange={e => setNuevoUsuario({...nuevoUsuario, direccion: e.target.value})} required />
-                </label>
-              </div>
-              <button type="submit" className="btn-primary">Registrar Usuario en EPS</button>
-            </form>
-          </div>
-        )}
+          <button
+            type="button"
+            className={`adm-menu__opcion ${seccionActiva === 'usuarios' ? 'adm-menu__opcion--activa' : ''}`}
+            onClick={() => { setSeccionActiva('usuarios'); setMenuAbierto(false); }}
+          >
+            <span>Crear Usuario EPS</span>
+          </button>
 
-        {activeTab === 'geografia' && (
-          <div className="section-geografia">
-            <h3>Administración de Departamentos y Ciudades</h3>
-            <div className="geo-grid">
-              <div className="geo-box">
-                <h4>Departamentos</h4>
-                <ul>
-                  {departamentos.map((dep, idx) => <li key={idx}>{dep}</li>)}
-                </ul>
+          <button
+            type="button"
+            className={`adm-menu__opcion ${seccionActiva === 'geografia' ? 'adm-menu__opcion--activa' : ''}`}
+            onClick={() => { setSeccionActiva('geografia'); setMenuAbierto(false); }}
+          >
+            <span>Gestión Geográfica</span>
+          </button>
+        </nav>
+      </aside>
+
+      {/* Contenido principal del panel */}
+      <main className="adm-contenido">
+        <header className="adm-encabezado">
+          <div>
+            <h2>Panel de Gestión - Perfil Afiliaciones</h2>
+            <p>Administración de solicitudes, padrón de usuarios y cobertura geográfica en Tecnosalud.</p>
+          </div>
+        </header>
+
+        {seccionActiva === 'solicitudes' && (
+          <section className="adm-seccion">
+            <div className="adm-tarjeta">
+              <div className="adm-tarjeta__encabezado">
+                <h3>Bandeja de Solicitudes Pendientes (Médicos y Usuarios)</h3>
               </div>
-              <div className="geo-box">
-                <h4>Ciudades / Municipios</h4>
-                <ul>
-                  {ciudades.map((ciu, idx) => <li key={idx}>{ciu}</li>)}
-                </ul>
+
+              <div className="adm-tabla-contenedor">
+                <table className="adm-tabla">
+                  <thead>
+                    <tr>
+                      <th>Tipo</th>
+                      <th>Nombre</th>
+                      <th>Detalle</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {solicitudes.map((sol) => (
+                      <tr key={sol.id}>
+                        <td><strong>{sol.tipo}</strong></td>
+                        <td>{sol.nombre}</td>
+                        <td>{sol.detalle}</td>
+                        <td>
+                          <span className={`adm-insignia ${sol.estado === 'Pendiente' ? 'adm-insignia--pendiente' : 'adm-insignia--activo'}`}>
+                            {sol.estado}
+                          </span>
+                        </td>
+                        <td>
+                          {sol.estado === 'Pendiente' ? (
+                            <button
+                              type="button"
+                              className="adm-btn adm-btn--verde"
+                              onClick={() => aprobarSolicitud(sol.id)}
+                            >
+                              Aprobar
+                            </button>
+                          ) : (
+                            <span className="adm-sub">Completado</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {solicitudes.length === 0 && (
+                      <tr>
+                        <td colSpan="5" className="adm-vacio" style={{ textAlign: 'center', padding: '1.5rem' }}>
+                          No hay solicitudes pendientes en este momento.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
+          </section>
         )}
-      </div>
+
+        {seccionActiva === 'usuarios' && (
+          <section className="adm-seccion">
+            <div className="adm-tarjeta">
+              <div className="adm-tarjeta__encabezado">
+                <h3>Crear Nuevo Usuario EPS (Tecnosalud Fija)</h3>
+              </div>
+              <p className="adm-nota">Formulario para dar de alta registros con la EPS fija en Tecnosalud Católica.</p>
+              {/* Aquí puedes incorporar los campos de registro de afiliado */}
+            </div>
+          </section>
+        )}
+
+        {seccionActiva === 'geografia' && (
+          <section className="adm-seccion">
+            <div className="adm-tarjeta">
+              <div className="adm-tarjeta__encabezado">
+                <h3>Gestión de Cobertura Geográfica</h3>
+              </div>
+              <p className="adm-nota">Administración de zonas y sedes habilitadas para la red de atención.</p>
+            </div>
+          </section>
+        )}
+      </main>
     </div>
   );
 }
