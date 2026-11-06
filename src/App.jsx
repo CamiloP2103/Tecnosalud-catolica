@@ -20,6 +20,7 @@ const Triage = lazy(() => import('./components/pages/Afiliados/Triage'));
 const NotFound = lazy(() => import('./components/pages/NotFound/NotFound'));
 const RestablecerClave = lazy(() => import('./components/pages/Acceso/RestablecerClave'));
 const PanelAdmin = lazy(() => import('./components/pages/admin/PanelAdmin'));
+const PanelAfiliaciones = lazy(() => import('./components/pages/Afiliaciones/PanelAfiliaciones'));
 
 const baseNavItems = [
   { id: 'inicio', label: 'Inicio' },
@@ -49,7 +50,7 @@ const baseNavItems = [
 const accesoItem = { id: 'acceso', label: 'Acceso' };
 
 // Páginas que exigen sesión iniciada (RutaProtegida valida el JWT)
-const PAGINAS_PROTEGIDAS = ['servicios', 'farmacias', 'documentos', 'admin'];
+const PAGINAS_PROTEGIDAS = ['servicios', 'farmacias', 'documentos', 'admin', 'Afiliaciones'];
 
 // Mapeo único y global de páginas
 const pages = {
@@ -67,7 +68,8 @@ const pages = {
   'muerte-digna': MuerteDigna,
   medicamentos: Medicamentos,
   triage: Triage,
-  admin: PanelAdmin, 
+  admin: PanelAdmin,
+  Afiliaciones: PanelAfiliaciones, // Panel afiliaciones  
   'restablecer-clave': RestablecerClave, // <- Ruta registrada
   
 };
@@ -86,6 +88,11 @@ function App() {
       localStorage.getItem('tecnosalud_sesion_activa') &&
       localStorage.getItem('tecnosalud_token')
     );
+  });
+
+  
+  const [userRole, setUserRole] = useState(() => {
+    return localStorage.getItem('tecnosalud_rol') || '';
   });
 
   useEffect(() => {
@@ -109,21 +116,36 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleLoginExitoso = () => {
+  const handleLoginExitoso = (rolRecibido) => {
     setSesionActiva(true);
+    if (rolRecibido) {
+      setUserRole(rolRecibido);
+      localStorage.setItem('tecnosalud_rol', rolRecibido);
+    }
   };
 
   const handleLogout = () => {
     localStorage.removeItem('tecnosalud_sesion_activa');
     localStorage.removeItem('tecnosalud_token');
+    localStorage.removeItem('tecnosalud_rol');
     setSesionActiva(false);
+    setUserRole('');
     handleNavigate('acceso');
   };
 
-  // Servicios Clínicos, Farmacias y Documentos visibles si la sesión está autenticada
-  const navItems = sesionActiva
-    ? [...baseNavItems, { id: 'servicios', label: 'Servicios Clínicos' }, { id: 'farmacias', label: 'Farmacias' }, { id: 'documentos', label: 'Documentos clínicos' }]
-    : baseNavItems;
+  // Construcción dinámica de ítems del menú según la sesión y el rol
+  let navItems = [...baseNavItems];
+  if (sesionActiva) {
+    navItems.push(
+      { id: 'servicios', label: 'Servicios Clínicos' },
+      { id: 'farmacias', label: 'Farmacias' },
+      { id: 'documentos', label: 'Documentos clínicos' }
+    );
+    // Si el rol es afiliaciones, agregamos la opción al menú principal
+    if (userRole && userRole.toLowerCase() === 'afiliaciones') {
+      navItems.push({ id: 'afiliaciones', label: 'Afiliaciones' });
+    }
+  }
 
   const currentPageLabel = pages[currentPage] ? currentPage : '404';
 
@@ -157,6 +179,7 @@ function App() {
         onNavigate={handleNavigate}
         navItems={navItems}
         ctaItem={accesoItem}
+        userRole={userRole}
       />
       <Layout>
         <Breadcrumbs currentPage={currentPage} onNavigate={handleNavigate} />

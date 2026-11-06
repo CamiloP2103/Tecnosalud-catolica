@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import App from '../App';
 
@@ -8,6 +8,7 @@ describe('Navegación', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Registro' }));
     expect(await screen.findByRole('heading', { name: /Afiliación al Sistema Tecnosalud/i })).toBeInTheDocument();
   });
+
 
   it('debe desplegar Nosotros y navegar a Historia', async () => {
     render(<App />);
@@ -32,4 +33,6 @@ describe('Navegación', () => {
     expect(screen.getByText(/contacto@tecnosalud.com/i)).toBeInTheDocument();
     expect(screen.getByText(/© 2026 Tecnosalud EPS/i)).toBeInTheDocument();
   });
+
+
 });
