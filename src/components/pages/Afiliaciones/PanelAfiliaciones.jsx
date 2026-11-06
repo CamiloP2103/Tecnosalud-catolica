@@ -19,7 +19,7 @@ function PanelAfiliaciones() {
     documento: '',
     email: '',
     nombre: '',
-    rol_id: '2' // ID por defecto para usuario EPS / Afiliado
+    rol_id: '2'
   });
   const [cargandoCrear, setCargandoCrear] = useState(false);
   const [mensajeCrear, setMensajeCrear] = useState({ tipo: '', texto: '' });
@@ -28,10 +28,15 @@ function PanelAfiliaciones() {
   const [departamentos, setDepartamentos] = useState([]);
   const [municipios, setMunicipios] = useState([]);
   const [cargandoGeo, setCargandoGeo] = useState(false);
+  
+  // Formularios de Creación Geográfica
+  const [nombreDepartamento, setNombreDepartamento] = useState('');
+  const [nombreMunicipio, setNombreMunicipio] = useState('');
+  const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState('');
+  const [mensajeGeo, setMensajeGeo] = useState({ tipo: '', texto: '' });
 
   const token = localStorage.getItem('tecnosalud_token');
 
-  // Cargar solicitudes pendientes al iniciar o cambiar a esa pestaña
   useEffect(() => {
     if (seccionActiva === 'solicitudes') {
       cargarSolicitudesPendientes();
@@ -71,7 +76,6 @@ function PanelAfiliaciones() {
         body: JSON.stringify({ estado: 'ACTIVO', observacion: 'Aprobado desde el panel de afiliaciones' })
       });
       if (res.ok) {
-        // Actualizamos la lista localmente quitando el aprobado
         setSolicitudes(solicitudes.filter(s => s.id !== id));
       } else {
         const data = await res.json();
@@ -132,9 +136,62 @@ function PanelAfiliaciones() {
     }
   };
 
+  const handleCrearDepartamento = async (e) => {
+    e.preventDefault();
+    setMensajeGeo({ tipo: '', texto: '' });
+    if (!nombreDepartamento.trim()) return;
+
+    try {
+      const res = await fetch(`${API_REGISTRO}/departamentos`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ nombre: nombreDepartamento.trim() })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMensajeGeo({ tipo: 'exito', texto: 'Departamento creado exitosamente.' });
+        setNombreDepartamento('');
+        cargarCatalogosGeograficos();
+      } else {
+        setMensajeGeo({ tipo: 'error', texto: data.error || 'No se pudo crear el departamento.' });
+      }
+    } catch (error) {
+      setMensajeGeo({ tipo: 'error', texto: 'Error de conexión al crear departamento.' });
+    }
+  };
+
+  const handleCrearMunicipio = async (e) => {
+    e.preventDefault();
+    setMensajeGeo({ tipo: '', texto: '' });
+    if (!nombreMunicipio.trim() || !departamentoSeleccionado) return;
+
+    try {
+      const res = await fetch(`${API_REGISTRO}/municipios`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ departamento_id: departamentoSeleccionado, nombre: nombreMunicipio.trim() })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMensajeGeo({ tipo: 'exito', texto: 'Ciudad/Municipio creado exitosamente.' });
+        setNombreMunicipio('');
+        cargarCatalogosGeograficos();
+      } else {
+        setMensajeGeo({ tipo: 'error', texto: data.error || 'No se pudo crear la ciudad.' });
+      }
+    } catch (error) {
+      setMensajeGeo({ tipo: 'error', texto: 'Error de conexión al crear ciudad.' });
+    }
+  };
+
   return (
     <div className="adm-panel">
-      {/* Botón para desplegar menú en móviles */}
       <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
         <button
           type="button"
@@ -146,7 +203,6 @@ function PanelAfiliaciones() {
         </button>
       </div>
 
-      {/* Menú lateral de navegación del perfil */}
       <aside className={`adm-menu ${menuAbierto ? 'adm-menu--abierto' : ''}`}>
         <p className="adm-menu__titulo">Gestión de Afiliaciones</p>
         <nav>
@@ -176,7 +232,6 @@ function PanelAfiliaciones() {
         </nav>
       </aside>
 
-      {/* Contenido principal del panel */}
       <main className="adm-contenido">
         <header className="adm-encabezado">
           <div>
@@ -185,7 +240,6 @@ function PanelAfiliaciones() {
           </div>
         </header>
 
-        {/* 1. SECCIÓN: APROBACIÓN DE SOLICITUDES */}
         {seccionActiva === 'solicitudes' && (
           <section className="adm-seccion">
             <div className="adm-tarjeta">
@@ -245,7 +299,6 @@ function PanelAfiliaciones() {
           </section>
         )}
 
-        {/* 2. SECCIÓN: CREAR USUARIO EPS */}
         {seccionActiva === 'usuarios' && (
           <section className="adm-seccion">
             <div className="adm-tarjeta">
@@ -255,7 +308,7 @@ function PanelAfiliaciones() {
               <p className="adm-nota">Formulario conectado al servicio de autenticación para dar de alta registros internos con EPS fija en Tecnosalud.</p>
 
               {mensajeCrear.texto && (
-                <div className={`adm-aviso`} style={{ marginBottom: '1rem', background: mensajeCrear.tipo === 'exito' ? '#ccfbf1' : '#fee2e2', color: mensajeCrear.tipo === 'exito' ? '#115e59' : '#b91c1c' }}>
+                <div className="adm-aviso" style={{ marginBottom: '1rem', background: mensajeCrear.tipo === 'exito' ? '#ccfbf1' : '#fee2e2', color: mensajeCrear.tipo === 'exito' ? '#115e59' : '#b91c1c' }}>
                   {mensajeCrear.texto}
                 </div>
               )}
@@ -298,22 +351,83 @@ function PanelAfiliaciones() {
           </section>
         )}
 
-        {/* 3. SECCIÓN: GESTIÓN GEOGRÁFICA */}
         {seccionActiva === 'geografia' && (
-          <section className="adm-seccion">
+          <section className="adm-seccion" style={{ display: 'grid', gap: '1.5rem' }}>
+            {/* Formulario de Creación */}
             <div className="adm-tarjeta">
               <div className="adm-tarjeta__encabezado">
-                <h3>Gestión y Consulta Geográfica (Departamentos y Municipios)</h3>
+                <h3>Creación de Departamentos y Ciudades</h3>
+              </div>
+              <p className="adm-nota">Amplía la cobertura geográfica añadiendo nuevos departamentos o municipios a la red.</p>
+
+              {mensajeGeo.texto && (
+                <div className="adm-aviso" style={{ marginTop: '1rem', background: mensajeGeo.tipo === 'exito' ? '#ccfbf1' : '#fee2e2', color: mensajeGeo.tipo === 'exito' ? '#115e59' : '#b91c1c' }}>
+                  {mensajeGeo.texto}
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1rem' }}>
+                <form onSubmit={handleCrearDepartamento} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nuevo Departamento</h4>
+                  <input
+                    type="text"
+                    placeholder="Nombre del departamento"
+                    value={nombreDepartamento}
+                    onChange={(e) => setNombreDepartamento(e.target.value)}
+                    required
+                    className="adm-buscador"
+                    style={{ width: '100%' }}
+                  />
+                  <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start' }}>
+                    Crear Departamento
+                  </button>
+                </form>
+
+                <form onSubmit={handleCrearMunicipio} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nueva Ciudad / Municipio</h4>
+                  <select
+                    value={departamentoSeleccionado}
+                    onChange={(e) => setDepartamentoSeleccionado(e.target.value)}
+                    required
+                    className="adm-btn"
+                    style={{ width: '100%', background: '#fff' }}
+                  >
+                    <option value="">Selecciona departamento...</option>
+                    {departamentos.map((dep, idx) => (
+                      <option key={idx} value={dep.id || dep.nombre || dep}>
+                        {dep.nombre || dep}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Nombre de la ciudad"
+                    value={nombreMunicipio}
+                    onChange={(e) => setNombreMunicipio(e.target.value)}
+                    required
+                    className="adm-buscador"
+                    style={{ width: '100%' }}
+                  />
+                  <button type="submit" className="adm-btn adm-btn--verde" style={{ justifySelf: 'start' }}>
+                    Crear Ciudad
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* Listado de Cobertura Actual */}
+            <div className="adm-tarjeta">
+              <div className="adm-tarjeta__encabezado">
+                <h3>Cobertura Geográfica Actual</h3>
                 <button type="button" className="adm-btn" onClick={cargarCatalogosGeograficos} disabled={cargandoGeo}>
-                  {cargandoGeo ? 'Cargando...' : 'Actualizar Cobertura'}
+                  {cargandoGeo ? 'Cargando...' : 'Actualizar Listados'}
                 </button>
               </div>
-              <p className="adm-nota">Listado oficial de departamentos y municipios disponibles en la red de atención.</p>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1rem' }}>
                 <div>
                   <h4 style={{ marginBottom: '0.5rem', color: 'var(--adm-azul)' }}>Departamentos Habilitados ({departamentos.length})</h4>
-                  <ul style={{ listStyle: 'none', padding: 0, maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
+                  <ul style={{ listStyle: 'none', padding: 0, maxHeight: '220px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
                     {departamentos.map((dep, idx) => (
                       <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>
                         {dep.nombre || dep}
@@ -323,8 +437,8 @@ function PanelAfiliaciones() {
                 </div>
 
                 <div>
-                  <h4 style={{ marginBottom: '0.5rem', color: 'var(--adm-azul)' }}>Municipios Registrados ({municipios.length})</h4>
-                  <ul style={{ listStyle: 'none', padding: 0, maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
+                  <h4 style={{ marginBottom: '0.5rem', color: 'var(--adm-azul)' }}>Ciudades / Municipios ({municipios.length})</h4>
+                  <ul style={{ listStyle: 'none', padding: 0, maxHeight: '220px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
                     {municipios.map((mun, idx) => (
                       <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>
                         {mun.nombre || mun}
