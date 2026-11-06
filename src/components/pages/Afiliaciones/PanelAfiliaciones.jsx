@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import '../PanelAdmin/PanelAdmin.css'; // Reutilizamos los estilos institucionales
+import './PanelAfiliaciones.css'; // Reutilizamos los estilos institucionales
 
 const API_REGISTRO = import.meta.env.VITE_API_REGISTRO_URL || 'https://tecnosalud-registro-2026.azurewebsites.net/api/registro';
 const API_AUTH = import.meta.env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2026-grgzcsa5ajhje5f8.brazilsouth-01.azurewebsites.net/api/auth';
