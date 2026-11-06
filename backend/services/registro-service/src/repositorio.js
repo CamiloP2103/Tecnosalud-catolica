@@ -224,7 +224,7 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
     },
 
     async crearMunicipio(departamentoCodigo, nombre) {
-      const base = nombre.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+      const base = nombre.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
       const aleatorio = Math.floor(Math.random() * 90) + 1;
       const codigo = `${base}${aleatorio}`.slice(0, 5);
 
