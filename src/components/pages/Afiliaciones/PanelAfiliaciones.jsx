@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import './PanelAdmin.css'; // Reutilizamos los estilos institucionales
+import './PanelAfiliaciones.css'; // Reutilizamos los estilos institucionales
 
 function PanelAfiliaciones() {
   const [seccionActiva, setSeccionActiva] = useState('solicitudes');
