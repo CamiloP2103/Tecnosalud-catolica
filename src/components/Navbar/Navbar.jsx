@@ -32,7 +32,7 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem, userRole }) {
   // Filtramos los ítems del menú: "afiliaciones" solo se muestra si el userRole es 'afiliaciones' o 'admin' según corresponda
   const filteredNavItems = navItems.filter((item) => {
     if (item.id === 'afiliaciones') {
-      return userRole === 'afiliaciones';
+      return userRole && userRole.toLowerCase() === 'afiliaciones';
     }
     return true;
   });
