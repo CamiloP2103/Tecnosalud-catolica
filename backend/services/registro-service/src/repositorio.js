@@ -223,14 +223,30 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
       return resultado.insertId;
     },
 
-    async crearMunicipio(departamentoCodigo, nombre) {
+    async crearMunicipio(departamentoEntrada, nombre) {
+      let depCodigo = '';
+
+      // 1. Verificamos si lo que llegó es un nombre o un código y buscamos el código real en la BD
+      const [depRows] = await pool.execute(
+        'SELECT codigo FROM departamentos WHERE codigo = ? OR nombre = ? LIMIT 1',
+        [departamentoEntrada, departamentoEntrada]
+      );
+
+      if (depRows.length > 0) {
+        depCodigo = depRows[0].codigo;
+      } else {
+        // Fallback de emergencia si no se encuentra exacto
+        depCodigo = String(departamentoEntrada || '').trim().toUpperCase().slice(0, 5);
+      }
+
+      // 2. Generamos el código corto del municipio (máximo 5 caracteres)
       const base = nombre.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
-      const aleatorio = Math.floor(Math.random() * 90) + 1;
-      const codigo = `${base}${aleatorio}`.slice(0, 5);
+      const aleatorio = Math.floor(Math.random() * 9) + 1;
+      const codigoMunicipio = `${base}${aleatorio}`.slice(0, 5);
 
       const [resultado] = await pool.execute(
         'INSERT INTO municipios (codigo, nombre, departamento_codigo) VALUES (?, ?, ?)',
-        [codigo, nombre.trim(), departamentoCodigo]
+        [codigoMunicipio, nombre.trim(), depCodigo]
       );
       return resultado.insertId;
     },
