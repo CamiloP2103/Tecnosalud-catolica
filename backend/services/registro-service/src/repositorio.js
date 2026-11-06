@@ -251,13 +251,17 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
       return resultado.insertId;
     },
 
-    async crearMunicipio(departamentoCodigo, nombre) {
-      const codigo = nombre.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6) + Math.floor(Math.random() * 90 + 10);
+    async crearDepartamento(nombre) {
+      // Tomamos solo las primeras 2 o 3 letras del nombre en mayúsculas y un número de 1 dígito para que sea corto (ej. CUND1)
+      const base = nombre.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+      const aleatorio = Math.floor(Math.random() * 9) + 1;
+      const codigo = `${base}${aleatorio}`.slice(0, 5); // Garantiza un máximo de 5 caracteres
+
       const [resultado] = await pool.execute(
-        'INSERT INTO municipios (codigo, nombre, departamento_codigo) VALUES (?, ?, ?)',
-        [codigo, nombre.trim(), departamentoCodigo]
+        'INSERT INTO departamentos (codigo, nombre) VALUES (?, ?)',
+        [codigo, nombre.trim()]
       );
-      cache = null; // Limpiar caché
+      cache = null; // Limpiamos la caché de catálogos
       return resultado.insertId;
     },
     async cambiarEstado(id, estadoNuevo, { cambiadoPor, observacion }) {
