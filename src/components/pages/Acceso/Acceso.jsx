@@ -147,7 +147,9 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
       // Persistencia segura: Token JWT, datos del usuario, guardar rol
       localStorage.setItem('tecnosalud_token', datos.token);
       localStorage.setItem('tecnosalud_sesion_activa', JSON.stringify(datos.usuario));
+      const rolUsuario = datos.usuario?.rol || '';
       localStorage.setItem('tecnosalud_rol', rolUsuario);
+      
       setUsuarioLogueado(datos.usuario);
 
       if (form.recordarUsuario) {
