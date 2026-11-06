@@ -6,7 +6,7 @@ function PanelAfiliaciones() {
 
   // Estado simulado de solicitudes pendientes
   const [solicitudes, setSolicitudes] = useState([
-    { id: 1, tipo: 'Usuario EPS', nombre: 'Carlos Jiménez', documento: '12345678', estado: 'Pendiente' },
+    { id: 1, tipo: 'Usuario EPS', nombre: 'Carlos Jiménez', documento: '72000607', estado: 'Pendiente' },
     { id: 2, tipo: 'Médico', nombre: 'Dra. Ana María Pérez', especialidad: 'Cardiología', estado: 'Pendiente' },
   ]);
 
