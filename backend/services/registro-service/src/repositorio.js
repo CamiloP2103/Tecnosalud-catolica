@@ -238,7 +238,28 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
       
       return filas;
     },
+    // --- Gestión Geográfica ---
+    async crearDepartamento(nombre) {
+      // Generamos un código automático basado en el nombre (ej. BOG, ANT) o minúsculas sin espacios
+      const codigo = nombre.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5) + Math.floor(Math.random() * 90 + 10);
+      const [resultado] = await pool.execute(
+        'INSERT INTO departamentos (codigo, nombre) VALUES (?, ?)',
+        [codigo, nombre.trim()]
+      );
+      // Limpiamos la caché de catálogos para que los cambios se reflejen de inmediato
+      cache = null; 
+      return resultado.insertId;
+    },
 
+    async crearMunicipio(departamentoCodigo, nombre) {
+      const codigo = nombre.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6) + Math.floor(Math.random() * 90 + 10);
+      const [resultado] = await pool.execute(
+        'INSERT INTO municipios (codigo, nombre, departamento_codigo) VALUES (?, ?, ?)',
+        [codigo, nombre.trim(), departamentoCodigo]
+      );
+      cache = null; // Limpiar caché
+      return resultado.insertId;
+    },
     async cambiarEstado(id, estadoNuevo, { cambiadoPor, observacion }) {
       if (!ESTADOS.includes(estadoNuevo)) throw new ErrorNegocio(400, `Estado inválido. Usa: ${ESTADOS.join(', ')}.`);
       const conexion = await pool.getConnection();
@@ -272,6 +293,8 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
       return filas;
     },
   };
+
+  
 }
 
 module.exports = { crearRepositorio, ErrorNegocio, ESTADOS };

@@ -167,6 +167,39 @@ function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
     return res.json({ historial: await repo.historial(id) });
   }));
 
+  // --- CREAR DEPARTAMENTO ---
+  router.post('/departamentos', conSesion, requiereAdmin, manejar(async (req, res) => {
+    const nombre = typeof req.body?.nombre === 'string' ? req.body.nombre.trim().slice(0, 100) : '';
+    if (!nombre) {
+      return res.status(400).json({ error: 'El nombre del departamento es obligatorio.' });
+    }
+    const nuevoId = await repo.crearDepartamento(nombre);
+    return res.status(201).json({ id: nuevoId, nombre });
+  }));
+
+// --- CREAR DEPARTAMENTO ---
+  router.post('/departamentos', conSesion, requiereAdmin, manejar(async (req, res) => {
+    const nombre = typeof req.body?.nombre === 'string' ? req.body.nombre.trim().slice(0, 100) : '';
+    if (!nombre) {
+      return res.status(400).json({ error: 'El nombre del departamento es obligatorio.' });
+    }
+    const nuevoId = await repo.crearDepartamento(nombre);
+    return res.status(201).json({ id: nuevoId, nombre });
+  }));
+
+  // --- CREAR MUNICIPIO / CIUDAD ---
+  router.post('/municipios', conSesion, requiereAdmin, manejar(async (req, res) => {
+    const departamentoCodigo = req.body?.departamento_id || req.body?.departamentoCodigo;
+    const nombre = typeof req.body?.nombre === 'string' ? req.body.nombre.trim().slice(0, 100) : '';
+    
+    if (!departamentoCodigo || !nombre) {
+      return res.status(400).json({ error: 'El departamento y el nombre de la ciudad son obligatorios.' });
+    }
+    
+    const nuevoId = await repo.crearMunicipio(departamentoCodigo, nombre);
+    return res.status(201).json({ id: nuevoId, departamento_codigo: departamentoCodigo, nombre });
+  }));
+
   app.use('/api/registro', router);
 
   return app;
