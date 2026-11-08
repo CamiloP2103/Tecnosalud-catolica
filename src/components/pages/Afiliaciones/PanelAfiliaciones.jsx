@@ -43,7 +43,7 @@ const estadoFormAfiliacion = {
   contactoEmergenciaNombre: '',
   contactoEmergenciaTelefono: '',
   contactoEmergenciaParentescoCodigo: '',
-  aceptaTratamientoDatos: false,
+  aceptaTratamientoDatos: true, // Por defecto en true ya que se manejará con tu idea aparte
 };
 
 function PanelAfiliaciones() {
@@ -85,22 +85,7 @@ function PanelAfiliaciones() {
   const [modalExitoAfiliacion, setModalExitoAfiliacion] = useState(false);
   const [correoEnviadoAfiliacion, setCorreoEnviadoAfiliacion] = useState('');
 
-  // Captcha local para afiliación
-  const [captchaChallenge, setCaptchaChallenge] = useState({ num1: 0, num2: 0, resultado: 0 });
-  const [captchaInput, setCaptchaInput] = useState('');
-
-  const generarCaptchaLocal = () => {
-    const num1 = Math.floor(Math.random() * 9) + 1;
-    const num2 = Math.floor(Math.random() * 9) + 1;
-    setCaptchaChallenge({ num1, num2, resultado: num1 + num2 });
-    setCaptchaInput('');
-  };
-
   const token = localStorage.getItem('tecnosalud_token');
-
-  useEffect(() => {
-    generarCaptchaLocal();
-  }, []);
 
   useEffect(() => {
     if (seccionActiva === 'solicitudes') {
@@ -264,18 +249,16 @@ function PanelAfiliaciones() {
     setFormAfiliacion((prev) => {
       const nuevoForm = { ...prev, [name]: type === 'checkbox' ? checked : value };
 
-      // REGLA 1: Si selecciona régimen contributivo, forzamos la EPS a "Tecnosalud" (o la que corresponda a Tecnosalud EPS)
       if (name === 'regimenCodigo' && value.toUpperCase() === 'CONTRIBUTIVO') {
-        const epsTecnosalud = listaEps.find(e => 
-          (e.nombre || '').toLowerCase().includes('tecnosalud') || 
-          (e.codigo || '').toLowerCase().includes('tecnosalud')
+        const epsTecnosalud = listaEps.find(epsItem => 
+          (epsItem.nombre || '').toLowerCase().includes('tecnosalud') || 
+          (epsItem.codigo || '').toLowerCase().includes('tecnosalud')
         );
         if (epsTecnosalud) {
           nuevoForm.epsCodigo = epsTecnosalud.codigo || epsTecnosalud.id;
         }
       }
 
-      // REGLA 2: Si cambia de régimen y no es contributivo, limpiamos salario
       if (name === 'regimenCodigo' && value.toUpperCase() !== 'CONTRIBUTIVO') {
         nuevoForm.salario = '';
       }
@@ -312,14 +295,6 @@ function PanelAfiliaciones() {
       return 'Completa todos los datos de contacto de emergencia.';
     }
 
-    if (!formAfiliacion.aceptaTratamientoDatos) {
-      return 'Debes autorizar el tratamiento de datos personales y sensibles.';
-    }
-
-    if (parseInt(captchaInput, 10) !== captchaChallenge.resultado) {
-      return 'El resultado del captcha es incorrecto. Intenta de nuevo.';
-    }
-
     return null;
   };
 
@@ -330,9 +305,6 @@ function PanelAfiliaciones() {
     const error = validarAfiliacionForm();
     if (error) {
       setErrorMsgAfiliacion(error);
-      if (parseInt(captchaInput, 10) !== captchaChallenge.resultado) {
-        generarCaptchaLocal();
-      }
       return;
     }
 
@@ -363,7 +335,7 @@ function PanelAfiliaciones() {
       contactoEmergenciaTelefono: formAfiliacion.contactoEmergenciaTelefono,
       contactoEmergenciaParentescoCodigo: formAfiliacion.contactoEmergenciaParentescoCodigo,
       contactoEmergenciaParentesco: formAfiliacion.contactoEmergenciaParentescoCodigo,
-      aceptaTratamientoDatos: formAfiliacion.aceptaTratamientoDatos,
+      aceptaTratamientoDatos: true,
     };
 
     try {
@@ -385,7 +357,6 @@ function PanelAfiliaciones() {
       setCorreoEnviadoAfiliacion(datos.email || formAfiliacion.correo);
       setModalExitoAfiliacion(true);
       setFormAfiliacion(estadoFormAfiliacion);
-      generarCaptchaLocal();
     } catch {
       setErrorMsgAfiliacion('Error de conexión con el servicio de registro.');
     } finally {
@@ -393,7 +364,6 @@ function PanelAfiliaciones() {
     }
   };
 
-  // Filtrar EPS según tipo de afiliación o régimen si el usuario es Médico
   const esMedicoProfesional = formAfiliacion.tipoAfiliacionCodigo.toUpperCase() === 'PROFESIONAL';
 
   return (
@@ -529,7 +499,7 @@ function PanelAfiliaciones() {
 
               <form onSubmit={handleAfiliacionSubmit} noValidate style={{ display: 'grid', gap: '1.5rem', marginTop: '1rem' }}>
                 
-                {/* SECCIÓN 1: TIPO DE AFILIACIÓN Y SALUD (¡PRIMERO!) */}
+                {/* SECCIÓN 1: TIPO DE AFILIACIÓN Y SALUD */}
                 <fieldset style={{ border: '1px solid var(--adm-borde)', padding: '1.2rem', borderRadius: '8px', background: '#f8fafc' }}>
                   <legend style={{ fontWeight: 'bold', color: 'var(--adm-azul)', padding: '0 0.5rem' }}>1. Sistema de Salud y Afiliación</legend>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
@@ -567,11 +537,11 @@ function PanelAfiliaciones() {
                         required
                       >
                         <option value="">Selecciona EPS...</option>
-                        {listaEps.map((eps) => {
-                          const valEps = eps.codigo || eps.id || eps.nombre;
+                        {listaEps.map((epsItem) => {
+                          const valEps = epsItem.codigo || epsItem.id || epsItem.nombre;
                           return (
                             <option key={valEps} value={valEps}>
-                              {eps.nombre}
+                              {epsItem.nombre}
                             </option>
                           );
                         })}
@@ -700,9 +670,9 @@ function PanelAfiliaciones() {
                   </div>
                 </fieldset>
 
-                {/* SECCIÓN 4: EMERGENCIA Y POLÍTICAS */}
+                {/* SECCIÓN 4: EMERGENCIA */}
                 <fieldset style={{ border: '1px solid var(--adm-borde)', padding: '1.2rem', borderRadius: '8px' }}>
-                  <legend style={{ fontWeight: 'bold', color: 'var(--adm-azul)', padding: '0 0.5rem' }}>4. Contacto de Emergencia y Autorización</legend>
+                  <legend style={{ fontWeight: 'bold', color: 'var(--adm-azul)', padding: '0 0.5rem' }}>4. Contacto de Emergencia</legend>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
                     
                     <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
@@ -728,36 +698,7 @@ function PanelAfiliaciones() {
                       </select>
                     </label>
                   </div>
-
-                  <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <p style={{ fontSize: '0.8rem', color: '#475569', lineHeight: '1.4' }}>
-                      En cumplimiento de la <strong>Ley 1581 de 2012</strong>, autorizo el tratamiento de datos personales y sensibles con fines asistenciales y de gestión en Tecnosalud.
-                    </p>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer' }}>
-                      <input type="checkbox" name="aceptaTratamientoDatos" checked={formAfiliacion.aceptaTratamientoDatos} onChange={handleAfiliacionChange} required />
-                      <span>Autorizo el tratamiento de mis datos personales y sensibles *</span>
-                    </label>
-                  </div>
                 </fieldset>
-
-                {/* CAPTCHA */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                  <span>Seguridad: ¿Cuánto es {captchaChallenge.num1} + {captchaChallenge.num2}? *</span>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input
-                      type="number"
-                      value={captchaInput}
-                      onChange={(e) => setCaptchaInput(e.target.value)}
-                      placeholder="Respuesta"
-                      required
-                      className="adm-buscador"
-                      style={{ width: '120px' }}
-                    />
-                    <button type="button" onClick={generarCaptchaLocal} className="adm-btn" style={{ background: '#e2e8f0', color: '#1e293b' }}>
-                      Cambiar
-                    </button>
-                  </div>
-                </div>
 
                 <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start', padding: '0.75rem 1.5rem', fontSize: '1rem' }} disabled={cargandoAfiliacion}>
                   {cargandoAfiliacion ? 'Procesando Afiliación...' : 'Completar Afiliación Institucional'}
