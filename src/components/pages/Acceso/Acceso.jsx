@@ -349,6 +349,13 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
       } else {
         onNavigate('servicios');
       }
+
+      if (rol === 'afiliaciones' ) {
+        onNavigate('admin'); // Navega al perfil de afiliaciones 
+      } else {
+        onNavigate('afiliaciones');
+      }
+
     }
   };
 
@@ -423,14 +430,22 @@ const enviarMiConstancia = async () => {
                   if (rol === 'admin' || rol === 'administrador') {
                     onNavigate('admin'); // Cambia por tu ruta de administrador
                   } else {
-                    onNavigate('servicios');
-                  }
+                          if (rol === 'afiliaciones'){
+                            onNavigate('afiliaciones');
+                            } else {  
+                              onNavigate('servicios');
+                            }
+                    }
                 }
               }}
             >
-              {usuarioLogueado?.rol?.toLowerCase() === 'admin' || usuarioLogueado?.rol?.toLowerCase() === 'administrador' 
-                ? 'Ir al Perfil Administrador' 
-                : 'Ir a Servicios Clínicos'}
+              {['admin', 'administrador'].includes(usuarioLogueado?.rol?.toLowerCase())
+                ? 'Ir al Perfil Administrador'
+                : ['afiliaciones', 'afiliaciones'].includes(usuarioLogueado?.rol?.toLowerCase())
+                    ? 'Ir al Perfil Afiliaciones'
+                    : ['Historiaclinica', 'Historiaclinica'].includes(usuarioLogueado?.rol?.toLowerCase())
+                      ? 'Ir al Perfil Medicos'
+                      : 'Ir a Servicios Clínicos'}
             </button>
             <button
               type="button"
