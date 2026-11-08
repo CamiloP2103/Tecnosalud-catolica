@@ -105,6 +105,7 @@ function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
       const nuevoId = await repo.crearAfiliado(datos);
 
       // 2. Comunicarnos con el servicio de autenticación para dar de alta las credenciales
+      // Integrado perfil de Afiliaciones
       try {
         const respuestaAuth = await fetch(`${authServiceUrl}/api/auth/registro-interno`, {
           method: 'POST',
