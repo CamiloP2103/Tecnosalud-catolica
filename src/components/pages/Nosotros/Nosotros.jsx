@@ -24,7 +24,6 @@ function Nosotros({ seccion }) {
           </div>
 
           <div className="nosotros-card nosotros-card--about">
-            <div className="nosotros-card__icon" aria-hidden="true">TC</div>
             <div className="nosotros-card__body">
               <h3>Hitos de Transformación Digital</h3>
               <p>
@@ -62,7 +61,6 @@ function Nosotros({ seccion }) {
       {seccion === 'mision-vision' && (
         <>
           <div className="nosotros-card nosotros-card--about">
-            <div className="nosotros-card__icon" aria-hidden="true">MV</div>
             <div className="nosotros-card__body">
               <h3>Direccionamiento Estratégico</h3>
               <p>
@@ -74,7 +72,6 @@ function Nosotros({ seccion }) {
 
           <div className="nosotros-grid">
             <div className="nosotros-card nosotros-card--mision">
-              <div className="nosotros-card__icon" aria-hidden="true">M</div>
               <h3>Misión</h3>
               <p>
                 Diseñar, implementar y desplegar soluciones tecnológicas e interoperables en el sector salud con un enfoque 
@@ -84,7 +81,6 @@ function Nosotros({ seccion }) {
             </div>
 
             <div className="nosotros-card nosotros-card--vision">
-              <div className="nosotros-card__icon" aria-hidden="true">V</div>
               <h3>Visión</h3>
               <p>
                 Consolidarnos para el año 2028 como la plataforma de gestión en salud de referencia académica e institucional 
@@ -159,7 +155,6 @@ function Nosotros({ seccion }) {
       {seccion === 'trabaja-con-nosotros' && (
         <>
           <div className="trabajo-intro">
-            <div className="nosotros-card__icon" aria-hidden="true">TC</div>
             <div className="trabajo-intro__body">
               <span className="nosotros-badge">Talento e Ingeniería con Propósito</span>
               <p>
