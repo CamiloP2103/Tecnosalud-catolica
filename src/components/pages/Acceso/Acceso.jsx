@@ -445,7 +445,7 @@ const enviarMiConstancia = async () => {
                 }
               }}
             >
-              {['admin', 'administrador'].includes(usuarioLogueado?.rol?.toLowerCase())
+              {['admin', 'admin'].includes(usuarioLogueado?.rol?.toLowerCase())
                 ? 'Ir al Perfil Administrador'
                 : ['afiliaciones', 'afiliaciones'].includes(usuarioLogueado?.rol?.toLowerCase())
                     ? 'Ir al Perfil Afiliaciones'
@@ -757,7 +757,7 @@ const enviarMiConstancia = async () => {
               className="modal-btn-confirm"
               onClick={handleCerrarAviso}
             >
-              {esLoginExitoso ? 'Ingresar a Servicios Clínicos' : 'Entendido'}
+              {esLoginExitoso ? 'Clic en el boton para continuar' : 'Entendido'}
             </button>
           </div>
         </div>
