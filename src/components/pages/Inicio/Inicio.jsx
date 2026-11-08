@@ -34,7 +34,7 @@ function Inicio({ onNavigate }) {
           <button
             type="button"
             className="inicio-hero__cta"
-            onClick={() => onNavigate && onNavigate('nosotros')}
+            onClick={() => onNavigate && onNavigate('historia')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M3 12h4l2-6 4 12 2-6h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

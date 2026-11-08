@@ -151,7 +151,7 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
       registrarIntento({ usuarioId: user.id, email: emailIngresado, ipCliente, exitoso: true });
       notificarSeguridadLogin({ destinatario: user.email, nombreUsuario: user.nombre, exito: true, ipCliente });
 
-      const token = jwt.sign({ id: user.id, email: user.email, rol: user.rol, doc: user.documento }, jwtSecret, { expiresIn: '8h' });
+      const token = jwt.sign({ id: user.id, email: user.email, rol: user.rol, doc: user.documento }, jwtSecret, { expiresIn: '5m' });
 
       return res.json({ token, usuario: { id: user.id, nombre: user.nombre, email: user.email, tipoDoc: user.tipo_doc, documento: user.documento, rol: user.rol } });
     } catch (error) {

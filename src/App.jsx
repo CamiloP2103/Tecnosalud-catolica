@@ -136,11 +136,19 @@ function App() {
   // Construcción dinámica de ítems del menú según la sesión y el rol
   let navItems = [...baseNavItems];
   if (sesionActiva) {
+    //navItems.push(
+    //  { id: 'servicios', label: 'Servicios Clínicos' },
+    //  { id: 'farmacias', label: 'Farmacias' },
+     // { id: 'documentos', label: 'Documentos clínicos' }
+    //);
+
+    // Si el rol es paciente se activa los servicios de paciente 
+    if (userRole && userRole.toLowerCase() === 'paciente') {
     navItems.push(
       { id: 'servicios', label: 'Servicios Clínicos' },
       { id: 'farmacias', label: 'Farmacias' },
-      { id: 'documentos', label: 'Documentos clínicos' }
-    );
+      { id: 'documentos', label: 'Documentos clínicos' });
+    }  
     // Si el rol es afiliaciones, agregamos la opción al menú principal
     if (userRole && userRole.toLowerCase() === 'afiliaciones') {
       navItems.push({ id: 'afiliaciones', label: 'Afiliaciones' });
