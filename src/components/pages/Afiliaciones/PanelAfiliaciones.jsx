@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import './PanelAfiliaciones.css'; // Reutilizamos los estilos institucionales
+import { llamarServicio, SERVICIO_REGISTRO } from '../../../utils/servicios'; // (Ajusta la ruta relativa según donde esté ubicado PanelAfiliaciones.jsx)
 
 const API_REGISTRO = import.meta.env.VITE_API_REGISTRO_URL || 'https://tecnosalud-registro-2026.azurewebsites.net/api/registro';
-const API_AUTH = import.meta.env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2026-grgzcsa5ajhje5f8.brazilsouth-01.azurewebsites.net/api/auth';
+//const API_AUTH = import.meta.env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2026-grgzcsa5ajhje5f8.brazilsouth-01.azurewebsites.net/api/auth';
 
 const DIAS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
 const MESES = [
@@ -326,22 +327,20 @@ function PanelAfiliaciones() {
       contactoEmergenciaTelefono: formAfiliacion.contactoEmergenciaTelefono,
       contactoEmergenciaParentescoCodigo: formAfiliacion.contactoEmergenciaParentescoCodigo,
       contactoEmergenciaParentesco: formAfiliacion.contactoEmergenciaParentescoCodigo,
-      aceptaTratamientoDatos: false,
+      aceptaTratamientoDatos: true,
     };
     
     try {
-      const res = await fetch(`${API_REGISTRO}`, {
+      const { ok, datos } = await llamarServicio(API_REGISTRO, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify(datosEnviar),
-      });
+      }, SERVICIO_REGISTRO);
 
-      const datos = await res.json();
-
-      if (!res.ok) {
+      if (!ok) {
         setErrorMsgAfiliacion(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar el registro.');
         return;
       }
