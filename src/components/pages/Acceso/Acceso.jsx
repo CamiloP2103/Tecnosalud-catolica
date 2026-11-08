@@ -351,9 +351,15 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
       }
 
       if (rol === 'afiliaciones' ) {
-        onNavigate('admin'); // Navega al perfil de afiliaciones 
+        onNavigate('afiliaciones'); // Navega al perfil de afiliaciones 
       } else {
-        onNavigate('afiliaciones');
+        onNavigate('servicios');
+      }
+
+      if (rol === 'medico' ) {
+        onNavigate('historiaclinica'); // Navega al perfil de Medico 
+      } else {
+        onNavigate('servicios');
       }
 
     }

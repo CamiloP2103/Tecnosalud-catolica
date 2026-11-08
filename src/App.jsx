@@ -50,7 +50,7 @@ const baseNavItems = [
 const accesoItem = { id: 'acceso', label: 'Acceso' };
 
 // Páginas que exigen sesión iniciada (RutaProtegida valida el JWT)
-const PAGINAS_PROTEGIDAS = ['servicios', 'farmacias', 'documentos', 'admin', 'Afiliaciones'];
+const PAGINAS_PROTEGIDAS = ['servicios', 'farmacias', 'documentos', 'admin', 'afiliaciones'];
 
 // Mapeo único y global de páginas
 const pages = {
@@ -69,9 +69,8 @@ const pages = {
   medicamentos: Medicamentos,
   triage: Triage,
   admin: PanelAdmin,
-  afiliaciones: PanelAfiliaciones, // Panel afiliaciones  
-  'restablecer-clave': RestablecerClave, // <- Ruta registrada
-  
+  afiliaciones: PanelAfiliaciones,
+  'restablecer-clave': RestablecerClave,
 };
 
 // Función limpia para extraer solo la ruta y descartar el '?token=...'
@@ -81,21 +80,49 @@ const normalizeHashPage = (hashValue) => {
   return rutaLimpia || 'inicio';
 };
 
+// Función auxiliar robusta para verificar si el token JWT sigue vigente
+const verificarTokenVigente = () => {
+  const token = localStorage.getItem('tecnosalud_token');
+  const sesionActivaFlag = localStorage.getItem('tecnosalud_sesion_activa');
+
+  if (!token || !sesionActivaFlag) return false;
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const ahoraEnSegundos = Math.floor(Date.now() / 1000);
+
+    // Si ya expiró, limpiamos todo de inmediato
+    if (payload.exp < ahoraEnSegundos) {
+      localStorage.removeItem('tecnosalud_sesion_activa');
+      localStorage.removeItem('tecnosalud_token');
+      localStorage.removeItem('tecnosalud_rol');
+      return false;
+    }
+    return true;
+  } catch (e) {
+    // Si el token está corrupto, limpiamos por seguridad
+    localStorage.clear();
+    return false;
+  }
+};
+
 function App() {
   const [currentPage, setCurrentPage] = useState(() => normalizeHashPage(window.location.hash));
-  const [sesionActiva, setSesionActiva] = useState(() => {
-    return Boolean(
-      localStorage.getItem('tecnosalud_sesion_activa') &&
-      localStorage.getItem('tecnosalud_token')
-    );
-  });
-
   
+  // Evaluamos de entrada con la función de expiración real del JWT
+  const [sesionActiva, setSesionActiva] = useState(() => verificarTokenVigente());
+
   const [userRole, setUserRole] = useState(() => {
-    return localStorage.getItem('tecnosalud_rol') || '';
+    return verificarTokenVigente() ? (localStorage.getItem('tecnosalud_rol') || '') : '';
   });
 
+  // Validación periódica o al montar la app
   useEffect(() => {
+    if (!verificarTokenVigente()) {
+      setSesionActiva(false);
+      setUserRole('');
+    }
+
     const handleHashChange = () => {
       const hashPage = normalizeHashPage(window.location.hash);
       setCurrentPage(pages[hashPage] ? hashPage : '404');
@@ -110,6 +137,12 @@ function App() {
   const ActivePage = pages[currentPage] || NotFound;
 
   const handleNavigate = (pageId) => {
+    // Doble validación al navegar por si el token expiró en segundo plano
+    if (!verificarTokenVigente()) {
+      setSesionActiva(false);
+      setUserRole('');
+    }
+
     const nextPage = pages[pageId] ? pageId : '404';
     setCurrentPage(nextPage);
     window.location.hash = nextPage === 'inicio' ? '' : `/${nextPage}`;
@@ -136,20 +169,13 @@ function App() {
   // Construcción dinámica de ítems del menú según la sesión y el rol
   let navItems = [...baseNavItems];
   if (sesionActiva) {
-    //navItems.push(
-    //  { id: 'servicios', label: 'Servicios Clínicos' },
-    //  { id: 'farmacias', label: 'Farmacias' },
-     // { id: 'documentos', label: 'Documentos clínicos' }
-    //);
-
-    // Si el rol es paciente se activa los servicios de paciente 
     if (userRole && userRole.toLowerCase() === 'paciente') {
-    navItems.push(
-      { id: 'servicios', label: 'Servicios Clínicos' },
-      { id: 'farmacias', label: 'Farmacias' },
-      { id: 'documentos', label: 'Documentos clínicos' });
+      navItems.push(
+        { id: 'servicios', label: 'Servicios Clínicos' },
+        { id: 'farmacias', label: 'Farmacias' },
+        { id: 'documentos', label: 'Documentos clínicos' }
+      );
     }  
-    // Si el rol es afiliaciones, agregamos la opción al menú principal
     if (userRole && userRole.toLowerCase() === 'afiliaciones') {
       navItems.push({ id: 'afiliaciones', label: 'Afiliaciones' });
     }
@@ -157,7 +183,6 @@ function App() {
 
   const currentPageLabel = pages[currentPage] ? currentPage : '404';
 
-  // Renderiza el componente activo y aplica el guardián de ruta a las páginas con sesión
   const renderContenido = () => {
     const contenido = (
       <ActivePage
