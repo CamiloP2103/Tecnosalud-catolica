@@ -346,15 +346,12 @@ function PanelAfiliaciones() {
     try {
       const { ok, datos } = await llamarServicio(API_REGISTRO, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(datosEnviar),
       }, SERVICIO_REGISTRO);
 
       if (!ok) {
-        setErrorMsgAfiliacion(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar el registro.');
+        setErrorMsg(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar el registro.');
         return;
       }
 
