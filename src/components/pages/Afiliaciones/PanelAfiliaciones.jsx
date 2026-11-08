@@ -4,6 +4,48 @@ import './PanelAfiliaciones.css'; // Reutilizamos los estilos institucionales
 const API_REGISTRO = import.meta.env.VITE_API_REGISTRO_URL || 'https://tecnosalud-registro-2026.azurewebsites.net/api/registro';
 const API_AUTH = import.meta.env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2026-grgzcsa5ajhje5f8.brazilsouth-01.azurewebsites.net/api/auth';
 
+const DIAS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
+const MESES = [
+  { valor: '01', nombre: 'Enero' },
+  { valor: '02', nombre: 'Febrero' },
+  { valor: '03', nombre: 'Marzo' },
+  { valor: '04', nombre: 'Abril' },
+  { valor: '05', nombre: 'Mayo' },
+  { valor: '06', nombre: 'Junio' },
+  { valor: '07', nombre: 'Julio' },
+  { valor: '08', nombre: 'Agosto' },
+  { valor: '09', nombre: 'Septiembre' },
+  { valor: '10', nombre: 'Octubre' },
+  { valor: '11', nombre: 'Noviembre' },
+  { valor: '12', nombre: 'Diciembre' },
+];
+
+const anioActual = new Date().getFullYear();
+const ANIOS = Array.from({ length: anioActual - 1920 + 1 }, (_, i) => String(anioActual - i));
+
+const estadoFormAfiliacion = {
+  tipoAfiliacionCodigo: '',
+  regimenCodigo: '',
+  epsCodigo: '',
+  nombres: '',
+  apellidos: '',
+  tipoDocumentoCodigo: 'CC',
+  documento: '',
+  nacimientoDia: '',
+  nacimientoMes: '',
+  nacimientoAnio: '',
+  generoCodigo: '',
+  correo: '',
+  telefono: '',
+  direccion: '',
+  municipioCodigo: '',
+  salario: '',
+  contactoEmergenciaNombre: '',
+  contactoEmergenciaTelefono: '',
+  contactoEmergenciaParentescoCodigo: '',
+  aceptaTratamientoDatos: false,
+};
+
 function PanelAfiliaciones() {
   const [seccionActiva, setSeccionActiva] = useState('solicitudes');
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -24,9 +66,10 @@ function PanelAfiliaciones() {
   const [cargandoCrear, setCargandoCrear] = useState(false);
   const [mensajeCrear, setMensajeCrear] = useState({ tipo: '', texto: '' });
 
-  // Estados de Gestión Geográfica
+  // Estados de Gestión Geográfica y Catálogos de Afiliación
   const [departamentos, setDepartamentos] = useState([]);
   const [municipios, setMunicipios] = useState([]);
+  const [listaEps, setListaEps] = useState([]);
   const [cargandoGeo, setCargandoGeo] = useState(false);
   
   // Formularios de Creación Geográfica
@@ -35,12 +78,34 @@ function PanelAfiliaciones() {
   const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState('');
   const [mensajeGeo, setMensajeGeo] = useState({ tipo: '', texto: '' });
 
+  // Estado del Formulario de Registro de Afiliados
+  const [formAfiliacion, setFormAfiliacion] = useState(estadoFormAfiliacion);
+  const [errorMsgAfiliacion, setErrorMsgAfiliacion] = useState('');
+  const [cargandoAfiliacion, setCargandoAfiliacion] = useState(false);
+  const [modalExitoAfiliacion, setModalExitoAfiliacion] = useState(false);
+  const [correoEnviadoAfiliacion, setCorreoEnviadoAfiliacion] = useState('');
+
+  // Captcha local para afiliación
+  const [captchaChallenge, setCaptchaChallenge] = useState({ num1: 0, num2: 0, resultado: 0 });
+  const [captchaInput, setCaptchaInput] = useState('');
+
+  const generarCaptchaLocal = () => {
+    const num1 = Math.floor(Math.random() * 9) + 1;
+    const num2 = Math.floor(Math.random() * 9) + 1;
+    setCaptchaChallenge({ num1, num2, resultado: num1 + num2 });
+    setCaptchaInput('');
+  };
+
   const token = localStorage.getItem('tecnosalud_token');
+
+  useEffect(() => {
+    generarCaptchaLocal();
+  }, []);
 
   useEffect(() => {
     if (seccionActiva === 'solicitudes') {
       cargarSolicitudesPendientes();
-    } else if (seccionActiva === 'geografia') {
+    } else if (seccionActiva === 'geografia' || seccionActiva === 'nueva-afiliacion') {
       cargarCatalogosGeograficos();
     }
   }, [seccionActiva]);
@@ -123,12 +188,15 @@ function PanelAfiliaciones() {
   const cargarCatalogosGeograficos = async () => {
     setCargandoGeo(true);
     try {
-      const [resDep, resMun] = await Promise.all([
-        fetch(`${API_REGISTRO}/departamentos`),
-        fetch(`${API_REGISTRO}/municipios`)
+      const timestamp = Date.now();
+      const [resDep, resMun, resEps] = await Promise.all([
+        fetch(`${API_REGISTRO}/departamentos?_t=${timestamp}`),
+        fetch(`${API_REGISTRO}/municipios?_t=${timestamp}`),
+        fetch(`${API_REGISTRO}/eps?_t=${timestamp}`)
       ]);
       if (resDep.ok) setDepartamentos(await resDep.json());
       if (resMun.ok) setMunicipios(await resMun.json());
+      if (resEps.ok) setListaEps(await resEps.json());
     } catch (error) {
       console.error('Error cargando catálogos geográficos:', error);
     } finally {
@@ -190,6 +258,144 @@ function PanelAfiliaciones() {
     }
   };
 
+  // Manejadores del Formulario de Afiliación de Personas con Reglas de Negocio
+  const handleAfiliacionChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormAfiliacion((prev) => {
+      const nuevoForm = { ...prev, [name]: type === 'checkbox' ? checked : value };
+
+      // REGLA 1: Si selecciona régimen contributivo, forzamos la EPS a "Tecnosalud" (o la que corresponda a Tecnosalud EPS)
+      if (name === 'regimenCodigo' && value.toUpperCase() === 'CONTRIBUTIVO') {
+        const epsTecnosalud = listaEps.find(e => 
+          (e.nombre || '').toLowerCase().includes('tecnosalud') || 
+          (e.codigo || '').toLowerCase().includes('tecnosalud')
+        );
+        if (epsTecnosalud) {
+          nuevoForm.epsCodigo = epsTecnosalud.codigo || epsTecnosalud.id;
+        }
+      }
+
+      // REGLA 2: Si cambia de régimen y no es contributivo, limpiamos salario
+      if (name === 'regimenCodigo' && value.toUpperCase() !== 'CONTRIBUTIVO') {
+        nuevoForm.salario = '';
+      }
+
+      return nuevoForm;
+    });
+  };
+
+  const handleAfiliacionNumericChange = (e) => {
+    const { name, value } = e.target;
+    const numericValue = value.replace(/\D/g, '');
+    setFormAfiliacion((prev) => ({ ...prev, [name]: numericValue }));
+  };
+
+  const validarAfiliacionForm = () => {
+    if (!formAfiliacion.tipoAfiliacionCodigo) return 'Por favor selecciona el tipo de afiliación.';
+    if (!formAfiliacion.regimenCodigo) return 'Por favor selecciona el régimen de salud.';
+    if (!formAfiliacion.epsCodigo) return 'Por favor selecciona la EPS.';
+    if (!formAfiliacion.nombres.trim()) return 'Por favor completa los nombres.';
+    if (!formAfiliacion.apellidos.trim()) return 'Por favor completa los apellidos.';
+    if (!formAfiliacion.documento.trim()) return 'Por favor ingresa el número de documento.';
+    if (!formAfiliacion.nacimientoDia || !formAfiliacion.nacimientoMes || !formAfiliacion.nacimientoAnio) return 'Completa la fecha de nacimiento.';
+    if (!formAfiliacion.generoCodigo) return 'Selecciona el género.';
+    if (!formAfiliacion.correo.trim()) return 'Ingresa el correo electrónico.';
+    if (!formAfiliacion.telefono.trim()) return 'Ingresa el teléfono celular.';
+    if (!formAfiliacion.direccion.trim()) return 'Ingresa la dirección de residencia.';
+    if (!formAfiliacion.municipioCodigo) return 'Selecciona el municipio.';
+
+    if (formAfiliacion.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' && (!formAfiliacion.salario || String(formAfiliacion.salario).trim() === '')) {
+      return 'Debes ingresar tu salario base para el régimen contributivo.';
+    }
+
+    if (!formAfiliacion.contactoEmergenciaNombre.trim() || !formAfiliacion.contactoEmergenciaTelefono.trim() || !formAfiliacion.contactoEmergenciaParentescoCodigo) {
+      return 'Completa todos los datos de contacto de emergencia.';
+    }
+
+    if (!formAfiliacion.aceptaTratamientoDatos) {
+      return 'Debes autorizar el tratamiento de datos personales y sensibles.';
+    }
+
+    if (parseInt(captchaInput, 10) !== captchaChallenge.resultado) {
+      return 'El resultado del captcha es incorrecto. Intenta de nuevo.';
+    }
+
+    return null;
+  };
+
+  const handleAfiliacionSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsgAfiliacion('');
+
+    const error = validarAfiliacionForm();
+    if (error) {
+      setErrorMsgAfiliacion(error);
+      if (parseInt(captchaInput, 10) !== captchaChallenge.resultado) {
+        generarCaptchaLocal();
+      }
+      return;
+    }
+
+    setCargandoAfiliacion(true);
+    const fechaNacimiento = `${formAfiliacion.nacimientoAnio}-${formAfiliacion.nacimientoMes}-${formAfiliacion.nacimientoDia}`;
+    
+    const datosEnviar = {
+      nombres: formAfiliacion.nombres,
+      apellidos: formAfiliacion.apellidos,
+      tipoDocumentoCodigo: formAfiliacion.tipoDocumentoCodigo,
+      tipoDocumento: formAfiliacion.tipoDocumentoCodigo,
+      documento: formAfiliacion.documento,
+      fechaNacimiento,
+      generoCodigo: formAfiliacion.generoCodigo,
+      genero: formAfiliacion.generoCodigo,
+      correo: formAfiliacion.correo,
+      telefono: formAfiliacion.telefono,
+      direccion: formAfiliacion.direccion,
+      municipioCodigo: formAfiliacion.municipioCodigo,
+      tipoAfiliacionCodigo: formAfiliacion.tipoAfiliacionCodigo,
+      tipoAfiliacion: formAfiliacion.tipoAfiliacionCodigo,
+      epsCodigo: formAfiliacion.epsCodigo,
+      eps: formAfiliacion.epsCodigo,
+      regimenCodigo: formAfiliacion.regimenCodigo,
+      regimen: formAfiliacion.regimenCodigo,
+      salario: formAfiliacion.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' ? formAfiliacion.salario : null,
+      contactoEmergenciaNombre: formAfiliacion.contactoEmergenciaNombre,
+      contactoEmergenciaTelefono: formAfiliacion.contactoEmergenciaTelefono,
+      contactoEmergenciaParentescoCodigo: formAfiliacion.contactoEmergenciaParentescoCodigo,
+      contactoEmergenciaParentesco: formAfiliacion.contactoEmergenciaParentescoCodigo,
+      aceptaTratamientoDatos: formAfiliacion.aceptaTratamientoDatos,
+    };
+
+    try {
+      const res = await fetch(`${API_REGISTRO}`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(datosEnviar),
+      });
+      const datos = await res.json();
+
+      if (!res.ok) {
+        setErrorMsgAfiliacion(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar la afiliación.');
+        return;
+      }
+
+      setCorreoEnviadoAfiliacion(datos.email || formAfiliacion.correo);
+      setModalExitoAfiliacion(true);
+      setFormAfiliacion(estadoFormAfiliacion);
+      generarCaptchaLocal();
+    } catch {
+      setErrorMsgAfiliacion('Error de conexión con el servicio de registro.');
+    } finally {
+      setCargandoAfiliacion(false);
+    }
+  };
+
+  // Filtrar EPS según tipo de afiliación o régimen si el usuario es Médico
+  const esMedicoProfesional = formAfiliacion.tipoAfiliacionCodigo.toUpperCase() === 'PROFESIONAL';
+
   return (
     <div className="adm-panel">
       <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
@@ -216,6 +422,14 @@ function PanelAfiliaciones() {
 
           <button
             type="button"
+            className={`adm-menu__opcion ${seccionActiva === 'nueva-afiliacion' ? 'adm-menu__opcion--activa' : ''}`}
+            onClick={() => { setSeccionActiva('nueva-afiliacion'); setMenuAbierto(false); }}
+          >
+            <span>Nueva Afiliación (Persona)</span>
+          </button>
+
+          <button
+            type="button"
             className={`adm-menu__opcion ${seccionActiva === 'usuarios' ? 'adm-menu__opcion--activa' : ''}`}
             onClick={() => { setSeccionActiva('usuarios'); setMenuAbierto(false); }}
           >
@@ -236,7 +450,7 @@ function PanelAfiliaciones() {
         <header className="adm-encabezado">
           <div>
             <h2>Panel de Gestión - Perfil Afiliaciones</h2>
-            <p>Administración de solicitudes, padrón de usuarios y cobertura geográfica en Tecnosalud.</p>
+            <p>Administración de solicitudes, registro de ciudadanos, padrón de usuarios y cobertura geográfica.</p>
           </div>
         </header>
 
@@ -266,7 +480,7 @@ function PanelAfiliaciones() {
                   <tbody>
                     {solicitudes.map((sol) => (
                       <tr key={sol.id}>
-                        <td>{sol.tipo_doc} {sol.documento}</td>
+                        <td>{sol.tipo_doc || sol.tipoDocumento} {sol.documento}</td>
                         <td><strong>{sol.nombres} {sol.apellidos}</strong></td>
                         <td>{sol.correo}</td>
                         <td>
@@ -295,6 +509,260 @@ function PanelAfiliaciones() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </section>
+        )}
+
+        {seccionActiva === 'nueva-afiliacion' && (
+          <section className="adm-seccion">
+            <div className="adm-tarjeta">
+              <div className="adm-tarjeta__encabezado">
+                <h3>Formulario de Nueva Afiliación al Sistema Tecnosalud</h3>
+              </div>
+              <p className="adm-nota">El tipo de afiliación y régimen determinan la asignación de EPS institucional o red de médicos.</p>
+
+              {errorMsgAfiliacion && (
+                <div className="form__alert-error" role="alert" style={{ marginBottom: '1rem', padding: '0.75rem', background: '#fee2e2', color: '#b91c1c', borderRadius: '6px' }}>
+                  {errorMsgAfiliacion}
+                </div>
+              )}
+
+              <form onSubmit={handleAfiliacionSubmit} noValidate style={{ display: 'grid', gap: '1.5rem', marginTop: '1rem' }}>
+                
+                {/* SECCIÓN 1: TIPO DE AFILIACIÓN Y SALUD (¡PRIMERO!) */}
+                <fieldset style={{ border: '1px solid var(--adm-borde)', padding: '1.2rem', borderRadius: '8px', background: '#f8fafc' }}>
+                  <legend style={{ fontWeight: 'bold', color: 'var(--adm-azul)', padding: '0 0.5rem' }}>1. Sistema de Salud y Afiliación</legend>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                    
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                      Tipo de afiliación requerida *
+                      <select name="tipoAfiliacionCodigo" value={formAfiliacion.tipoAfiliacionCodigo} onChange={handleAfiliacionChange} className="adm-btn" style={{ width: '100%', background: '#fff' }} required>
+                        <option value="">Selecciona tipo de afiliación...</option>
+                        <option value="PACIENTE">Paciente / Afiliado General</option>
+                        <option value="PROFESIONAL">Profesional de la salud (Médico)</option>
+                        <option value="EMPRESA">Empresa / Convenio Institucional</option>
+                      </select>
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                      Régimen de salud *
+                      <select name="regimenCodigo" value={formAfiliacion.regimenCodigo} onChange={handleAfiliacionChange} className="adm-btn" style={{ width: '100%', background: '#fff' }} required>
+                        <option value="">Selecciona régimen...</option>
+                        <option value="CONTRIBUTIVO">Contributivo</option>
+                        <option value="SUBSIDIADO">Subsidiado</option>
+                        <option value="ESPECIAL">Especial / Excepción</option>
+                        <option value="PARTICULAR">Particular / Póliza</option>
+                      </select>
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600', gridColumn: esMedicoProfesional ? 'span 1' : 'span 2' }}>
+                      EPS / Entidad de Salud *
+                      <select 
+                        name="epsCodigo" 
+                        value={formAfiliacion.epsCodigo} 
+                        onChange={handleAfiliacionChange} 
+                        className="adm-btn" 
+                        style={{ width: '100%', background: '#fff' }}
+                        disabled={formAfiliacion.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO'}
+                        required
+                      >
+                        <option value="">Selecciona EPS...</option>
+                        {listaEps.map((eps) => {
+                          const valEps = eps.codigo || eps.id || eps.nombre;
+                          return (
+                            <option key={valEps} value={valEps}>
+                              {eps.nombre}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      {formAfiliacion.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' && (
+                        <small style={{ color: '#0369a1', fontWeight: 'normal' }}>* Régimen Contributivo asignado automáticamente a Tecnosalud EPS.</small>
+                      )}
+                    </label>
+
+                    {formAfiliacion.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' && (
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                        Salario base (COP) *
+                        <input
+                          type="text"
+                          name="salario"
+                          inputMode="numeric"
+                          value={formAfiliacion.salario}
+                          onChange={handleAfiliacionNumericChange}
+                          placeholder="Ej. 1300000"
+                          className="adm-buscador"
+                          style={{ width: '100%' }}
+                          required
+                        />
+                      </label>
+                    )}
+                  </div>
+                </fieldset>
+
+                {/* SECCIÓN 2: DATOS PERSONALES */}
+                <fieldset style={{ border: '1px solid var(--adm-borde)', padding: '1.2rem', borderRadius: '8px' }}>
+                  <legend style={{ fontWeight: 'bold', color: 'var(--adm-azul)', padding: '0 0.5rem' }}>2. Datos Personales e Identificación</legend>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                    
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                      Nombres *
+                      <input type="text" name="nombres" value={formAfiliacion.nombres} onChange={handleAfiliacionChange} placeholder="Nombres" required className="adm-buscador" style={{ width: '100%' }} />
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                      Apellidos *
+                      <input type="text" name="apellidos" value={formAfiliacion.apellidos} onChange={handleAfiliacionChange} placeholder="Apellidos" required className="adm-buscador" style={{ width: '100%' }} />
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                      Tipo de documento *
+                      <select name="tipoDocumentoCodigo" value={formAfiliacion.tipoDocumentoCodigo} onChange={handleAfiliacionChange} className="adm-btn" style={{ width: '100%', background: '#fff' }} required>
+                        <option value="CC">Cédula de Ciudadanía (CC)</option>
+                        <option value="TI">Tarjeta de Identidad (TI)</option>
+                        <option value="CE">Cédula de Extranjería (CE)</option>
+                        <option value="PA">Pasaporte (PA)</option>
+                        <option value="RC">Registro Civil (RC)</option>
+                        <option value="PPT">Permiso por Protección Temporal (PPT)</option>
+                      </select>
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                      Número de documento *
+                      <input type="text" name="documento" inputMode="numeric" value={formAfiliacion.documento} onChange={handleAfiliacionNumericChange} placeholder="Número de documento" required className="adm-buscador" style={{ width: '100%' }} />
+                    </label>
+
+                    <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                      <span>Fecha de nacimiento *</span>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                        <select name="nacimientoDia" value={formAfiliacion.nacimientoDia} onChange={handleAfiliacionChange} className="adm-btn" style={{ width: '100%', background: '#fff' }} required>
+                          <option value="">Día</option>
+                          {DIAS.map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                        <select name="nacimientoMes" value={formAfiliacion.nacimientoMes} onChange={handleAfiliacionChange} className="adm-btn" style={{ width: '100%', background: '#fff' }} required>
+                          <option value="">Mes</option>
+                          {MESES.map(m => <option key={m.valor} value={m.valor}>{m.nombre}</option>)}
+                        </select>
+                        <select name="nacimientoAnio" value={formAfiliacion.nacimientoAnio} onChange={handleAfiliacionChange} className="adm-btn" style={{ width: '100%', background: '#fff' }} required>
+                          <option value="">Año</option>
+                          {ANIOS.map(a => <option key={a} value={a}>{a}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600', gridColumn: 'span 2' }}>
+                      Género *
+                      <select name="generoCodigo" value={formAfiliacion.generoCodigo} onChange={handleAfiliacionChange} className="adm-btn" style={{ width: '100%', background: '#fff' }} required>
+                        <option value="">Selecciona género...</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                        <option value="OTRO">Otro</option>
+                      </select>
+                    </label>
+                  </div>
+                </fieldset>
+
+                {/* SECCIÓN 3: CONTACTO Y UBICACIÓN */}
+                <fieldset style={{ border: '1px solid var(--adm-borde)', padding: '1.2rem', borderRadius: '8px' }}>
+                  <legend style={{ fontWeight: 'bold', color: 'var(--adm-azul)', padding: '0 0.5rem' }}>3. Contacto y Ubicación</legend>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                    
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                      Correo electrónico *
+                      <input type="email" name="correo" value={formAfiliacion.correo} onChange={handleAfiliacionChange} placeholder="correo@ejemplo.com" required className="adm-buscador" style={{ width: '100%' }} />
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                      Teléfono / Celular *
+                      <input type="tel" name="telefono" inputMode="numeric" value={formAfiliacion.telefono} onChange={handleAfiliacionNumericChange} maxLength={10} placeholder="3001234567" required className="adm-buscador" style={{ width: '100%' }} />
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                      Dirección de residencia *
+                      <input type="text" name="direccion" value={formAfiliacion.direccion} onChange={handleAfiliacionChange} placeholder="Calle 45 # 12-34" required className="adm-buscador" style={{ width: '100%' }} />
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                      Ciudad / Municipio (Colombia) *
+                      <select name="municipioCodigo" value={formAfiliacion.municipioCodigo} onChange={handleAfiliacionChange} className="adm-btn" style={{ width: '100%', background: '#fff' }} required>
+                        <option value="">Selecciona municipio...</option>
+                        {departamentos.map((depto) => (
+                          <optgroup key={depto.codigo || depto.nombre} label={depto.nombre}>
+                            {(depto.municipios || []).map((mun) => (
+                              <option key={mun.codigo} value={mun.codigo}>
+                                {mun.nombre}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </fieldset>
+
+                {/* SECCIÓN 4: EMERGENCIA Y POLÍTICAS */}
+                <fieldset style={{ border: '1px solid var(--adm-borde)', padding: '1.2rem', borderRadius: '8px' }}>
+                  <legend style={{ fontWeight: 'bold', color: 'var(--adm-azul)', padding: '0 0.5rem' }}>4. Contacto de Emergencia y Autorización</legend>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                    
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                      Nombre del contacto *
+                      <input type="text" name="contactoEmergenciaNombre" value={formAfiliacion.contactoEmergenciaNombre} onChange={handleAfiliacionChange} placeholder="Familiar o responsable" required className="adm-buscador" style={{ width: '100%' }} />
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                      Teléfono de emergencia *
+                      <input type="tel" name="contactoEmergenciaTelefono" inputMode="numeric" value={formAfiliacion.contactoEmergenciaTelefono} onChange={handleAfiliacionNumericChange} maxLength={10} placeholder="3109876543" required className="adm-buscador" style={{ width: '100%' }} />
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600', gridColumn: 'span 2' }}>
+                      Parentesco *
+                      <select name="contactoEmergenciaParentescoCodigo" value={formAfiliacion.contactoEmergenciaParentescoCodigo} onChange={handleAfiliacionChange} className="adm-btn" style={{ width: '100%', background: '#fff' }} required>
+                        <option value="">Selecciona parentesco...</option>
+                        <option value="conyuge">Cónyuge</option>
+                        <option value="padre">Padre</option>
+                        <option value="madre">Madre</option>
+                        <option value="hijo">Hijo(a)</option>
+                        <option value="hermano">Hermano(a)</option>
+                        <option value="otro">Otro</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <p style={{ fontSize: '0.8rem', color: '#475569', lineHeight: '1.4' }}>
+                      En cumplimiento de la <strong>Ley 1581 de 2012</strong>, autorizo el tratamiento de datos personales y sensibles con fines asistenciales y de gestión en Tecnosalud.
+                    </p>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer' }}>
+                      <input type="checkbox" name="aceptaTratamientoDatos" checked={formAfiliacion.aceptaTratamientoDatos} onChange={handleAfiliacionChange} required />
+                      <span>Autorizo el tratamiento de mis datos personales y sensibles *</span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                {/* CAPTCHA */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                  <span>Seguridad: ¿Cuánto es {captchaChallenge.num1} + {captchaChallenge.num2}? *</span>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="number"
+                      value={captchaInput}
+                      onChange={(e) => setCaptchaInput(e.target.value)}
+                      placeholder="Respuesta"
+                      required
+                      className="adm-buscador"
+                      style={{ width: '120px' }}
+                    />
+                    <button type="button" onClick={generarCaptchaLocal} className="adm-btn" style={{ background: '#e2e8f0', color: '#1e293b' }}>
+                      Cambiar
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start', padding: '0.75rem 1.5rem', fontSize: '1rem' }} disabled={cargandoAfiliacion}>
+                  {cargandoAfiliacion ? 'Procesando Afiliación...' : 'Completar Afiliación Institucional'}
+                </button>
+              </form>
             </div>
           </section>
         )}
@@ -353,7 +821,6 @@ function PanelAfiliaciones() {
 
         {seccionActiva === 'geografia' && (
           <section className="adm-seccion" style={{ display: 'grid', gap: '1.5rem' }}>
-            {/* Formulario de Creación */}
             <div className="adm-tarjeta">
               <div className="adm-tarjeta__encabezado">
                 <h3>Creación de Departamentos y Ciudades</h3>
@@ -394,7 +861,7 @@ function PanelAfiliaciones() {
                   >
                     <option value="">Selecciona departamento...</option>
                     {departamentos.map((dep, idx) => (
-                      <option key={idx} value={dep.id || dep.nombre || dep}>
+                      <option key={idx} value={dep.codigo || dep.id || dep.nombre}>
                         {dep.nombre || dep}
                       </option>
                     ))}
@@ -415,7 +882,6 @@ function PanelAfiliaciones() {
               </div>
             </div>
 
-            {/* Listado de Cobertura Actual */}
             <div className="adm-tarjeta">
               <div className="adm-tarjeta__encabezado">
                 <h3>Cobertura Geográfica Actual</h3>
@@ -451,6 +917,22 @@ function PanelAfiliaciones() {
           </section>
         )}
       </main>
+
+      {modalExitoAfiliacion && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="modal-content" style={{ background: '#fff', padding: '2rem', borderRadius: '12px', maxWidth: '400px', width: '90%', textAlign: 'center' }}>
+            <h3>¡Afiliación Exitosa!</h3>
+            <p>Hemos procesado tu solicitud en el sistema Tecnosalud.</p>
+            <div className="modal-info-box" style={{ margin: '1rem 0', background: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
+              <p>Se ha enviado tu contraseña temporal al correo:</p>
+              <span className="modal-email-highlight" style={{ fontWeight: 'bold', color: 'var(--adm-azul)' }}>{correoEnviadoAfiliacion}</span>
+            </div>
+            <button type="button" className="modal-btn-confirm adm-btn adm-btn--azul" onClick={() => setModalExitoAfiliacion(false)}>
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
