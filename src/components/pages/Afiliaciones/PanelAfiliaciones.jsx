@@ -313,7 +313,7 @@ function PanelAfiliaciones() {
 
     setCargandoAfiliacion(true);
     const fechaNacimiento = `${formAfiliacion.nacimientoAnio}-${formAfiliacion.nacimientoMes}-${formAfiliacion.nacimientoDia}`;
-    console.log('[FRONTEND-STATE] form actual:', form);
+    console.log('[FRONTEND-STATE] form actual:', formAfiliacion);
     const datosEnviar = {
       nombres: formAfiliacion.nombres,
       apellidos: formAfiliacion.apellidos,
