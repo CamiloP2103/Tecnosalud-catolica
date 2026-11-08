@@ -101,8 +101,34 @@ function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
     }
 
     try {
+      // 1. Guardamos el afiliado en la base de datos de registro
       const nuevoId = await repo.crearAfiliado(datos);
 
+      // 2. Comunicarnos con el servicio de autenticación para dar de alta las credenciales
+      try {
+        const respuestaAuth = await fetch(`${authServiceUrl}/api/auth/registro-interno`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tipo_doc: datos.tipoDocumentoCodigo || datos.tipoDocumento || 'CC',
+            documento: datos.documento,
+            email: datos.correo,
+            nombre: `${datos.nombres} ${datos.apellidos}`,
+            rol_id: '2' // Rol estándar de afiliado/paciente o según tu lógica
+          }),
+        });
+
+        if (!respuestaAuth.ok) {
+          const errorAuthData = await respuestaAuth.json().catch(() => ({}));
+          console.error('[registro-service] Aviso: El servicio de auth respondió con error:', errorAuthData);
+        }
+      } catch (errAuth) {
+        // Registramos el error de red hacia auth pero evitamos que tire abajo el registro principal si lo deseas, 
+        // o puedes relanzarlo si es obligatorio que auth responda.
+        console.error('[registro-service] No se pudo conectar con auth-service:', errAuth.message);
+      }
+
+      // 3. Disparamos la notificación de confirmación por correo
       enviarConfirmacion({ correo: datos.correo, nombres: datos.nombres });
 
       return res.status(201).json({
