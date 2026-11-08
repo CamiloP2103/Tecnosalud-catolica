@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import './PanelAfiliaciones.css'; // Reutilizamos los estilos institucionales
-import { llamarServicio, SERVICIO_REGISTRO } from '../../../utils/servicios'; // (Ajusta la ruta relativa según donde esté ubicado PanelAfiliaciones.jsx)
+import { llamarServicio, SERVICIO_REGISTRO } from '../../../utils/servicios';
 
 const API_REGISTRO = import.meta.env.VITE_API_REGISTRO_URL || 'https://tecnosalud-registro-2026.azurewebsites.net/api/registro';
-//const API_AUTH = import.meta.env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2026-grgzcsa5ajhje5f8.brazilsouth-01.azurewebsites.net/api/auth';
+const API_AUTH = import.meta.env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2026-grgzcsa5ajhje5f8.brazilsouth-01.azurewebsites.net/api/auth';
 
 const DIAS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
 const MESES = [
@@ -44,7 +44,7 @@ const estadoInicialAfiliacion = {
   contactoEmergenciaNombre: '',
   contactoEmergenciaTelefono: '',
   contactoEmergenciaParentescoCodigo: '',
-  aceptaTratamientoDatos: false,
+  aceptaTratamientoDatos: true,
 };
 
 function PanelAfiliaciones() {
@@ -79,7 +79,7 @@ function PanelAfiliaciones() {
   const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState('');
   const [mensajeGeo, setMensajeGeo] = useState({ tipo: '', texto: '' });
 
-  // Estados del Formulario de Nueva Afiliación (Idéntico a Registro.jsx)
+  // Estados del Formulario de Nueva Afiliación
   const [formAfiliacion, setFormAfiliacion] = useState(estadoInicialAfiliacion);
   const [errorMsgAfiliacion, setErrorMsgAfiliacion] = useState('');
   const [modalExitoAfiliacion, setModalExitoAfiliacion] = useState(false);
@@ -244,14 +244,27 @@ function PanelAfiliaciones() {
     }
   };
 
-  // Lógica del Formulario de Afiliación (Idéntica a Registro.jsx)
+  // Lógica del Formulario de Afiliación con la regla de Régimen Contributivo -> Tecnosalud EPS
   const handleAfiliacionChange = (event) => {
     const { name, value, type, checked } = event.target;
     setFormAfiliacion((prev) => {
       const nuevoForm = { ...prev, [name]: type === 'checkbox' ? checked : value };
+
+      // Si selecciona régimen contributivo, asignamos Tecnosalud EPS por defecto
+      if (name === 'regimenCodigo' && value.toUpperCase() === 'CONTRIBUTIVO') {
+        const epsTecnosalud = listaEps.find(epsItem => 
+          (epsItem.nombre || '').toLowerCase().includes('tecnosalud') || 
+          (epsItem.codigo || '').toLowerCase().includes('tecnosalud')
+        );
+        if (epsTecnosalud) {
+          nuevoForm.epsCodigo = epsTecnosalud.codigo || epsTecnosalud.id || epsTecnosalud.nombre;
+        }
+      }
+
       if (name === 'regimenCodigo' && value.toUpperCase() !== 'CONTRIBUTIVO') {
         nuevoForm.salario = '';
       }
+
       return nuevoForm;
     });
   };
@@ -472,7 +485,7 @@ function PanelAfiliaciones() {
           </section>
         )}
 
-        {/* SECCIÓN NUEVA AFILIACIÓN (Formulario completo de Registro integrado) */}
+        {/* SECCIÓN NUEVA AFILIACIÓN */}
         {seccionActiva === 'nueva-afiliacion' && (
           <section className="adm-seccion">
             <div className="adm-tarjeta">
@@ -489,7 +502,7 @@ function PanelAfiliaciones() {
 
               <form onSubmit={handleAfiliacionSubmit} noValidate style={{ display: 'grid', gap: '1.5rem', marginTop: '1rem' }}>
                 
-                {/* SECCIÓN 1: SISTEMA DE SALUD (¡Primero como solicitaste!) */}
+                {/* SECCIÓN 1: SISTEMA DE SALUD */}
                 <fieldset style={{ border: '1px solid var(--adm-borde)', padding: '1.2rem', borderRadius: '8px', background: '#f8fafc' }}>
                   <legend style={{ fontWeight: 'bold', color: 'var(--adm-azul)', padding: '0 0.5rem' }}>Datos del Sistema de Salud</legend>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
@@ -505,8 +518,27 @@ function PanelAfiliaciones() {
                     </label>
 
                     <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600' }}>
+                      Régimen de salud *
+                      <select name="regimenCodigo" value={formAfiliacion.regimenCodigo} onChange={handleAfiliacionChange} className="adm-btn" style={{ width: '100%', background: '#fff' }} required>
+                        <option value="">Selecciona una opción</option>
+                        <option value="CONTRIBUTIVO">Contributivo</option>
+                        <option value="SUBSIDIADO">Subsidiado</option>
+                        <option value="ESPECIAL">Especial / Régimen de Excepción</option>
+                        <option value="PARTICULAR">Particular / Póliza de Salud</option>
+                      </select>
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600', gridColumn: formAfiliacion.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' ? 'span 1' : 'span 2' }}>
                       EPS / Entidad actual *
-                      <select name="epsCodigo" value={formAfiliacion.epsCodigo} onChange={handleAfiliacionChange} className="adm-btn" style={{ width: '100%', background: '#fff' }} required>
+                      <select 
+                        name="epsCodigo" 
+                        value={formAfiliacion.epsCodigo} 
+                        onChange={handleAfiliacionChange} 
+                        className="adm-btn" 
+                        style={{ width: '100%', background: '#fff' }}
+                        disabled={formAfiliacion.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO'}
+                        required
+                      >
                         <option value="">Selecciona tu EPS...</option>
                         {listaEps.map((eps) => {
                           const valEps = eps.codigo || eps.id || eps.nit || eps.nombre;
@@ -517,17 +549,9 @@ function PanelAfiliaciones() {
                           );
                         })}
                       </select>
-                    </label>
-
-                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600', gridColumn: formAfiliacion.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' ? 'span 1' : 'span 2' }}>
-                      Régimen de salud *
-                      <select name="regimenCodigo" value={formAfiliacion.regimenCodigo} onChange={handleAfiliacionChange} className="adm-btn" style={{ width: '100%', background: '#fff' }} required>
-                        <option value="">Selecciona una opción</option>
-                        <option value="CONTRIBUTIVO">Contributivo</option>
-                        <option value="SUBSIDIADO">Subsidiado</option>
-                        <option value="ESPECIAL">Especial / Régimen de Excepción</option>
-                        <option value="PARTICULAR">Particular / Póliza de Salud</option>
-                      </select>
+                      {formAfiliacion.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' && (
+                        <small style={{ color: '#0369a1', fontWeight: 'normal', marginTop: '0.2rem' }}>* Régimen Contributivo asignado automáticamente a Tecnosalud EPS.</small>
+                      )}
                     </label>
 
                     {formAfiliacion.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' && (
