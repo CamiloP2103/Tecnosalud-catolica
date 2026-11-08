@@ -5,8 +5,8 @@ function Nosotros({ seccion }) {
   const [visitas, setVisitas] = useState(0);
 
   const socialLinks = [
-    { label: 'GitHub', href: 'https://github.com/CamiloP2103/Tecnosalud-catolica.git' },
-    { label: 'Instagram', href: 'https://www.instagram.com/tecnosalud' },
+    { label: 'GitHub Institucional', href: 'https://github.com/CamiloP2103/Tecnosalud-catolica.git' },
+    { label: 'Portal Oficial', href: 'https://www.instagram.com/tecnosalud' },
   ];
 
   return (
@@ -14,43 +14,45 @@ function Nosotros({ seccion }) {
       {seccion === 'historia' && (
         <>
           <div className="nosotros-header">
-            <span className="nosotros-badge">Nuestra historia</span>
-            <h2>Innovación y Vocación al Servicio de la Vida</h2>
+            <span className="nosotros-badge">Nuestra Evolución e Historia</span>
+            <h2>Innovación Académica y Vocación al Servicio de la Vida</h2>
             <p className="nosotros-lead">
-              Tecnosalud nació con la misión de acercar soluciones de salud más humanas, tecnológicas y accesibles.
-              A lo largo del tiempo hemos fortalecido la experiencia de nuestros afiliados y comunidades mediante una
-              gestión cercana, eficiente y orientada a resultados.
+              Tecnosalud Católica surge como una iniciativa de vanguardia gestada desde el rigor académico de la 
+              Facultad de Ingeniería de Sistemas y de la Computación, combinando la excelencia técnica con la 
+              profunda vocación de servicio en el sector salud colombiano.
             </p>
           </div>
 
           <div className="nosotros-card nosotros-card--about">
-            <div className="nosotros-card__icon" aria-hidden="true">C</div>
+            <div className="nosotros-card__icon" aria-hidden="true">TC</div>
             <div className="nosotros-card__body">
-              <h3>Compromiso con la comunidad</h3>
+              <h3>Hitos de Transformación Digital</h3>
               <p>
-                Trabajamos cada día para que la tecnología no sea una barrera, sino un puente hacia una atención más
-                humana, clara y cercana. Nuestro enfoque combina experiencia clínico-administrativa, innovación y sentido social.
+                Desde su concepción, nuestra plataforma ha evolucionado desde un modelo conceptual de gestión hospitalaria 
+                hasta convertirse en un ecosistema robusto basado en microservicios en la nube (Azure Container Apps), 
+                arquitectura orientada a eventos (RabbitMQ) y un motor de orquestación inteligente. Hemos transformado 
+                la forma en que las EPS gestionan sus afiliaciones, la interoperabilidad clínica y la cobertura regional.
               </p>
             </div>
           </div>
 
           <div className="nosotros-pillars">
-            <h3>Presencia y Cobertura</h3>
+            <h3>Nuestros Pilares de Crecimiento</h3>
             <div className="nosotros-pillars__grid">
               <div className="pillar-item">
-                <span className="pillar-item__icon" aria-hidden="true">A</span>
-                <h4>Cobertura regional</h4>
-                <p>Atención cercana con enfoque territorial y fortalecimiento del acceso a la salud.</p>
+                <span className="pillar-item__icon" aria-hidden="true">01</span>
+                <h4>Arquitectura Escalable</h4>
+                <p>Desarrollo nativo en la nube con estándares de alta disponibilidad, seguridad OWASP y bases de datos relacionales optimizadas.</p>
               </div>
               <div className="pillar-item">
-                <span className="pillar-item__icon" aria-hidden="true">P</span>
-                <h4>Enfoque social</h4>
-                <p>Priorizamos la atención de población vulnerable y con mayores barreras de acceso.</p>
+                <span className="pillar-item__icon" aria-hidden="true">02</span>
+                <h4>Enfoque Humano y Social</h4>
+                <p>Compromiso absoluto con la equidad en salud, facilitando trámites transparentes y accesibles para los afiliados.</p>
               </div>
               <div className="pillar-item">
-                <span className="pillar-item__icon" aria-hidden="true">T</span>
-                <h4>Tecnología para la salud</h4>
-                <p>Plataformas y procesos digitales que agilizan la atención y fortalecen la gestión clínica.</p>
+                <span className="pillar-item__icon" aria-hidden="true">03</span>
+                <h4>Interoperabilidad</h4>
+                <p>Integración fluida entre módulos de autenticación, registros clínicos, farmacias y gestión geográfica departamental.</p>
               </div>
             </div>
           </div>
@@ -60,11 +62,12 @@ function Nosotros({ seccion }) {
       {seccion === 'mision-vision' && (
         <>
           <div className="nosotros-card nosotros-card--about">
-            <div className="nosotros-card__icon" aria-hidden="true">M</div>
+            <div className="nosotros-card__icon" aria-hidden="true">MV</div>
             <div className="nosotros-card__body">
+              <h3>Direccionamiento Estratégico</h3>
               <p>
-                Somos una organización comprometida con la gestión responsable de la salud, fortaleciendo la calidad de vida
-                de las personas a través de soluciones accesibles, humanas y sostenibles.
+                Garantizamos una gestión responsable, ética y tecnológicamente avanzada para optimizar la calidad de vida 
+                de los ciudadanos a través de soluciones de salud transparentes y sostenibles.
               </p>
             </div>
           </div>
@@ -74,8 +77,9 @@ function Nosotros({ seccion }) {
               <div className="nosotros-card__icon" aria-hidden="true">M</div>
               <h3>Misión</h3>
               <p>
-                Diseñar y ejecutar soluciones en salud con enfoque humano, tecnológico y social, para mejorar la experiencia,
-                la accesibilidad y la calidad de vida de nuestros afiliados y comunidades.
+                Diseñar, implementar y desplegar soluciones tecnológicas e interoperables en el sector salud con un enfoque 
+                humano y social, optimizando los tiempos de respuesta, la gestión de afiliaciones y la experiencia de los 
+                usuarios en el territorio nacional.
               </p>
             </div>
 
@@ -83,29 +87,30 @@ function Nosotros({ seccion }) {
               <div className="nosotros-card__icon" aria-hidden="true">V</div>
               <h3>Visión</h3>
               <p>
-                Ser una organización referente en salud y tecnología, reconocida por su impacto positivo, innovación y
-                capacidad de acompañar de manera cercana a cada persona.
+                Consolidarnos para el año 2028 como la plataforma de gestión en salud de referencia académica e institucional 
+                en Colombia, reconocida por su innovación en arquitectura de software, seguridad de la información y su impacto 
+                positivo en el bienestar comunitario.
               </p>
             </div>
           </div>
 
           <div className="nosotros-pillars">
-            <h3>Objetivos Estratégicos</h3>
+            <h3>Objetivos Estratégicos Institucionales</h3>
             <div className="nosotros-pillars__grid">
               <div className="pillar-item">
                 <span className="pillar-item__icon" aria-hidden="true">A</span>
-                <h4>Acceso oportuno</h4>
-                <p>Reducir tiempos de espera y facilitar la entrada efectiva a los servicios de salud.</p>
+                <h4>Eficiencia Operativa</h4>
+                <p>Automatizar los procesos de validación de estado y aprobación de solicitudes mediante flujos basados en roles seguros.</p>
               </div>
               <div className="pillar-item">
                 <span className="pillar-item__icon" aria-hidden="true">Q</span>
-                <h4>Calidad asistencial</h4>
-                <p>Garantizar atención segura, humanizada y guiada por evidencia.</p>
+                <h4>Calidad y Seguridad</h4>
+                <p>Cumplir estrictamente con los estándares normativos de protección de datos, cifrado TLS y auditorías de seguridad.</p>
               </div>
               <div className="pillar-item">
                 <span className="pillar-item__icon" aria-hidden="true">I</span>
-                <h4>Innovación continua</h4>
-                <p>Integrar tecnología para mejorar procesos y fortalecer la experiencia del usuario.</p>
+                <h4>Innovación Continua</h4>
+                <p>Incorporar metodologías ágiles y herramientas de inteligencia artificial para la optimización de procesos administrativos.</p>
               </div>
             </div>
           </div>
@@ -115,37 +120,37 @@ function Nosotros({ seccion }) {
       {seccion === 'valores' && (
         <div className="nosotros-pillars">
           <div className="nosotros-header">
-            <h3>Valores</h3>
+            <h3>Nuestros Valores Corporativos</h3>
             <p className="nosotros-lead">
-              Estos son los principios que orientan cada una de nuestras decisiones y guían la forma en
-              que nos relacionamos con nuestros afiliados, colaboradores y aliados.
+              Los principios éticos y profesionales que rigen nuestro código de conducta, el desarrollo de software 
+              y la relación permanente con nuestros afiliados y aliados institucionales.
             </p>
           </div>
           <div className="nosotros-pillars__grid">
             <div className="pillar-item">
               <span className="pillar-item__icon" aria-hidden="true">R</span>
-              <h4>Respeto</h4>
-              <p>Reconocemos la dignidad de cada persona y promovemos relaciones basadas en la escucha y la empatía.</p>
+              <h4>Rigor Técnico y Ético</h4>
+              <p>Aplicamos buenas prácticas de ingeniería en cada línea de código y actuamos con absoluta integridad en la gestión de datos sensibles.</p>
             </div>
             <div className="pillar-item">
               <span className="pillar-item__icon" aria-hidden="true">E</span>
-              <h4>Equidad</h4>
-              <p>Buscamos reducir brechas, facilitar el acceso y garantizar atención útil para quienes más lo necesitan.</p>
+              <h4>Empatía Social</h4>
+              <p>Diseñamos pensando en las personas, reduciendo barreras tecnológicas y facilitando el acceso equitativo a los servicios de salud.</p>
             </div>
             <div className="pillar-item">
               <span className="pillar-item__icon" aria-hidden="true">T</span>
               <h4>Transparencia</h4>
-              <p>Somos claros en nuestras decisiones, procesos y compromisos, con responsabilidad frente a la comunidad.</p>
+              <p>Garantizamos trazabilidad absoluta en el historial de estados de afiliación y claridad institucional en cada proceso.</p>
             </div>
             <div className="pillar-item">
               <span className="pillar-item__icon" aria-hidden="true">C</span>
-              <h4>Cercanía</h4>
-              <p>Queremos que la experiencia de atención se sienta cercana, humana y acompañada en cada etapa.</p>
+              <h4>Colaboración</h4>
+              <p>Fomentamos el trabajo en equipo multidisciplinario entre ingenieros, personal clínico y administradores en pro del bienestar.</p>
             </div>
             <div className="pillar-item">
               <span className="pillar-item__icon" aria-hidden="true">S</span>
-              <h4>Responsabilidad</h4>
-              <p>Actuamos con criterio, ética y sentido social para generar impacto real en la salud de la población.</p>
+              <h4>Sostenibilidad</h4>
+              <p>Creamos infraestructura tecnológica escalable, optimizada y preparada para soportar la demanda a largo plazo.</p>
             </div>
           </div>
         </div>
@@ -154,115 +159,97 @@ function Nosotros({ seccion }) {
       {seccion === 'trabaja-con-nosotros' && (
         <>
           <div className="trabajo-intro">
-            <div className="nosotros-card__icon" aria-hidden="true">T</div>
+            <div className="nosotros-card__icon" aria-hidden="true">TC</div>
             <div className="trabajo-intro__body">
-              <span className="nosotros-badge">Talento y propósito</span>
+              <span className="nosotros-badge">Talento e Ingeniería con Propósito</span>
               <p>
-                En <strong>Tecnosalud Católica</strong> creemos que el talento humano es clave para transformar la salud.
-                Por eso reunimos profesionales y practicantes con vocación de servicio, pensamiento crítico y capacidad de
-                aportar soluciones reales a la comunidad.
+                En <strong>Tecnosalud Católica</strong> valoramos el talento humano como el motor principal de la transformación 
+                digital en la salud. Buscamos profesionales, investigadores y practicantes apasionados por el desarrollo de 
+                software, la gestión hospitalaria y la innovación tecnológica.
               </p>
             </div>
           </div>
 
           <div className="nosotros-pillars">
-            <h3>¿Por qué trabajar con nosotros?</h3>
+            <h3>¿Por qué unirte a nuestro equipo?</h3>
             <div className="nosotros-pillars__grid">
               <div className="pillar-item">
-                <span className="pillar-item__icon" aria-hidden="true">C</span>
-                <h4>Crecimiento profesional</h4>
-                <p>Aprendizaje constante, acompañamiento real y oportunidades para desarrollar habilidades con impacto social.</p>
+                <span className="pillar-item__icon" aria-hidden="true">CP</span>
+                <h4>Experiencia en Entornos Cloud</h4>
+                <p>Exposición real a despliegues profesionales en Azure, microservicios, bases de datos relacionales y control de versiones avanzado.</p>
               </div>
               <div className="pillar-item">
-                <span className="pillar-item__icon" aria-hidden="true">I</span>
-                <h4>Ambiente inclusivo</h4>
-                <p>Valoramos la diversidad, la empatía y el respeto por la diferencia como parte de nuestra cultura.</p>
+                <span className="pillar-item__icon" aria-hidden="true">AI</span>
+                <h4>Cultura de Innovación</h4>
+                <p>Participación activa en proyectos de ingeniería de sistemas aplicados a resolver problemáticas críticas del sector salud.</p>
               </div>
               <div className="pillar-item">
-                <span className="pillar-item__icon" aria-hidden="true">S</span>
-                <h4>Impacto social</h4>
-                <p>Cada proyecto contribuye a mejorar la salud, la calidad de vida y el acceso a servicios de la comunidad.</p>
+                <span className="pillar-item__icon" aria-hidden="true">IS</span>
+                <h4>Alto Impacto Social</h4>
+                <p>Tu trabajo contribuirá directamente a mejorar la calidad de vida y el acceso a los servicios de miles de usuarios.</p>
               </div>
             </div>
           </div>
 
           <div className="trabajo-callout">
-            <h3>¿Qué buscamos?</h3>
+            <h3>Perfil de Talento Requerido</h3>
             <ul className="trabajo-callout__list">
-              <li>Estudiantes y egresados con interés en la salud, la administración, la tecnología y la atención al usuario.</li>
-              <li>Personas con actitud proactiva, responsabilidad, capacidad de trabajo en equipo y sentido de servicio.</li>
-              <li>Talento dispuesto a aprender, aportar ideas y contribuir al bienestar de la población a la que servimos.</li>
+              <li>Estudiantes avanzados o egresados de Ingeniería de Sistemas, Computación o áreas administrativas y de salud.</li>
+              <li>Compromiso con la calidad, la seguridad de la información, el trabajo en equipo y la mejora continua.</li>
+              <li>Capacidad analítica para la resolución de problemas complejos y desarrollo orientado a microservicios.</li>
             </ul>
           </div>
 
           <div className="trabajo-grid">
             <div className="trabajo-card">
-              <h3>Practicantes y aprendices</h3>
+              <h3>Convocatoria de Prácticas e Investigación</h3>
               <p>
-                Estamos buscando estudiantes de programas técnicos, tecnológicos y profesionales interesados en fortalecer sus
-                conocimientos en un entorno real, cercano y con impacto social.
+                Abrimos espacios para la integración de talento académico en áreas de desarrollo de software, arquitectura web, 
+                soporte administrativo y gestión de catálogos en salud.
               </p>
               <ul className="trabajo-card__list">
-                <li>Técnica o Tecnología en Auxiliar Administrativo.</li>
-                <li>Técnica o Tecnología en Auxiliar Administrativo en Salud.</li>
-                <li>Profesional en Contabilidad.</li>
-                <li>Técnica o Tecnología en Regencia de Farmacia.</li>
-                <li>Técnica o Tecnología en Enfermería.</li>
-                <li>Profesional en Gerencia de Sistemas de Información (GESIS).</li>
+                <li>Ingeniería de Sistemas y Computación.</li>
+                <li>Tecnología en Desarrollo de Software y Bases de Datos.</li>
+                <li>Administración de Servicios de Salud.</li>
+                <li>Gestión de Infraestructura Tecnológica.</li>
               </ul>
               <div className="trabajo-card__meta">
-                <p><strong>Tipo de contrato:</strong> SENA</p>
-                <p><strong>Modalidad:</strong> presencial, Medellín</p>
-                <p><strong>Correo de contacto:</strong> <a href="mailto:seleccion@tecnosaludcatolica.com">seleccion@tecnosaludcatolica.com</a></p>
-                <p className="trabajo-card__nota">En el asunto debes indicar el programa al cual perteneces.</p>
+                <p><strong>Modalidad:</strong> Híbrida / Remota</p>
+                <p><strong>Contacto institucional:</strong> <a href="mailto:seleccion@tecnosaludcatolica.com">seleccion@tecnosaludcatolica.com</a></p>
+                <p className="trabajo-card__nota">Indique en el asunto el área de interés o proyecto al que postula.</p>
               </div>
             </div>
 
             <div className="trabajo-card">
-              <h3>Participación regional</h3>
+              <h3>Despliegue y Cobertura Regional</h3>
               <p>
-                También estamos convocando talento en diferentes municipios de Antioquia para apoyar procesos administrativos,
-                de atención y acompañamiento en salud.
+                Nuestra plataforma acompaña activamente la gestión administrativa y de afiliaciones en múltiples regiones, 
+                articulando nodos departamentales y municipales con un esquema centralizado y seguro.
               </p>
               <ul className="trabajo-card__list trabajo-card__list--dos-columnas">
-                <li>Campamento</li>
-                <li>Rionegro</li>
-                <li>Cañasgordas</li>
-                <li>Salgar</li>
-                <li>Caicedo</li>
-                <li>San Carlos</li>
-                <li>Cisneros</li>
-                <li>San Jerónimo</li>
-                <li>Donmatías</li>
-                <li>San Roque</li>
-                <li>El Peñol</li>
-                <li>Santa Rosa de Osos</li>
-                <li>Fredonia</li>
-                <li>Santafé de Antioquia</li>
-                <li>La Ceja</li>
-                <li>Segovia</li>
-                <li>Liborina</li>
-                <li>Turbo</li>
-                <li>Nariño</li>
-                <li>Vegachí</li>
-                <li>Puerto Berrío</li>
-                <li>Yolombó</li>
+                <li>Bogotá D.C. (Sede Principal)</li>
+                <li>Cundinamarca</li>
+                <li>Antioquia</li>
+                <li>Atlántico</li>
+                <li>Valle del Cauca</li>
+                <li>Bolívar</li>
+                <li>Santander</li>
+                <li>Boyacá</li>
               </ul>
               <div className="trabajo-card__meta">
-                <p><strong>Tipo de contrato:</strong> SENA</p>
-                <p><strong>Modalidad:</strong> presencial</p>
-                <p><strong>Correo de contacto:</strong> <a href="mailto:seleccion@tecnosaludcatolica.com">seleccion@tecnosaludcatolica.com</a></p>
-                <p className="trabajo-card__nota">En el asunto debes indicar el programa al cual perteneces.</p>
+                <p><strong>Ecosistema:</strong> Microservicios Node.js / React</p>
+                <p><strong>Infraestructura:</strong> Azure Cloud Service</p>
+                <p className="trabajo-card__nota">Únete a la red de innovación en salud tecnológica.</p>
               </div>
             </div>
           </div>
 
           <div className="trabajo-actions">
-            <a href="mailto:seleccion@tecnosaludcatolica.com?subject=Postulaci%C3%B3n%20Tecnosalud%20-%20Practicantes" className="trabajo-btn trabajo-btn--primary">
-              Enviar mi hoja de vida
+            <a href="mailto:seleccion@tecnosaludcatolica.com?subject=Postulaci%C3%B3n%20Tecnosalud%20-%20Talento" className="trabajo-btn trabajo-btn--primary">
+              Enviar Hoja de Vida
             </a>
-            <a href="https://www.sena.edu.co/" target="_blank" rel="noreferrer" className="trabajo-btn trabajo-btn--secondary">
-              Registro de convocatorias SENA
+            <a href="https://github.com/CamiloP2103/Tecnosalud-catolica.git" target="_blank" rel="noreferrer" className="trabajo-btn trabajo-btn--secondary">
+              Ver Repositorio en GitHub
             </a>
           </div>
         </>
@@ -271,26 +258,26 @@ function Nosotros({ seccion }) {
       {seccion === 'organigrama' && (
         <div className="organigrama">
           <div className="nosotros-header">
-            <span className="nosotros-badge">Estructura institucional</span>
-            <h2>Organigrama de Tecnosalud</h2>
+            <span className="nosotros-badge">Estructura Institucional</span>
+            <h2>Organigrama Operativo de Tecnosalud</h2>
           </div>
 
           <div className="organigrama__tree">
-            <div className="org-node org-node--top">Dirección General</div>
+            <div className="org-node org-node--top">Dirección General y Rectoría de Proyecto</div>
             <div className="org-node__branch">
-              <div className="org-node">Administración</div>
-              <div className="org-node">Financiera</div>
-              <div className="org-node">Operaciones</div>
+              <div className="org-node">Gestión Administrativa</div>
+              <div className="org-node">Dirección Financiera y Presupuesto</div>
+              <div className="org-node">Operaciones y Afiliaciones</div>
             </div>
             <div className="org-node__branch">
-              <div className="org-node">Salud y Atención</div>
-              <div className="org-node">Tecnología e innovación</div>
-              <div className="org-node">Talento humano</div>
+              <div className="org-node">Servicios Clínicos y Asistenciales</div>
+              <div className="org-node">Ingeniería de Software e Innovación Cloud</div>
+              <div className="org-node">Talento Humano y Seguridad de la Información</div>
             </div>
           </div>
 
           <div className="social-links">
-            <h3>Conéctate con nosotros</h3>
+            <h3>Canales Oficiales y Repositorios</h3>
             <div className="social-links__list">
               {socialLinks.map((link) => (
                 <a key={link.label} href={link.href} target="_blank" rel="noreferrer">
