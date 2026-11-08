@@ -347,20 +347,16 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
       if (rol === 'admin' || rol === 'administrador') {
         onNavigate('admin'); // Cambia 'perfil-admin' por el nombre real de tu ruta
       } else {
-        onNavigate('servicios');
-      }
-
-      if (rol === 'afiliaciones' ) {
-        onNavigate('afiliaciones'); // Navega al perfil de afiliaciones 
-      } else {
-        onNavigate('servicios');
-      }
-
-      if (rol === 'medico' ) {
-        onNavigate('historiaclinica'); // Navega al perfil de Medico 
-      } else {
-        onNavigate('servicios');
-      }
+              if (rol === 'afiliaciones' ) {
+              onNavigate('afiliaciones'); // Navega al perfil de afiliaciones 
+              } else {
+                        if (rol === 'medico' ) {
+                        onNavigate('historiaclinica'); // Navega al perfil de Medico 
+                        } else {
+                                  onNavigate('servicios');
+                                }
+                      }
+              }
 
     }
   };
