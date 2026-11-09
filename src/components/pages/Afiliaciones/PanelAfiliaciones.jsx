@@ -14,7 +14,7 @@ const MESES = [
 ];
 
 const anioActual = new Date().getFullYear();
-const ANIOS = Array.from({ length: anioActual - 1920 + 1 }, (_, i) => String(anioActual - i));
+const ANIOS = Array.from({ length: anioActual - 1900 + 1 }, (_, i) => String(anioActual - i));
 
 const estadoInicialAfiliacion = {
   nombres: '', apellidos: '', tipoDocumentoCodigo: 'CC', documento: '',
@@ -45,7 +45,7 @@ function PanelAfiliaciones() {
   const [cargandoCrear, setCargandoCrear] = useState(false);
   const [mensajeCrear, setMensajeCrear] = useState({ tipo: '', texto: '' });
 
-  // Estados de Catálogos y Geografía
+  // Estados independientes de Maestros y Geografía
   const [departamentos, setDepartamentos] = useState([]);
   const [municipios, setMunicipios] = useState([]);
   const [listaEps, setListaEps] = useState([]);
@@ -132,14 +132,14 @@ function PanelAfiliaciones() {
     }
   };
 
+  // Carga usando el endpoint dedicado de géneros (o listado general si aplica)
   const cargarGeneros = async () => {
     setCargandoGeneros(true);
     try {
-      const res = await fetch(`${API_REGISTRO}/catalogos?_t=${Date.now()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setGeneros(data.listas?.generos || []);
-      }
+      const res = await fetch(`${API_REGISTRO}/generos?_t=${Date.now()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) setGeneros(await res.json());
     } catch (error) {
       console.error('Error cargando géneros:', error);
     } finally {
@@ -150,11 +150,10 @@ function PanelAfiliaciones() {
   const cargarParentescos = async () => {
     setCargandoParentescos(true);
     try {
-      const res = await fetch(`${API_REGISTRO}/catalogos?_t=${Date.now()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setParentescos(data.listas?.parentescos || []);
-      }
+      const res = await fetch(`${API_REGISTRO}/parentescos?_t=${Date.now()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) setParentescos(await res.json());
     } catch (error) {
       console.error('Error cargando parentescos:', error);
     } finally {
@@ -839,7 +838,7 @@ function PanelAfiliaciones() {
           </section>
         )}
 
-        {/* 4. MAESTRO: GÉNEROS */}
+        {/* 4. MAESTRO: GÉNEROS (Endpoint /generos dedicado) */}
         {seccionActiva === 'generos' && (
           <section className="adm-seccion">
             <div className="adm-tarjeta">
@@ -863,7 +862,7 @@ function PanelAfiliaciones() {
           </section>
         )}
 
-        {/* 5. MAESTRO: PARENTESCOS */}
+        {/* 5. MAESTRO: PARENTESCOS (Endpoint /parentescos dedicado) */}
         {seccionActiva === 'parentescos' && (
           <section className="adm-seccion">
             <div className="adm-tarjeta">
@@ -887,7 +886,7 @@ function PanelAfiliaciones() {
           </section>
         )}
 
-        {/* 6. MAESTRO: EPS */}
+        {/* 6. MAESTRO: EPS (Endpoint /eps dedicado) */}
         {seccionActiva === 'eps' && (
           <section className="adm-seccion">
             <div className="adm-tarjeta">
@@ -911,7 +910,7 @@ function PanelAfiliaciones() {
           </section>
         )}
 
-        {/* 7. MAESTRO: GEOGRAFÍA */}
+        {/* 7. MAESTRO: GESTIÓN GEOGRÁFICA (Departamentos y Municipios) */}
         {seccionActiva === 'geografia' && (
           <section className="adm-seccion" style={{ display: 'grid', gap: '1.5rem' }}>
             <div className="adm-tarjeta">
