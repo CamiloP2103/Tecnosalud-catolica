@@ -110,7 +110,7 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
         const contactoNombre = datos.contactoEmergenciaNombre || null;
         const contactoTelefono = datos.contactoEmergenciaTelefono || null;
         const parentesco = datos.contactoEmergenciaParentescoCodigo || datos.contactoEmergenciaParentesco || null;
-        const aceptaTratamientoDatos = datos.aceptaTratamientoDatos;
+        const aceptarTratamientoDatos = datos.aceptaTratamientoDatos || null;
 
         const parametros = [
           datos.nombres || null,
@@ -130,7 +130,7 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
           contactoNombre,
           contactoTelefono,
           parentesco,
-          aceptaTratamientoDatos
+          aceptarTratamientoDatos
         ];
 
         const parametrosSeguros = parametros.map(valor => (valor === undefined || valor === '' ? null : valor));
