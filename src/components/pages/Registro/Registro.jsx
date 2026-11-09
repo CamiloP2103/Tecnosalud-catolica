@@ -201,7 +201,6 @@ function Registro() {
       eps: form.epsCodigo,
       regimenCodigo: form.regimenCodigo,
       regimen: form.regimenCodigo,
-      salario: null,
       contactoEmergenciaNombre: form.contactoEmergenciaNombre,
       contactoEmergenciaTelefono: form.contactoEmergenciaTelefono,
       contactoEmergenciaParentescoCodigo: form.contactoEmergenciaParentescoCodigo,
