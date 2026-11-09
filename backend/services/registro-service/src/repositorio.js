@@ -208,7 +208,7 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
       correo || '', 
       documento || ''
     ]);
-
+    console.log('[registro-service] Filas actualizadas (affectedRows):', resultado.affectedRows);
     return resultado.affectedRows > 0;
   },
     async listarAfiliados({ estado, buscar, limite = 50 } = {}) {
