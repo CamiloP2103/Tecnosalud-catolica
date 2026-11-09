@@ -4,7 +4,7 @@ import './Inicio.css';
 
 
 function Inicio({ onNavigate }) {
-  const [horaCarga, setHoraCarga] = useState('--:--:--');
+  
 
   useEffect(() => {
     setHoraCarga(new Date().toLocaleTimeString('es-CO', {

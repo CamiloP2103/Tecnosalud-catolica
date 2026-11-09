@@ -110,6 +110,7 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
         const contactoNombre = datos.contactoEmergenciaNombre || null;
         const contactoTelefono = datos.contactoEmergenciaTelefono || null;
         const parentesco = datos.contactoEmergenciaParentescoCodigo || datos.contactoEmergenciaParentesco || null;
+        const aceptaTratamientoDatos = datos.aceptaTratamientoDatos;
 
         const parametros = [
           datos.nombres || null,
@@ -128,7 +129,8 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
           salarioGuardar,
           contactoNombre,
           contactoTelefono,
-          parentesco
+          parentesco,
+          aceptaTratamientoDatos
         ];
 
         const parametrosSeguros = parametros.map(valor => (valor === undefined || valor === '' ? null : valor));
@@ -138,7 +140,7 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
             (nombres, apellidos, tipo_documento_codigo, documento, fecha_nacimiento, genero_codigo, correo, telefono,
              direccion, municipio_codigo, tipo_afiliacion_codigo, eps_codigo, regimen_codigo, salario,
              contacto_emergencia_nombre, contacto_emergencia_telefono, contacto_emergencia_parentesco_codigo, acepta_tratamiento_datos, estado)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, false, 'PENDIENTE')`,
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE')`,
           parametrosSeguros
         );
 

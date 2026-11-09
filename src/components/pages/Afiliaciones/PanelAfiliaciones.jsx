@@ -55,6 +55,7 @@ function PanelAfiliaciones() {
   const [solicitudes, setSolicitudes] = useState([]);
   const [cargandoSolicitudes, setCargandoSolicitudes] = useState(false);
   const [mensajeSolicitudes, setMensajeSolicitudes] = useState('');
+  
 
   // Estados para Crear Usuario EPS
   const [formUsuario, setFormUsuario] = useState({
@@ -351,7 +352,7 @@ function PanelAfiliaciones() {
       }, SERVICIO_REGISTRO);
 
       if (!ok) {
-        setErrorMsg(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar el registro.');
+        setMensajeSolicitudes(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar el registro.');
         return;
       }
 

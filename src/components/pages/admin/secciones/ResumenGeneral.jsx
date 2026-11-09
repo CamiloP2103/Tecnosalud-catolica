@@ -1,7 +1,7 @@
 import {
   IconoAfiliacion, IconoAlerta, IconoCalendario, IconoCorreo, IconoDocumento, IconoMedicamento, IconoPedido, IconoUsuarios,
 } from '../iconos';
-import { Barra, Indicador, Tarjeta, numero, pesos } from '../componentes';
+import { Barra, Indicador, Tarjeta, numero} from '../componentes';
 
 const NOMBRES_SERVICIO = {
   auth: 'Autenticación',

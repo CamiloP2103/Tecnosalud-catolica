@@ -11,7 +11,7 @@ function RestablecerClave({ onNavigate }) {
   const [aceptaTratamientoDatos, setAceptaTratamientoDatos] = useState(false);
   
   // Estado para identificar si requiere tratamiento de datos (Médico o Paciente)
-  const [requiereTratamiento, setRequiereTratamiento] = useState(true);
+  const [requiereTratamiento] = useState(true);
   
   const [errorMsg, setErrorMsg] = useState('');
   const [exitoMsg, setExitoMsg] = useState('');
