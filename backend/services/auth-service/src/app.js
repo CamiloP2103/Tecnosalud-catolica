@@ -273,6 +273,14 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
       // 2. Sincronizamos el consentimiento y estado activo en db_registro (a través del microservicio de registro)
       if (datosUsuario.email || datosUsuario.documento) {
         try {
+              const payloadSincronizacion = {
+              correo: datosUsuario.email,
+              documento: datosUsuario.documento,
+              aceptaTratamientoDatos: aceptaTratamientoDatos ? 1 : 0
+              }; 
+
+              // Imprimimos en los logs de Azure para verificar qué valores van
+          console.log('[auth-service] Payload enviado a registro-service:', JSON.stringify(payloadSincronizacion));
           await fetch(`${process.env.REGISTRO_SERVICE_URL || 'http://localhost:3004'}/api/registro/activar-consentimiento`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
