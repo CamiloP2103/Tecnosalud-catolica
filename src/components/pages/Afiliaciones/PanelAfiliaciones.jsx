@@ -45,21 +45,27 @@ function PanelAfiliaciones() {
   const [cargandoCrear, setCargandoCrear] = useState(false);
   const [mensajeCrear, setMensajeCrear] = useState({ tipo: '', texto: '' });
 
-  // Estados de Gestión Geográfica y Catálogos
+  // Estados de Catálogos y Geografía
   const [departamentos, setDepartamentos] = useState([]);
   const [municipios, setMunicipios] = useState([]);
   const [listaEps, setListaEps] = useState([]);
   const [generos, setGeneros] = useState([]);
   const [parentescos, setParentescos] = useState([]);
-  const [cargandoGeo, setCargandoGeo] = useState(false);
   
-  // Formularios de Creación Geográfica y Catálogos
+  const [cargandoGeo, setCargandoGeo] = useState(false);
+  const [cargandoGeneros, setCargandoGeneros] = useState(false);
+  const [cargandoParentescos, setCargandoParentescos] = useState(false);
+  const [cargandoEps, setCargandoEps] = useState(false);
+
+  // Campos de Formularios
   const [nombreDepartamento, setNombreDepartamento] = useState('');
   const [nombreMunicipio, setNombreMunicipio] = useState('');
   const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState('');
   const [nombreGenero, setNombreGenero] = useState('');
   const [nombreParentesco, setNombreParentesco] = useState('');
   const [nombreEps, setNombreEps] = useState('');
+  
+  const [mensajeCat, setMensajeCat] = useState({ tipo: '', texto: '' });
   const [mensajeGeo, setMensajeGeo] = useState({ tipo: '', texto: '' });
 
   // Estados del Formulario de Nueva Afiliación
@@ -72,26 +78,36 @@ function PanelAfiliaciones() {
   const token = localStorage.getItem('tecnosalud_token');
 
   useEffect(() => {
+    setMensajeCat({ tipo: '', texto: '' });
+    setMensajeGeo({ tipo: '', texto: '' });
+
     if (seccionActiva === 'solicitudes') {
       cargarSolicitudesPendientes();
-    } else if (seccionActiva === 'geografia' || seccionActiva === 'nueva-afiliacion') {
-      cargarCatalogosCompletos();
+    } else if (seccionActiva === 'generos') {
+      cargarGeneros();
+    } else if (seccionActiva === 'parentescos') {
+      cargarParentescos();
+    } else if (seccionActiva === 'eps') {
+      cargarEps();
+    } else if (seccionActiva === 'geografia') {
+      cargarCatalogosGeograficos();
+    } else if (seccionActiva === 'nueva-afiliacion') {
+      cargarEps();
+      cargarCatalogosGeograficos();
+      cargarGeneros();
+      cargarParentescos();
     }
   }, [seccionActiva]);
 
   const cargarSolicitudesPendientes = async () => {
     setCargandoSolicitudes(true);
-    setMensajeSolicitudes('');
     try {
       const res = await fetch(`${API_REGISTRO}/admin/afiliados?estado=PENDIENTE`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
-      if (res.ok) {
-        setSolicitudes(data.afiliados || []);
-      } else {
-        setMensajeSolicitudes(data.error || 'No se pudieron cargar las solicitudes.');
-      }
+      if (res.ok) setSolicitudes(data.afiliados || []);
+      else setMensajeSolicitudes(data.error || 'No se pudieron cargar las solicitudes.');
     } catch {
       setMensajeSolicitudes('Error de conexión al cargar solicitudes.');
     } finally {
@@ -103,20 +119,175 @@ function PanelAfiliaciones() {
     try {
       const res = await fetch(`${API_REGISTRO}/admin/afiliados/${id}/estado`, {
         method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ estado: 'ACTIVO', observacion: 'Aprobado desde el panel de afiliaciones' })
       });
-      if (res.ok) {
-        setSolicitudes(solicitudes.filter(s => s.id !== id));
-      } else {
+      if (res.ok) setSolicitudes(solicitudes.filter(s => s.id !== id));
+      else {
         const data = await res.json();
         alert(data.error || 'No se pudo aprobar la solicitud.');
       }
     } catch {
       alert('Error de red al aprobar la solicitud.');
+    }
+  };
+
+  const cargarGeneros = async () => {
+    setCargandoGeneros(true);
+    try {
+      const res = await fetch(`${API_REGISTRO}/catalogos?_t=${Date.now()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setGeneros(data.listas?.generos || []);
+      }
+    } catch (error) {
+      console.error('Error cargando géneros:', error);
+    } finally {
+      setCargandoGeneros(false);
+    }
+  };
+
+  const cargarParentescos = async () => {
+    setCargandoParentescos(true);
+    try {
+      const res = await fetch(`${API_REGISTRO}/catalogos?_t=${Date.now()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setParentescos(data.listas?.parentescos || []);
+      }
+    } catch (error) {
+      console.error('Error cargando parentescos:', error);
+    } finally {
+      setCargandoParentescos(false);
+    }
+  };
+
+  const cargarEps = async () => {
+    setCargandoEps(true);
+    try {
+      const res = await fetch(`${API_REGISTRO}/eps?_t=${Date.now()}`);
+      if (res.ok) setListaEps(await res.json());
+    } catch (error) {
+      console.error('Error cargando EPS:', error);
+    } finally {
+      setCargandoEps(false);
+    }
+  };
+
+  const cargarCatalogosGeograficos = async () => {
+    setCargandoGeo(true);
+    try {
+      const timestamp = Date.now();
+      const [resDeptos, resMun] = await Promise.all([
+        fetch(`${API_REGISTRO}/departamentos?_t=${timestamp}`),
+        fetch(`${API_REGISTRO}/municipios?_t=${timestamp}`)
+      ]);
+      if (resDeptos.ok) setDepartamentos(await resDeptos.json());
+      if (resMun.ok) setMunicipios(await resMun.json());
+    } catch (error) {
+      console.error('Error cargando geografía:', error);
+    } finally {
+      setCargandoGeo(false);
+    }
+  };
+
+  const handleCrearGenero = async (e) => {
+    e.preventDefault();
+    if (!nombreGenero.trim()) return;
+    try {
+      const res = await fetch(`${API_REGISTRO}/generos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ nombre: nombreGenero.trim() })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMensajeCat({ tipo: 'exito', texto: 'Género creado exitosamente.' });
+        setNombreGenero('');
+        cargarGeneros();
+      } else setMensajeCat({ tipo: 'error', texto: data.error || 'Error al crear género.' });
+    } catch {
+      setMensajeCat({ tipo: 'error', texto: 'Error de conexión.' });
+    }
+  };
+
+  const handleCrearParentesco = async (e) => {
+    e.preventDefault();
+    if (!nombreParentesco.trim()) return;
+    try {
+      const res = await fetch(`${API_REGISTRO}/parentescos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ nombre: nombreParentesco.trim() })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMensajeCat({ tipo: 'exito', texto: 'Parentesco creado exitosamente.' });
+        setNombreParentesco('');
+        cargarParentescos();
+      } else setMensajeCat({ tipo: 'error', texto: data.error || 'Error al crear parentesco.' });
+    } catch {
+      setMensajeCat({ tipo: 'error', texto: 'Error de conexión.' });
+    }
+  };
+
+  const handleCrearEps = async (e) => {
+    e.preventDefault();
+    if (!nombreEps.trim()) return;
+    try {
+      const res = await fetch(`${API_REGISTRO}/eps`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ nombre: nombreEps.trim() })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMensajeCat({ tipo: 'exito', texto: 'EPS creada exitosamente.' });
+        setNombreEps('');
+        cargarEps();
+      } else setMensajeCat({ tipo: 'error', texto: data.error || 'Error al crear EPS.' });
+    } catch {
+      setMensajeCat({ tipo: 'error', texto: 'Error de conexión.' });
+    }
+  };
+
+  const handleCrearDepartamento = async (e) => {
+    e.preventDefault();
+    if (!nombreDepartamento.trim()) return;
+    try {
+      const res = await fetch(`${API_REGISTRO}/departamentos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ nombre: nombreDepartamento.trim() })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMensajeGeo({ tipo: 'exito', texto: 'Departamento creado exitosamente.' });
+        setNombreDepartamento('');
+        cargarCatalogosGeograficos();
+      } else setMensajeGeo({ tipo: 'error', texto: data.error || 'No se pudo crear el departamento.' });
+    } catch {
+      setMensajeGeo({ tipo: 'error', texto: 'Error de conexión.' });
+    }
+  };
+
+  const handleCrearMunicipio = async (e) => {
+    e.preventDefault();
+    if (!nombreMunicipio.trim() || !departamentoSeleccionado) return;
+    try {
+      const res = await fetch(`${API_REGISTRO}/municipios`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ departamento_id: departamentoSeleccionado, nombre: nombreMunicipio.trim() })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMensajeGeo({ tipo: 'exito', texto: 'Ciudad/Municipio creado exitosamente.' });
+        setNombreMunicipio('');
+        cargarCatalogosGeograficos();
+      } else setMensajeGeo({ tipo: 'error', texto: data.error || 'No se pudo crear la ciudad.' });
+    } catch {
+      setMensajeGeo({ tipo: 'error', texto: 'Error de conexión.' });
     }
   };
 
@@ -129,18 +300,13 @@ function PanelAfiliaciones() {
     e.preventDefault();
     setCargandoCrear(true);
     setMensajeCrear({ tipo: '', texto: '' });
-
     try {
       const res = await fetch(`${API_AUTH}/registro-interno`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(formUsuario)
       });
       const data = await res.json();
-
       if (res.ok) {
         setMensajeCrear({ tipo: 'exito', texto: 'Usuario EPS creado correctamente. Se le envió un correo para activar su cuenta.' });
         setFormUsuario({ tipo_doc: 'CC', documento: '', email: '', nombre: '', rol_id: '2' });
@@ -154,181 +320,22 @@ function PanelAfiliaciones() {
     }
   };
 
-  const cargarCatalogosCompletos = async () => {
-    setCargandoGeo(true);
-    try {
-      const timestamp = Date.now();
-      const [resDeptos, resMun, resEps, resCatalogos] = await Promise.all([
-        fetch(`${API_REGISTRO}/departamentos?_t=${timestamp}`),
-        fetch(`${API_REGISTRO}/municipios?_t=${timestamp}`),
-        fetch(`${API_REGISTRO}/eps?_t=${timestamp}`),
-        fetch(`${API_REGISTRO}/catalogos?_t=${timestamp}`)
-      ]);
-      if (resDeptos.ok) setDepartamentos(await resDeptos.json());
-      if (resMun.ok) setMunicipios(await resMun.json());
-      if (resEps.ok) setListaEps(await resEps.json());
-      if (resCatalogos.ok) {
-        const catData = await resCatalogos.json();
-        setGeneros(catData.listas?.generos || []);
-        setParentescos(catData.listas?.parentescos || []);
-      }
-    } catch (error) {
-      console.error('Error cargando catálogos:', error);
-    } finally {
-      setCargandoGeo(false);
-    }
-  };
-
-  const handleCrearGenero = async (e) => {
-    e.preventDefault();
-    setMensajeGeo({ tipo: '', texto: '' });
-    if (!nombreGenero.trim()) return;
-    try {
-      const res = await fetch(`${API_REGISTRO}/generos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ nombre: nombreGenero.trim() })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setMensajeGeo({ tipo: 'exito', texto: 'Género creado correctamente.' });
-        setNombreGenero('');
-        cargarCatalogosCompletos();
-      } else {
-        setMensajeGeo({ tipo: 'error', texto: data.error || 'Error al crear género.' });
-      }
-    } catch {
-      setMensajeGeo({ tipo: 'error', texto: 'Error de conexión.' });
-    }
-  };
-
-  const handleCrearParentesco = async (e) => {
-    e.preventDefault();
-    setMensajeGeo({ tipo: '', texto: '' });
-    if (!nombreParentesco.trim()) return;
-    try {
-      const res = await fetch(`${API_REGISTRO}/parentescos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ nombre: nombreParentesco.trim() })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setMensajeGeo({ tipo: 'exito', texto: 'Parentesco creado correctamente.' });
-        setNombreParentesco('');
-        cargarCatalogosCompletos();
-      } else {
-        setMensajeGeo({ tipo: 'error', texto: data.error || 'Error al crear parentesco.' });
-      }
-    } catch {
-      setMensajeGeo({ tipo: 'error', texto: 'Error de conexión.' });
-    }
-  };
-
-  const handleCrearEps = async (e) => {
-    e.preventDefault();
-    setMensajeGeo({ tipo: '', texto: '' });
-    if (!nombreEps.trim()) return;
-    try {
-      const res = await fetch(`${API_REGISTRO}/eps`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ nombre: nombreEps.trim() })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setMensajeGeo({ tipo: 'exito', texto: 'EPS creada correctamente.' });
-        setNombreEps('');
-        cargarCatalogosCompletos();
-      } else {
-        setMensajeGeo({ tipo: 'error', texto: data.error || 'Error al crear EPS.' });
-      }
-    } catch {
-      setMensajeGeo({ tipo: 'error', texto: 'Error de conexión.' });
-    }
-  };
-
-  const handleCrearDepartamento = async (e) => {
-    e.preventDefault();
-    setMensajeGeo({ tipo: '', texto: '' });
-    if (!nombreDepartamento.trim()) return;
-
-    try {
-      const res = await fetch(`${API_REGISTRO}/departamentos`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ nombre: nombreDepartamento.trim() })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setMensajeGeo({ tipo: 'exito', texto: 'Departamento creado exitosamente.' });
-        setNombreDepartamento('');
-        cargarCatalogosCompletos();
-      } else {
-        setMensajeGeo({ tipo: 'error', texto: data.error || 'No se pudo crear el departamento.' });
-      }
-    } catch {
-      setMensajeGeo({ tipo: 'error', texto: 'Error de conexión al crear departamento.' });
-    }
-  };
-
-  const handleCrearMunicipio = async (e) => {
-    e.preventDefault();
-    setMensajeGeo({ tipo: '', texto: '' });
-    if (!nombreMunicipio.trim() || !departamentoSeleccionado) return;
-
-    try {
-      const res = await fetch(`${API_REGISTRO}/municipios`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ departamento_id: departamentoSeleccionado, nombre: nombreMunicipio.trim() })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setMensajeGeo({ tipo: 'exito', texto: 'Ciudad/Municipio creado exitosamente.' });
-        setNombreMunicipio('');
-        cargarCatalogosCompletos();
-      } else {
-        setMensajeGeo({ tipo: 'error', texto: data.error || 'No se pudo crear la ciudad.' });
-      }
-    } catch {
-      setMensajeGeo({ tipo: 'error', texto: 'Error de conexión al crear ciudad.' });
-    }
-  };
-
   const handleAfiliacionChange = (event) => {
     const { name, value, type, checked } = event.target;
     setFormAfiliacion((prev) => {
       const nuevoForm = { ...prev, [name]: type === 'checkbox' ? checked : value };
-
       if (name === 'regimenCodigo' && value.toUpperCase() === 'CONTRIBUTIVO') {
-        const epsTecnosalud = listaEps.find(epsItem => 
-          (epsItem.nombre || '').toLowerCase().includes('tecnosalud') || 
-          (epsItem.codigo || '').toLowerCase().includes('tecnosalud')
-        );
-        if (epsTecnosalud) {
-          nuevoForm.epsCodigo = epsTecnosalud.codigo || epsTecnosalud.id || epsTecnosalud.nombre;
-        }
+        const epsTecnosalud = listaEps.find(epsItem => (epsItem.nombre || '').toLowerCase().includes('tecnosalud'));
+        if (epsTecnosalud) nuevoForm.epsCodigo = epsTecnosalud.codigo || epsTecnosalud.id || epsTecnosalud.nombre;
       }
-
-      if (name === 'regimenCodigo' && value.toUpperCase() !== 'CONTRIBUTIVO') {
-        nuevoForm.salario = '';
-      }
-
+      if (name === 'regimenCodigo' && value.toUpperCase() !== 'CONTRIBUTIVO') nuevoForm.salario = '';
       return nuevoForm;
     });
   };
 
   const handleAfiliacionNumericChange = (event) => {
     const { name, value } = event.target;
-    const numericValue = value.replace(/\D/g, '');
-    setFormAfiliacion((prev) => ({ ...prev, [name]: numericValue }));
+    setFormAfiliacion((prev) => ({ ...prev, [name]: value.replace(/\D/g, '') }));
   };
 
   const validarAfiliacionForm = () => {
@@ -409,7 +416,6 @@ function PanelAfiliaciones() {
         setErrorMsgAfiliacion(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar el registro.');
         return;
       }
-
       setCorreoEnviadoAfiliacion(datos.email || formAfiliacion.correo);
       setModalExitoAfiliacion(true);
       setFormAfiliacion(estadoInicialAfiliacion);
@@ -460,12 +466,38 @@ function PanelAfiliaciones() {
             <span>Crear Usuario EPS</span>
           </button>
 
+          <div style={{ margin: '0.75rem 0 0.25rem 0.75rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 'bold' }}>Maestros y Catálogos</div>
+          
+          <button
+            type="button"
+            className={`adm-menu__opcion ${seccionActiva === 'generos' ? 'adm-menu__opcion--activa' : ''}`}
+            onClick={() => { setSeccionActiva('generos'); setMenuAbierto(false); }}
+          >
+            <span>Gestión de Géneros</span>
+          </button>
+
+          <button
+            type="button"
+            className={`adm-menu__opcion ${seccionActiva === 'parentescos' ? 'adm-menu__opcion--activa' : ''}`}
+            onClick={() => { setSeccionActiva('parentescos'); setMenuAbierto(false); }}
+          >
+            <span>Gestión de Parentescos</span>
+          </button>
+
+          <button
+            type="button"
+            className={`adm-menu__opcion ${seccionActiva === 'eps' ? 'adm-menu__opcion--activa' : ''}`}
+            onClick={() => { setSeccionActiva('eps'); setMenuAbierto(false); }}
+          >
+            <span>Gestión de EPS</span>
+          </button>
+
           <button
             type="button"
             className={`adm-menu__opcion ${seccionActiva === 'geografia' ? 'adm-menu__opcion--activa' : ''}`}
             onClick={() => { setSeccionActiva('geografia'); setMenuAbierto(false); }}
           >
-            <span>Gestión Geográfica y Catálogos</span>
+            <span>Gestión Geográfica</span>
           </button>
         </nav>
       </aside>
@@ -474,10 +506,11 @@ function PanelAfiliaciones() {
         <header className="adm-encabezado">
           <div>
             <h2>Panel de Gestión - Perfil Afiliaciones</h2>
-            <p>Administración de solicitudes, padrón de usuarios, catálogos y cobertura geográfica en Tecnosalud.</p>
+            <p>Administración modular de solicitudes, padrón de usuarios y maestros independientes en Tecnosalud.</p>
           </div>
         </header>
 
+        {/* 1. SOLICITUDES */}
         {seccionActiva === 'solicitudes' && (
           <section className="adm-seccion">
             <div className="adm-tarjeta">
@@ -537,7 +570,7 @@ function PanelAfiliaciones() {
           </section>
         )}
 
-        {/* SECCIÓN NUEVA AFILIACIÓN */}
+        {/* 2. NUEVA AFILIACIÓN */}
         {seccionActiva === 'nueva-afiliacion' && (
           <section className="adm-seccion">
             <div className="adm-tarjeta">
@@ -554,7 +587,6 @@ function PanelAfiliaciones() {
 
               <form onSubmit={handleAfiliacionSubmit} noValidate style={{ display: 'grid', gap: '1.5rem', marginTop: '1rem' }}>
                 
-                {/* SECCIÓN 1: SISTEMA DE SALUD */}
                 <fieldset style={{ border: '1px solid var(--adm-borde)', padding: '1.2rem', borderRadius: '8px', background: '#f8fafc' }}>
                   <legend style={{ fontWeight: 'bold', color: 'var(--adm-azul)', padding: '0 0.5rem' }}>Datos del Sistema de Salud</legend>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
@@ -625,7 +657,6 @@ function PanelAfiliaciones() {
                   </div>
                 </fieldset>
 
-                {/* SECCIÓN 2: DATOS PERSONALES */}
                 <fieldset style={{ border: '1px solid var(--adm-borde)', padding: '1.2rem', borderRadius: '8px' }}>
                   <legend style={{ fontWeight: 'bold', color: 'var(--adm-azul)', padding: '0 0.5rem' }}>Datos Personales e Identificación</legend>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
@@ -686,7 +717,6 @@ function PanelAfiliaciones() {
                   </div>
                 </fieldset>
 
-                {/* SECCIÓN 3: CONTACTO Y UBICACIÓN */}
                 <fieldset style={{ border: '1px solid var(--adm-borde)', padding: '1.2rem', borderRadius: '8px' }}>
                   <legend style={{ fontWeight: 'bold', color: 'var(--adm-azul)', padding: '0 0.5rem' }}>Información de Contacto y Ubicación</legend>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
@@ -723,7 +753,6 @@ function PanelAfiliaciones() {
                   </div>
                 </fieldset>
 
-                {/* SECCIÓN 4: CONTACTO DE EMERGENCIA */}
                 <fieldset style={{ border: '1px solid var(--adm-borde)', padding: '1.2rem', borderRadius: '8px' }}>
                   <legend style={{ fontWeight: 'bold', color: 'var(--adm-azul)', padding: '0 0.5rem' }}>Contacto de Emergencia</legend>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
@@ -757,6 +786,7 @@ function PanelAfiliaciones() {
           </section>
         )}
 
+        {/* 3. CREAR USUARIO EPS */}
         {seccionActiva === 'usuarios' && (
           <section className="adm-seccion">
             <div className="adm-tarjeta">
@@ -809,102 +839,117 @@ function PanelAfiliaciones() {
           </section>
         )}
 
+        {/* 4. MAESTRO: GÉNEROS */}
+        {seccionActiva === 'generos' && (
+          <section className="adm-seccion">
+            <div className="adm-tarjeta">
+              <div className="adm-tarjeta__encabezado">
+                <h3>Gestión de Géneros</h3>
+                <button type="button" className="adm-btn" onClick={cargarGeneros} disabled={cargandoGeneros}>Actualizar</button>
+              </div>
+              {mensajeCat.texto && <div className="adm-aviso" style={{ marginTop: '1rem', background: mensajeCat.tipo === 'exito' ? '#ccfbf1' : '#fee2e2', color: mensajeCat.tipo === 'exito' ? '#115e59' : '#b91c1c' }}>{mensajeCat.texto}</div>}
+              <form onSubmit={handleCrearGenero} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)', marginTop: '1rem' }}>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nuevo Género</h4>
+                <input type="text" placeholder="Nombre del género" value={nombreGenero} onChange={(e) => setNombreGenero(e.target.value)} required className="adm-buscador" />
+                <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start' }}>Crear Género</button>
+              </form>
+              <div style={{ marginTop: '1.5rem' }}>
+                <h4 style={{ color: 'var(--adm-azul)', marginBottom: '0.5rem' }}>Géneros Registrados ({generos.length})</h4>
+                <ul style={{ listStyle: 'none', padding: 0, maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
+                  {generos.map((g, idx) => <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>{g.nombre}</li>)}
+                </ul>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* 5. MAESTRO: PARENTESCOS */}
+        {seccionActiva === 'parentescos' && (
+          <section className="adm-seccion">
+            <div className="adm-tarjeta">
+              <div className="adm-tarjeta__encabezado">
+                <h3>Gestión de Parentescos</h3>
+                <button type="button" className="adm-btn" onClick={cargarParentescos} disabled={cargandoParentescos}>Actualizar</button>
+              </div>
+              {mensajeCat.texto && <div className="adm-aviso" style={{ marginTop: '1rem', background: mensajeCat.tipo === 'exito' ? '#ccfbf1' : '#fee2e2', color: mensajeCat.tipo === 'exito' ? '#115e59' : '#b91c1c' }}>{mensajeCat.texto}</div>}
+              <form onSubmit={handleCrearParentesco} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)', marginTop: '1rem' }}>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nuevo Parentesco</h4>
+                <input type="text" placeholder="Nombre del parentesco" value={nombreParentesco} onChange={(e) => setNombreParentesco(e.target.value)} required className="adm-buscador" />
+                <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start' }}>Crear Parentesco</button>
+              </form>
+              <div style={{ marginTop: '1.5rem' }}>
+                <h4 style={{ color: 'var(--adm-azul)', marginBottom: '0.5rem' }}>Parentescos Registrados ({parentescos.length})</h4>
+                <ul style={{ listStyle: 'none', padding: 0, maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
+                  {parentescos.map((p, idx) => <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>{p.nombre}</li>)}
+                </ul>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* 6. MAESTRO: EPS */}
+        {seccionActiva === 'eps' && (
+          <section className="adm-seccion">
+            <div className="adm-tarjeta">
+              <div className="adm-tarjeta__encabezado">
+                <h3>Gestión de Entidades Promotoras de Salud (EPS)</h3>
+                <button type="button" className="adm-btn" onClick={cargarEps} disabled={cargandoEps}>Actualizar</button>
+              </div>
+              {mensajeCat.texto && <div className="adm-aviso" style={{ marginTop: '1rem', background: mensajeCat.tipo === 'exito' ? '#ccfbf1' : '#fee2e2', color: mensajeCat.tipo === 'exito' ? '#115e59' : '#b91c1c' }}>{mensajeCat.texto}</div>}
+              <form onSubmit={handleCrearEps} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)', marginTop: '1rem' }}>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nueva EPS</h4>
+                <input type="text" placeholder="Nombre de la EPS" value={nombreEps} onChange={(e) => setNombreEps(e.target.value)} required className="adm-buscador" />
+                <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start' }}>Crear EPS</button>
+              </form>
+              <div style={{ marginTop: '1.5rem' }}>
+                <h4 style={{ color: 'var(--adm-azul)', marginBottom: '0.5rem' }}>EPS Activas en el Sistema ({listaEps.length})</h4>
+                <ul style={{ listStyle: 'none', padding: 0, maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
+                  {listaEps.map((e, idx) => <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>{e.nombre}</li>)}
+                </ul>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* 7. MAESTRO: GEOGRAFÍA */}
         {seccionActiva === 'geografia' && (
           <section className="adm-seccion" style={{ display: 'grid', gap: '1.5rem' }}>
             <div className="adm-tarjeta">
               <div className="adm-tarjeta__encabezado">
-                <h3>Gestión de Catálogos y Cobertura Geográfica</h3>
+                <h3>Gestión Geográfica (Departamentos y Ciudades)</h3>
+                <button type="button" className="adm-btn" onClick={cargarCatalogosGeograficos} disabled={cargandoGeo}>Actualizar Listas</button>
               </div>
-              <p className="adm-nota">Amplía la cobertura geográfica y gestiona los catálogos del sistema.</p>
-
-              {mensajeGeo.texto && (
-                <div className="adm-aviso" style={{ marginTop: '1rem', background: mensajeGeo.tipo === 'exito' ? '#ccfbf1' : '#fee2e2', color: mensajeGeo.tipo === 'exito' ? '#115e59' : '#b91c1c' }}>
-                  {mensajeGeo.texto}
-                </div>
-              )}
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
-                
-                {/* Crear Género */}
-                <form onSubmit={handleCrearGenero} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)' }}>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nuevo Género</h4>
-                  <input type="text" placeholder="Nombre del género" value={nombreGenero} onChange={(e) => setNombreGenero(e.target.value)} required className="adm-buscador" style={{ width: '100%' }} />
-                  <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start' }}>Crear Género</button>
-                </form>
-
-                {/* Crear Parentesco */}
-                <form onSubmit={handleCrearParentesco} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)' }}>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nuevo Parentesco</h4>
-                  <input type="text" placeholder="Nombre del parentesco" value={nombreParentesco} onChange={(e) => setNombreParentesco(e.target.value)} required className="adm-buscador" style={{ width: '100%' }} />
-                  <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start' }}>Crear Parentesco</button>
-                </form>
-
-                {/* Crear EPS */}
-                <form onSubmit={handleCrearEps} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)' }}>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nueva EPS</h4>
-                  <input type="text" placeholder="Nombre de la EPS" value={nombreEps} onChange={(e) => setNombreEps(e.target.value)} required className="adm-buscador" style={{ width: '100%' }} />
-                  <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start' }}>Crear EPS</button>
-                </form>
-
-                {/* Crear Departamento */}
+              {mensajeGeo.texto && <div className="adm-aviso" style={{ marginTop: '1rem', background: mensajeGeo.tipo === 'exito' ? '#ccfbf1' : '#fee2e2', color: mensajeGeo.tipo === 'exito' ? '#115e59' : '#b91c1c' }}>{mensajeGeo.texto}</div>}
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1rem' }}>
                 <form onSubmit={handleCrearDepartamento} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)' }}>
                   <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nuevo Departamento</h4>
-                  <input type="text" placeholder="Nombre del departamento" value={nombreDepartamento} onChange={(e) => setNombreDepartamento(e.target.value)} required className="adm-buscador" style={{ width: '100%' }} />
+                  <input type="text" placeholder="Nombre del departamento" value={nombreDepartamento} onChange={(e) => setNombreDepartamento(e.target.value)} required className="adm-buscador" />
                   <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start' }}>Crear Departamento</button>
                 </form>
 
-                {/* Crear Municipio */}
                 <form onSubmit={handleCrearMunicipio} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)' }}>
                   <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nueva Ciudad / Municipio</h4>
-                  <select value={departamentoSeleccionado} onChange={(e) => setDepartamentoSeleccionado(e.target.value)} required className="adm-btn" style={{ width: '100%', background: '#fff' }}>
+                  <select value={departamentoSeleccionado} onChange={(e) => setDepartamentoSeleccionado(e.target.value)} required className="adm-btn" style={{ background: '#fff' }}>
                     <option value="">Selecciona departamento...</option>
-                    {departamentos.map((dep, idx) => (
-                      <option key={idx} value={dep.codigo || dep.id || dep.nombre}>
-                        {dep.nombre || dep}
-                      </option>
-                    ))}
+                    {departamentos.map((dep, idx) => (<option key={idx} value={dep.codigo || dep.id || dep.nombre}>{dep.nombre || dep}</option>))}
                   </select>
-                  <input type="text" placeholder="Nombre de la ciudad" value={nombreMunicipio} onChange={(e) => setNombreMunicipio(e.target.value)} required className="adm-buscador" style={{ width: '100%' }} />
+                  <input type="text" placeholder="Nombre de la ciudad" value={nombreMunicipio} onChange={(e) => setNombreMunicipio(e.target.value)} required className="adm-buscador" />
                   <button type="submit" className="adm-btn adm-btn--verde" style={{ justifySelf: 'start' }}>Crear Ciudad</button>
                 </form>
-
-              </div>
-            </div>
-
-            <div className="adm-tarjeta">
-              <div className="adm-tarjeta__encabezado">
-                <h3>Listados Actuales de Cobertura y Catálogos</h3>
-                <button type="button" className="adm-btn" onClick={cargarCatalogosCompletos} disabled={cargandoGeo}>
-                  {cargandoGeo ? 'Cargando...' : 'Actualizar Listados'}
-                </button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginTop: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1.5rem' }}>
                 <div>
-                  <h4 style={{ marginBottom: '0.5rem', color: 'var(--adm-azul)' }}>Géneros ({generos.length})</h4>
-                  <ul style={{ listStyle: 'none', padding: 0, maxHeight: '220px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
-                    {generos.map((g, idx) => <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>{g.nombre}</li>)}
+                  <h4 style={{ color: 'var(--adm-azul)', marginBottom: '0.5rem' }}>Departamentos Habilitados ({departamentos.length})</h4>
+                  <ul style={{ listStyle: 'none', padding: 0, maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
+                    {departamentos.map((dep, idx) => <li key={idx} style={{ padding: '0.4rem 0.6rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>{dep.nombre || dep}</li>)}
                   </ul>
                 </div>
-
                 <div>
-                  <h4 style={{ marginBottom: '0.5rem', color: 'var(--adm-azul)' }}>Parentescos ({parentescos.length})</h4>
-                  <ul style={{ listStyle: 'none', padding: 0, maxHeight: '220px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
-                    {parentescos.map((p, idx) => <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>{p.nombre}</li>)}
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 style={{ marginBottom: '0.5rem', color: 'var(--adm-azul)' }}>EPS Activas ({listaEps.length})</h4>
-                  <ul style={{ listStyle: 'none', padding: 0, maxHeight: '220px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
-                    {listaEps.map((e, idx) => <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>{e.nombre}</li>)}
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 style={{ marginBottom: '0.5rem', color: 'var(--adm-azul)' }}>Departamentos ({departamentos.length})</h4>
-                  <ul style={{ listStyle: 'none', padding: 0, maxHeight: '220px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
-                    {departamentos.map((dep, idx) => <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>{dep.nombre || dep}</li>)}
+                  <h4 style={{ color: 'var(--adm-azul)', marginBottom: '0.5rem' }}>Ciudades / Municipios ({municipios.length})</h4>
+                  <ul style={{ listStyle: 'none', padding: 0, maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
+                    {municipios.map((mun, idx) => <li key={idx} style={{ padding: '0.4rem 0.6rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>{mun.nombre || mun}</li>)}
                   </ul>
                 </div>
               </div>
@@ -922,9 +967,7 @@ function PanelAfiliaciones() {
               <p>Se ha enviado tu contraseña temporal al correo:</p>
               <span className="modal-email-highlight" style={{ fontWeight: 'bold', color: 'var(--adm-azul)' }}>{correoEnviadoAfiliacion}</span>
             </div>
-            <button type="button" className="modal-btn-confirm adm-btn adm-btn--azul" onClick={() => setModalExitoAfiliacion(false)}>
-              Entendido
-            </button>
+            <button type="button" className="modal-btn-confirm adm-btn adm-btn--azul" onClick={() => setModalExitoAfiliacion(false)}>Entendido</button>
           </div>
         </div>
       )}
