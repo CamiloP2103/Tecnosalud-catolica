@@ -281,7 +281,7 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
 
               // Imprimimos en los logs de Azure para verificar qué valores van
           console.log('[auth-service] Payload enviado a registro-service:', JSON.stringify(payloadSincronizacion));
-          await fetch(`${process.env.REGISTRO_SERVICE_URL || 'http://localhost:3004'}/api/registro/activar-consentimiento`, {
+          await fetch(`${process.env.REGISTRO_SERVICE_URL || 'http://localhost:3004'}/activar-consentimiento`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
