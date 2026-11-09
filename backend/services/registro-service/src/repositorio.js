@@ -189,20 +189,22 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
     },
 
     async activarAfiliadoYConsentimiento({ correo, documento, aceptaTratamientoDatos }) {
-      let query = `UPDATE afiliados SET acepta_tratamiento_datos = ?, estado = 'ACTIVO' WHERE `;
-      let params = [aceptaTratamientoDatos];
+    const query = `
+      UPDATE afiliados 
+      SET acepta_tratamiento_datos = ?, 
+          estado = 'ACTIVO', 
+          fecha_aceptacion_datos = NOW() 
+      WHERE correo = ? OR documento = ?
+    `;
+    
+    const [resultado] = await this.pool.query(query, [
+      aceptaTratamientoDatos, 
+      correo || '', 
+      documento || ''
+    ]);
 
-      if (correo) {
-        query += `correo = ?`;
-        params.push(correo);
-      } else {
-        query += `documento = ?`;
-        params.push(documento);
-      }
-
-      const [resultado] = await this.pool.query(query, params);
-      return resultado.affectedRows > 0;
-    },
+    return resultado.affectedRows > 0;
+  },
     async listarAfiliados({ estado, buscar, limite = 50 } = {}) {
       const condiciones = [];
       const parametros = [];
