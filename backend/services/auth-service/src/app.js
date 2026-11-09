@@ -290,6 +290,7 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
               aceptaTratamientoDatos: aceptaTratamientoDatos ? 1 : 0
             })
           });
+          console.log('[auth-service] REGISTRO_SERVICE_URL configurada:', process.env.REGISTRO_SERVICE_URL);
         } catch (errorRegistro) {
           console.error('[auth-service] No se pudo sincronizar el consentimiento en registro-service:', errorRegistro.message);
         }
