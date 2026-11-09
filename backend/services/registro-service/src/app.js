@@ -113,9 +113,15 @@ function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
     try {
       // 1. Guardamos el afiliado en la base de datos de registro
       const nuevoId = await repo.crearAfiliado(datos);
-
+      const tipo = String(datos.tipoAfiliacionCodigo || '').trim().toUpperCase();
+      const rolesMap = {
+        'PACIENTE': 1,
+        'PROFESIONAL': 2,
+        'AFILIACIONES': 4,
+        'FARMACIA': 5, 
+      };
+      const Asigrolid = rolesMap[tipo] || 0; 
       // 2. Comunicarnos con el servicio de autenticación para dar de alta las credenciales
-      // Integrado perfil de Afiliaciones
       try {
         const respuestaAuth = await fetch(`${authServiceUrl}/api/auth/registro-interno`, {
           method: 'POST',
@@ -125,7 +131,7 @@ function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
             documento: datos.documento,
             email: datos.correo,
             nombre: `${datos.nombres} ${datos.apellidos}`,
-            rol_id: '2' // Rol estándar de afiliado/paciente o según tu lógica
+            rol_id: Asigrolid // Rol estándar de afiliado/paciente o según tu lógica
           }),
         });
 
