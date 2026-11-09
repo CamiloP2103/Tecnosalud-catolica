@@ -35,13 +35,13 @@ const estadoInicial = {
   telefono: '',
   direccion: '',
   municipioCodigo: '',
-  tipoAfiliacionCodigo: 'PROFESIONAL', // Rol o perfil aplicable al personal de farmacia
+  tipoAfiliacionCodigo: 'PROFESIONAL',
   epsCodigo: 'NINGUNA',
   regimenCodigo: 'PARTICULAR',
   salario: '',
-  contactoEmergenciaNombre: 'Soporte Tecnosalud',
-  contactoEmergenciaTelefono: '3000000000',
-  contactoEmergenciaParentescoCodigo: 'otro',
+  contactoEmergenciaNombre: '',
+  contactoEmergenciaTelefono: '',
+  contactoEmergenciaParentescoCodigo: '',
   aceptaTratamientoDatos: false,
 };
 
@@ -58,6 +58,9 @@ const camposRequeridos = {
   telefono: 'Teléfono / Celular',
   direccion: 'Dirección de residencia',
   municipioCodigo: 'Ciudad / Municipio',
+  contactoEmergenciaNombre: 'Nombre de contacto de emergencia',
+  contactoEmergenciaTelefono: 'Teléfono de contacto de emergencia',
+  contactoEmergenciaParentescoCodigo: 'Parentesco de emergencia',
 };
 
 function Registro() {
@@ -136,6 +139,10 @@ function Registro() {
 
     if (form.telefono.length < 7 || form.telefono.length > 10) {
       return 'El número de teléfono debe tener entre 7 y 10 dígitos.';
+    }
+
+    if (form.contactoEmergenciaTelefono.length < 7 || form.contactoEmergenciaTelefono.length > 10) {
+      return 'El teléfono de emergencia debe tener entre 7 y 10 dígitos.';
     }
 
     if (!form.aceptaTratamientoDatos) {
@@ -406,7 +413,56 @@ function Registro() {
           </div>
         </fieldset>
 
-        {/* SECCIÓN 3: POLÍTICA DE DATOS */}
+        {/* SECCIÓN 3: CONTACTO DE EMERGENCIA */}
+        <fieldset className="form__section">
+          <legend>Contacto de Emergencia</legend>
+          <div className="form__grid">
+            <label>
+              Nombre completo del contacto *
+              <input
+                type="text"
+                name="contactoEmergenciaNombre"
+                value={form.contactoEmergenciaNombre}
+                onChange={handleChange}
+                placeholder="Familiar o persona responsable"
+                required
+              />
+            </label>
+
+            <label>
+              Teléfono de emergencia *
+              <input
+                type="tel"
+                name="contactoEmergenciaTelefono"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={form.contactoEmergenciaTelefono}
+                onChange={handleNumericChange}
+                placeholder="Ej. 3109876543"
+                maxLength={10}
+                required
+              />
+            </label>
+
+            <label className="form__col-full">
+              Parentesco del contacto de emergencia *
+              <select name="contactoEmergenciaParentescoCodigo" value={form.contactoEmergenciaParentescoCodigo} onChange={handleChange} required>
+                <option value="">Selecciona el parentesco...</option>
+                <option value="conyuge">Cónyuge o compañero(a)</option>
+                <option value="padre">Padre</option>
+                <option value="madre">Madre</option>
+                <option value="hijo">Hijo(a)</option>
+                <option value="hermano">Hermano(a)</option>
+                <option value="abuelo">Abuelo(a)</option>
+                <option value="tio">Tío(a)</option>
+                <option value="amigo">Amigo(a)</option>
+                <option value="otro">Otro</option>
+              </select>
+            </label>
+          </div>
+        </fieldset>
+
+        {/* SECCIÓN 4: POLÍTICA DE DATOS */}
         <fieldset className="form__section form__section--legal">
           <legend>Tratamiento de Datos Personales</legend>
           <div className="form__legal-notice">
