@@ -189,7 +189,13 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
     },
 
     async activarAfiliadoYConsentimiento({ correo, documento, aceptaTratamientoDatos }) {
-    const query = `
+      // Capturamos y mostramos los valores exactos que entran al query
+      console.log('[registro-service] Ejecutando update con:', {
+        correo,
+        documento,
+        aceptaTratamientoDatos
+      });
+      const query = `
       UPDATE afiliados 
       SET acepta_tratamiento_datos = ?, 
           estado = 'ACTIVO', 
