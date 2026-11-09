@@ -36,9 +36,8 @@ const estadoInicial = {
   direccion: '',
   municipioCodigo: '',
   tipoAfiliacionCodigo: 'PROFESIONAL',
-  epsCodigo: 'NINGUNA',
-  regimenCodigo: 'PARTICULAR',
-  salario: '',
+  epsCodigo: '',
+  regimenCodigo: '',
   contactoEmergenciaNombre: '',
   contactoEmergenciaTelefono: '',
   contactoEmergenciaParentescoCodigo: '',
@@ -58,6 +57,8 @@ const camposRequeridos = {
   telefono: 'Teléfono / Celular',
   direccion: 'Dirección de residencia',
   municipioCodigo: 'Ciudad / Municipio',
+  regimenCodigo: 'Régimen de salud',
+  epsCodigo: 'EPS / Entidad actual',
   contactoEmergenciaNombre: 'Nombre de contacto de emergencia',
   contactoEmergenciaTelefono: 'Teléfono de contacto de emergencia',
   contactoEmergenciaParentescoCodigo: 'Parentesco de emergencia',
@@ -70,6 +71,7 @@ function Registro() {
   const [correoEnviado, setCorreoEnviado] = useState('');
 
   const [departamentos, setDepartamentos] = useState([]);
+  const [listaEps, setListaEps] = useState([]);
   const [errorCatalogos, setErrorCatalogos] = useState('');
 
   const [captchaChallenge, setCaptchaChallenge] = useState({ num1: 0, num2: 0, resultado: 0 });
@@ -91,16 +93,22 @@ function Registro() {
 
     const cargarCatalogos = async () => {
       try {
-        const respDeptos = await fetch(`${API_REGISTRO}/departamentos`);
+        const [respDeptos, respEps] = await Promise.all([
+          fetch(`${API_REGISTRO}/departamentos`),
+          fetch(`${API_REGISTRO}/eps`),
+        ]);
+        
         const deptos = await respDeptos.json();
+        const eps = await respEps.json();
 
         if (cancelado) return;
 
         setDepartamentos(deptos);
+        setListaEps(eps);
         setErrorCatalogos('');
       } catch {
         if (!cancelado) {
-          setErrorCatalogos('No se pudieron cargar los catálogos geográficos.');
+          setErrorCatalogos('No se pudieron cargar los catálogos.');
         }
       }
     };
@@ -113,10 +121,14 @@ function Registro() {
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    setForm((prev) => {
+      const nuevoForm = { ...prev, [name]: type === 'checkbox' ? checked : value };
+      if (name === 'regimenCodigo' && value.toUpperCase() === 'CONTRIBUTIVO') {
+        const epsTecnosalud = listaEps.find(epsItem => (epsItem.nombre || '').toLowerCase().includes('tecnosalud'));
+        if (epsTecnosalud) nuevoForm.epsCodigo = epsTecnosalud.codigo || epsTecnosalud.id || epsTecnosalud.nombre;
+      }
+      return nuevoForm;
+    });
   };
 
   const handleNumericChange = (event) => {
@@ -189,10 +201,10 @@ function Registro() {
       municipio: form.municipioCodigo,
       tipoAfiliacionCodigo: 'PROFESIONAL',
       tipoAfiliacion: 'PROFESIONAL',
-      epsCodigo: 'NINGUNA',
-      eps: 'NINGUNA',
-      regimenCodigo: 'PARTICULAR',
-      regimen: 'PARTICULAR',
+      epsCodigo: form.epsCodigo,
+      eps: form.epsCodigo,
+      regimenCodigo: form.regimenCodigo,
+      regimen: form.regimenCodigo,
       salario: null,
       contactoEmergenciaNombre: form.contactoEmergenciaNombre,
       contactoEmergenciaTelefono: form.contactoEmergenciaTelefono,
@@ -413,7 +425,45 @@ function Registro() {
           </div>
         </fieldset>
 
-        {/* SECCIÓN 3: CONTACTO DE EMERGENCIA */}
+        {/* SECCIÓN 3: SISTEMA DE SALUD */}
+        <fieldset className="form__section">
+          <legend>Datos del Sistema de Salud</legend>
+          <div className="form__grid">
+            <label className="form__col-full">
+              Régimen de salud *
+              <select name="regimenCodigo" value={form.regimenCodigo} onChange={handleChange} required>
+                <option value="">Selecciona una opción</option>
+                <option value="CONTRIBUTIVO">Contributivo</option>
+                <option value="SUBSIDIADO">Subsidiado</option>
+                <option value="ESPECIAL">Especial / Régimen de Excepción</option>
+                <option value="PARTICULAR">Particular / Póliza de Salud</option>
+              </select>
+            </label>
+
+            <label className="form__col-full">
+              EPS / Entidad actual *
+              <select 
+                name="epsCodigo" 
+                value={form.epsCodigo} 
+                onChange={handleChange} 
+                disabled={form.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO'}
+                required
+              >
+                <option value="">Selecciona tu EPS...</option>
+                {listaEps.map((eps) => {
+                  const valEps = eps.codigo || eps.id || eps.nit || eps.nombre;
+                  return (
+                    <option key={valEps} value={valEps}>
+                      {eps.nombre}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+          </div>
+        </fieldset>
+
+        {/* SECCIÓN 4: CONTACTO DE EMERGENCIA */}
         <fieldset className="form__section">
           <legend>Contacto de Emergencia</legend>
           <div className="form__grid">
@@ -462,7 +512,7 @@ function Registro() {
           </div>
         </fieldset>
 
-        {/* SECCIÓN 4: POLÍTICA DE DATOS */}
+        {/* SECCIÓN 5: POLÍTICA DE DATOS */}
         <fieldset className="form__section form__section--legal">
           <legend>Tratamiento de Datos Personales</legend>
           <div className="form__legal-notice">

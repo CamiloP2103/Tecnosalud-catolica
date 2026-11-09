@@ -3,13 +3,15 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import Registro from '../components/pages/Registro/Registro';
 
 const DEPARTAMENTOS = [{ codigo: 'ANT', nombre: 'Antioquia', municipios: [{ codigo: '05001', nombre: 'Medellín' }] }];
+const EPS = [{ codigo: 'EPS01', nombre: 'Tecnosalud EPS' }];
 
 const respuestaJson = (datos) => ({ ok: true, json: async () => datos });
 
-// Simula los catálogos geográficos del servicio de Registro
+// Simula todos los catálogos del servicio de Registro
 const mockFetchCatalogos = () =>
   vi.fn().mockImplementation(async (url) => {
     if (url.endsWith('/departamentos')) return respuestaJson(DEPARTAMENTOS);
+    if (url.endsWith('/eps')) return respuestaJson(EPS);
     return respuestaJson({});
   });
 
@@ -18,7 +20,7 @@ describe('Registro - Perfil Farmacia', () => {
     vi.stubGlobal('fetch', mockFetchCatalogos());
     render(<Registro />);
     
-    // Esperar que carguen los departamentos
+    // Esperar que carguen los departamentos y EPS
     await waitFor(() => {
       expect(screen.getByRole('combobox', { name: /Ciudad \/ Municipio/i })).toBeInTheDocument();
     });
