@@ -94,6 +94,16 @@ function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
     res.json(listas.eps);
   }));
 
+  router.get('/generos', manejar(async (req, res) => {
+    const { listas } = await repo.catalogos();
+    res.json(listas.generos);
+  }));
+
+  router.get('/parentescos', manejar(async (req, res) => {
+    const { listas } = await repo.catalogos();
+    res.json(listas.parentescos);
+  }));
+
   router.post('/', async (req, res) => {
     const { errores, datos } = validarRegistro(req.body);
     if (Object.keys(errores).length > 0) {
