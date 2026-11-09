@@ -60,10 +60,12 @@ function validarRegistro(body = {}) {
 
   // Validación de salario condicional si el régimen es contributivo
   const esContributivo = regimenCodigo.toUpperCase() === 'CONTRIBUTIVO';
-  if (esContributivo && (!salario || isNaN(Number(salario)))) {
-    errores.salario = 'El salario base es obligatorio para el régimen contributivo';
+  const estipoAfiliacionCodigo = tipoAfiliacionCodigo.toUpperCase() ==='PACIENTE';
+  if (estipoAfiliacionCodigo) {
+    if (esContributivo && (!salario || isNaN(Number(salario)))) {
+      errores.salario = 'El salario base es obligatorio para el régimen contributivo';
+    }
   }
-
   if (!contactoEmergenciaNombre) errores.contactoEmergenciaNombre = 'El nombre del contacto de emergencia es obligatorio';
   if (!/^\d{7,10}$/.test(contactoEmergenciaTelefono)) {
     errores.contactoEmergenciaTelefono = 'El teléfono de emergencia debe tener entre 7 y 10 dígitos';
