@@ -25,45 +25,35 @@ const API_REGISTRO = import.meta.env.VITE_API_REGISTRO_URL || 'http://localhost:
 const estadoInicial = {
   nombres: '',
   apellidos: '',
-  tipoDocumentoCodigo: '',
+  tipoDocumentoCodigo: 'CC',
   documento: '',
   nacimientoDia: '',
   nacimientoMes: '',
   nacimientoAnio: '',
-  generoCodigo: '',
+  generoCodigo: 'OTRO',
   correo: '',
   telefono: '',
   direccion: '',
   municipioCodigo: '',
-  tipoAfiliacionCodigo: '',
-  epsCodigo: '',
-  regimenCodigo: '',
+  tipoAfiliacionCodigo: 'FARMACIA', // Perfil exclusivo de Farmacia
+  epsCodigo: 'NINGUNA',
+  regimenCodigo: 'PARTICULAR',
   salario: '',
-  contactoEmergenciaNombre: '',
-  contactoEmergenciaTelefono: '',
-  contactoEmergenciaParentescoCodigo: '',
+  contactoEmergenciaNombre: 'Administrador Farmacia',
+  contactoEmergenciaTelefono: '3000000000',
+  contactoEmergenciaParentescoCodigo: 'otro',
   aceptaTratamientoDatos: false,
 };
 
 const camposRequeridos = {
-  nombres: 'Nombres',
-  apellidos: 'Apellidos',
+  nombres: 'Nombre del responsable / Establecimiento',
+  apellidos: 'Apellidos del representante',
   tipoDocumentoCodigo: 'Tipo de documento',
-  documento: 'Número de documento',
-  nacimientoDia: 'Día de nacimiento',
-  nacimientoMes: 'Mes de nacimiento',
-  nacimientoAnio: 'Año de nacimiento',
-  generoCodigo: 'Género',
-  correo: 'Correo electrónico',
-  telefono: 'Teléfono / Celular',
-  direccion: 'Dirección de residencia',
+  documento: 'Número de documento / NIT',
+  correo: 'Correo electrónico comercial',
+  telefono: 'Teléfono de contacto',
+  direccion: 'Dirección física del establecimiento',
   municipioCodigo: 'Ciudad / Municipio',
-  tipoAfiliacionCodigo: 'Tipo de afiliación',
-  epsCodigo: 'EPS / Entidad actual',
-  regimenCodigo: 'Régimen de salud',
-  contactoEmergenciaNombre: 'Nombre de contacto de emergencia',
-  contactoEmergenciaTelefono: 'Teléfono de contacto de emergencia',
-  contactoEmergenciaParentescoCodigo: 'Parentesco de emergencia',
 };
 
 function Registro() {
@@ -73,7 +63,6 @@ function Registro() {
   const [correoEnviado, setCorreoEnviado] = useState('');
 
   const [departamentos, setDepartamentos] = useState([]);
-  const [listaEps, setListaEps] = useState([]);
   const [errorCatalogos, setErrorCatalogos] = useState('');
 
   const [captchaChallenge, setCaptchaChallenge] = useState({ num1: 0, num2: 0, resultado: 0 });
@@ -95,24 +84,16 @@ function Registro() {
 
     const cargarCatalogos = async () => {
       try {
-        const [respDeptos, respEps] = await Promise.all([
-          fetch(`${API_REGISTRO}/departamentos`), // Esta ruta en app.js debe retornar listas.departamentos
-          fetch(`${API_REGISTRO}/eps`),
-        ]);
-        
+        const respDeptos = await fetch(`${API_REGISTRO}/departamentos`);
         const deptos = await respDeptos.json();
-        const eps = await respEps.json();
 
         if (cancelado) return;
 
-       
-
         setDepartamentos(deptos);
-        setListaEps(eps);
         setErrorCatalogos('');
       } catch {
         if (!cancelado) {
-          setErrorCatalogos('No se pudieron cargar los catálogos.');
+          setErrorCatalogos('No se pudieron cargar los catálogos geográficos.');
         }
       }
     };
@@ -125,13 +106,10 @@ function Registro() {
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
-    setForm((prev) => {
-      const nuevoForm = { ...prev, [name]: type === 'checkbox' ? checked : value };
-      if (name === 'regimenCodigo' && value.toUpperCase() !== 'CONTRIBUTIVO') {
-        nuevoForm.salario = '';
-      }
-      return nuevoForm;
-    });
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
   const handleNumericChange = (event) => {
@@ -147,38 +125,17 @@ function Registro() {
       }
     }
 
-    if (form.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' && (!form.salario || String(form.salario).trim() === '')) {
-      return 'Debes ingresar tu salario básico mensual para calcular la tarifa del régimen contributivo.';
-    }
-
-    const diaNum = Number(form.nacimientoDia);
-    const mesNum = Number(form.nacimientoMes);
-    const anioNum = Number(form.nacimientoAnio);
-    const fechaArmada = new Date(anioNum, mesNum - 1, diaNum);
-
-    if (
-      fechaArmada.getFullYear() !== anioNum ||
-      fechaArmada.getMonth() !== mesNum - 1 ||
-      fechaArmada.getDate() !== diaNum
-    ) {
-      return 'La fecha de nacimiento seleccionada no es válida.';
-    }
-
     const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!regexEmail.test(form.correo.trim())) {
-      return 'Por favor ingresa un correo electrónico válido (ej. usuario@dominio.com).';
+      return 'Por favor ingresa un correo electrónico válido (ej. farmacia@dominio.com).';
     }
 
     if (form.telefono.length < 7 || form.telefono.length > 10) {
       return 'El número de teléfono debe tener entre 7 y 10 dígitos.';
     }
 
-    if (form.contactoEmergenciaTelefono.length < 7 || form.contactoEmergenciaTelefono.length > 10) {
-      return 'El teléfono de emergencia debe tener entre 7 y 10 dígitos.';
-    }
-
     if (!form.aceptaTratamientoDatos) {
-      return 'Debes autorizar el tratamiento de tus datos personales y sensibles conforme a la Ley 1581 de 2012 para afiliarte.';
+      return 'Debes autorizar el tratamiento de datos comerciales y de red conforme a la normatividad vigente.';
     }
 
     if (parseInt(captchaInput, 10) !== captchaChallenge.resultado) {
@@ -202,8 +159,9 @@ function Registro() {
       return;
     }
 
-    const fechaNacimiento = `${form.nacimientoAnio}-${form.nacimientoMes}-${form.nacimientoDia}`;
-    console.log('[FRONTEND-STATE] form actual:', form);
+    // Fecha por defecto requerida por la estructura base
+    const fechaNacimiento = '2000-01-01';
+
     const datosEnviar = {
       nombres: form.nombres,
       apellidos: form.apellidos,
@@ -219,13 +177,13 @@ function Registro() {
       municipioCodigo: form.municipioCodigo,
       ciudad: form.municipioCodigo,
       municipio: form.municipioCodigo,
-      tipoAfiliacionCodigo: form.tipoAfiliacionCodigo,
-      tipoAfiliacion: form.tipoAfiliacionCodigo,
-      epsCodigo: form.epsCodigo,
-      eps: form.epsCodigo,
-      regimenCodigo: form.regimenCodigo,
-      regimen: form.regimenCodigo,
-      salario: form.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' ? form.salario : null,
+      tipoAfiliacionCodigo: 'FARMACIA',
+      tipoAfiliacion: 'FARMACIA',
+      epsCodigo: 'NINGUNA',
+      eps: 'NINGUNA',
+      regimenCodigo: 'PARTICULAR',
+      regimen: 'PARTICULAR',
+      salario: null,
       contactoEmergenciaNombre: form.contactoEmergenciaNombre,
       contactoEmergenciaTelefono: form.contactoEmergenciaTelefono,
       contactoEmergenciaParentescoCodigo: form.contactoEmergenciaParentescoCodigo,
@@ -241,7 +199,7 @@ function Registro() {
       }, SERVICIO_REGISTRO);
 
       if (!ok) {
-        setErrorMsg(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar el registro.');
+        setErrorMsg(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar el registro de la farmacia.');
         return;
       }
 
@@ -250,7 +208,7 @@ function Registro() {
       setForm(estadoInicial);
       generarCaptchaLocal();
     } catch {
-      setErrorMsg('No se pudo conectar con el micro-servicio de registro. Verifica que esté corriendo en el puerto 3004.');
+      setErrorMsg('No se pudo conectar con el micro-servicio de registro.');
     }
   };
 
@@ -261,8 +219,8 @@ function Registro() {
 
   return (
     <section className="page page--form">
-      <h2>Afiliación al Sistema Tecnosalud</h2>
-      <p>Completa el formulario con tus datos para tramitar tu solicitud de afiliación.</p>
+      <h2>Registro y Autogestión - Perfil Farmacia</h2>
+      <p>Inscribe tu establecimiento farmacéutico en la red Tecnosalud para recibir credenciales de acceso y activación por correo.</p>
 
       {errorMsg && (
         <div className="form__alert-error" role="alert">
@@ -277,49 +235,45 @@ function Registro() {
       )}
 
       <form onSubmit={handleSubmit} noValidate>
-        {/* SECCIÓN 1: DATOS PERSONALES */}
+        {/* SECCIÓN 1: DATOS DE LA FARMACIA Y REPRESENTANTE */}
         <fieldset className="form__section">
-          <legend>Datos Personales e Identificación</legend>
+          <legend>Información del Establecimiento y Representante</legend>
           <div className="form__grid">
             <label>
-              Nombres *
+              Nombre del Establecimiento / Responsable *
               <input
                 type="text"
                 name="nombres"
                 value={form.nombres}
                 onChange={handleChange}
-                placeholder="Ej. Juan Carlos"
+                placeholder="Ej. Farmacia Central / Juan Pérez"
                 required
               />
             </label>
 
             <label>
-              Apellidos *
+              Apellidos del Representante *
               <input
                 type="text"
                 name="apellidos"
                 value={form.apellidos}
                 onChange={handleChange}
-                placeholder="Ej. Pérez Gómez"
+                placeholder="Ej. Gómez"
                 required
               />
             </label>
 
             <label>
-              Tipo de documento *
+              Tipo de Documento *
               <select name="tipoDocumentoCodigo" value={form.tipoDocumentoCodigo} onChange={handleChange} required>
-                <option value="">Selecciona una opción</option>
                 <option value="CC">Cédula de Ciudadanía (CC)</option>
-                <option value="TI">Tarjeta de Identidad (TI)</option>
                 <option value="CE">Cédula de Extranjería (CE)</option>
                 <option value="PA">Pasaporte (PA)</option>
-                <option value="RC">Registro Civil (RC)</option>
-                <option value="PPT">Permiso por Protección Temporal (PPT)</option>
               </select>
             </label>
 
             <label>
-              Número de documento *
+              Número de Documento / NIT *
               <input
                 type="text"
                 name="documento"
@@ -331,81 +285,27 @@ function Registro() {
                 required
               />
             </label>
-
-            <div className="form__date-wrapper">
-              <span className="form__date-title">Fecha de nacimiento *</span>
-              <div className="form__date-group">
-                <select
-                  name="nacimientoDia"
-                  value={form.nacimientoDia}
-                  onChange={handleChange}
-                  required
-                  aria-label="Día de nacimiento"
-                >
-                  <option value="">Día</option>
-                  {DIAS.map((dia) => (
-                    <option key={dia} value={dia}>{dia}</option>
-                  ))}
-                </select>
-
-                <select
-                  name="nacimientoMes"
-                  value={form.nacimientoMes}
-                  onChange={handleChange}
-                  required
-                  aria-label="Mes de nacimiento"
-                >
-                  <option value="">Mes</option>
-                  {MESES.map((mes) => (
-                    <option key={mes.valor} value={mes.valor}>{mes.nombre}</option>
-                  ))}
-                </select>
-
-                <select
-                  name="nacimientoAnio"
-                  value={form.nacimientoAnio}
-                  onChange={handleChange}
-                  required
-                  aria-label="Año de nacimiento"
-                >
-                  <option value="">Año</option>
-                  {ANIOS.map((anio) => (
-                    <option key={anio} value={anio}>{anio}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <label>
-              Género *
-              <select name="generoCodigo" value={form.generoCodigo} onChange={handleChange} required>
-                <option value="">Selecciona una opción</option>
-                <option value="M">Masculino</option>
-                <option value="F">Femenino</option>
-                <option value="OTRO">Otro / Prefiero no decir</option>
-              </select>
-            </label>
           </div>
         </fieldset>
 
         {/* SECCIÓN 2: CONTACTO Y UBICACIÓN */}
         <fieldset className="form__section">
-          <legend>Información de Contacto y Ubicación</legend>
+          <legend>Ubicación y Contacto Comercial</legend>
           <div className="form__grid">
             <label>
-              Correo electrónico *
+              Correo electrónico de la Farmacia *
               <input
                 type="email"
                 name="correo"
                 value={form.correo}
                 onChange={handleChange}
-                placeholder="nombre@ejemplo.com"
+                placeholder="farmacia@ejemplo.com"
                 required
               />
             </label>
 
             <label>
-              Teléfono / Celular *
+              Teléfono / Celular de contacto *
               <input
                 type="tel"
                 name="telefono"
@@ -419,19 +319,19 @@ function Registro() {
               />
             </label>
 
-            <label>
-              Dirección de residencia *
+            <label className="form__col-full">
+              Dirección física del establecimiento *
               <input
                 type="text"
                 name="direccion"
                 value={form.direccion}
                 onChange={handleChange}
-                placeholder="Ej. Calle 45 # 12-34"
+                placeholder="Ej. Calle 45 # 12-34 Local 2"
                 required
               />
             </label>
 
-            <label>
+            <label className="form__col-full">
               Ciudad / Municipio (Colombia) *
               <select name="municipioCodigo" value={form.municipioCodigo} onChange={handleChange} required>
                 <option value="">Selecciona tu municipio...</option>
@@ -449,123 +349,13 @@ function Registro() {
           </div>
         </fieldset>
 
-        {/* SECCIÓN 3: SISTEMA DE SALUD */}
-        <fieldset className="form__section">
-          <legend>Datos del Sistema de Salud</legend>
-          <div className="form__grid">
-            <label>
-              Tipo de afiliación requerida *
-              <select name="tipoAfiliacionCodigo" value={form.tipoAfiliacionCodigo} onChange={handleChange} required>
-                <option value="">Selecciona una opción</option>
-                <option value="PACIENTE">Paciente / Afiliado General</option>
-                <option value="PROFESIONAL">Profesional de la salud</option>
-                <option value="EMPRESA">Empresa / Convenio Institucional</option>
-              </select>
-            </label>
-
-            <label>
-              EPS / Entidad actual *
-              <select name="epsCodigo" value={form.epsCodigo} onChange={handleChange} required>
-                <option value="">Selecciona tu EPS...</option>
-                {listaEps.map((eps) => {
-                  const valEps = eps.codigo || eps.id || eps.nit || eps.nombre;
-                  return (
-                    <option key={valEps} value={valEps}>
-                      {eps.nombre}
-                    </option>
-                  );
-                })}
-              </select>
-            </label>
-
-            <label className={form.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' ? '' : 'form__col-full'}>
-              Régimen de salud *
-              <select name="regimenCodigo" value={form.regimenCodigo} onChange={handleChange} required>
-                <option value="">Selecciona una opción</option>
-                <option value="CONTRIBUTIVO">Contributivo</option>
-                <option value="SUBSIDIADO">Subsidiado</option>
-                <option value="ESPECIAL">Especial / Régimen de Excepción</option>
-                <option value="PARTICULAR">Particular / Póliza de Salud</option>
-              </select>
-            </label>
-
-            {/* --- CAMPO CONDICIONAL DE SALARIO --- */}
-            {form.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' && (
-              <label>
-                Salario base (COP) *
-                <input
-                  type="text"
-                  name="salario"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={form.salario}
-                  onChange={handleNumericChange}
-                  placeholder="Ej. 1300000"
-                  required={form.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO'}
-                />
-              </label>
-            )}
-          </div>
-        </fieldset>
-
-        {/* SECCIÓN 4: CONTACTO DE EMERGENCIA */}
-        <fieldset className="form__section">
-          <legend>Contacto de Emergencia</legend>
-          <div className="form__grid">
-            <label>
-              Nombre completo del contacto *
-              <input
-                type="text"
-                name="contactoEmergenciaNombre"
-                value={form.contactoEmergenciaNombre}
-                onChange={handleChange}
-                placeholder="Familiar o persona responsable"
-                required
-              />
-            </label>
-
-            <label>
-              Teléfono de emergencia *
-              <input
-                type="tel"
-                name="contactoEmergenciaTelefono"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={form.contactoEmergenciaTelefono}
-                onChange={handleNumericChange}
-                placeholder="Ej. 3109876543"
-                maxLength={10}
-                required
-              />
-            </label>
-
-            <label className="form__col-full">
-              Parentesco del contacto de emergencia *
-              <select name="contactoEmergenciaParentescoCodigo" value={form.contactoEmergenciaParentescoCodigo} onChange={handleChange} required>
-                <option value="">Selecciona el parentesco...</option>
-                <option value="conyuge">Cónyuge o compañero(a)</option>
-                <option value="padre">Padre</option>
-                <option value="madre">Madre</option>
-                <option value="hijo">Hijo(a)</option>
-                <option value="hermano">Hermano(a)</option>
-                <option value="abuelo">Abuelo(a)</option>
-                <option value="tio">Tío(a)</option>
-                <option value="amigo">Amigo(a)</option>
-                <option value="otro">Otro</option>
-              </select>
-            </label>
-          </div>
-        </fieldset>
-
-        {/* SECCIÓN 5: POLÍTICA DE TRATAMIENTO DE DATOS */}
+        {/* SECCIÓN 3: POLÍTICA DE DATOS */}
         <fieldset className="form__section form__section--legal">
-          <legend>Tratamiento de Datos Personales y Sensibles</legend>
+          <legend>Términos de Red Comercial y Tratamiento de Datos</legend>
           <div className="form__legal-notice">
             <p>
-              En cumplimiento de la <strong>Ley Estatutaria 1581 de 2012</strong> y el Decreto 1377 de 2013 de la República de Colombia, 
-              <strong> Tecnosalud</strong> le informa que los datos recolectados (incluyendo información médica y de salud catalogada como dato sensible) 
-              serán tratados para fines asistenciales, administrativos y de gestión del servicio. Como titular, usted tiene derecho a conocer, actualizar, 
-              rectificar y suprimir sus datos mediante los canales oficiales de atención.
+              Al registrar su establecimiento farmacéutico en <strong>Tecnosalud</strong>, autoriza el tratamiento 
+              de la información comercial y de despacho conforme a la Ley estatutaria 1581 de 2012 para la integración en la red logística y de dispensación.
             </p>
           </div>
           <label className="form__checkbox-label">
@@ -577,7 +367,7 @@ function Registro() {
               required
             />
             <span>
-              Autorizo de manera libre, previa, expresa e informada a <strong>Tecnosalud</strong> para el tratamiento de mis datos personales y sensibles según la Política de Protección de Datos Personales. *
+              Acepto los términos de integración a la red de farmacias y la política de protección de datos. *
             </span>
           </label>
         </fieldset>
@@ -608,20 +398,20 @@ function Registro() {
           </label>
         </div>
 
-        <button type="submit" className="form__submit-btn">Completar Afiliación</button>
+        <button type="submit" className="form__submit-btn">Registrar Farmacia y Activar Cuenta</button>
       </form>
 
       {modalExito && (
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-content">
-            <h3>¡Registro Exitoso!</h3>
-            <p>Hemos procesado tu afiliación a <strong>Tecnosalud</strong>.</p>
+            <h3>¡Registro de Farmacia Exitoso!</h3>
+            <p>Hemos procesado la inscripción de tu establecimiento en <strong>Tecnosalud</strong>.</p>
             <div className="modal-info-box">
-              <p>Se ha enviado un mensaje con tu <strong>contraseña temporal autogenerada</strong> a:</p>
+              <p>Se ha enviado un mensaje con tu <strong>contraseña temporal</strong> y enlace de activación a:</p>
               <span className="modal-email-highlight">{correoEnviado}</span>
             </div>
             <p className="modal-instruction">
-              Utiliza esta credencial para iniciar sesión por primera vez y realizar el cambio de tu contraseña por una definitiva.
+              Ingresa a tu correo electrónico para verificar la cuenta y acceder al portal con el perfil de farmacia.
             </p>
             <button type="button" className="modal-btn-confirm" onClick={cerrarModal}>
               Entendido

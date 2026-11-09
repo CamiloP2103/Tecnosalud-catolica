@@ -6,7 +6,7 @@ describe('Navegación', () => {
   it('debe abrir la sección de registro desde el navbar', async () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Registro' }));
-    expect(await screen.findByRole('heading', { name: /Afiliación al Sistema Tecnosalud/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Registro y Autogestión - Perfil Farmacia/i })).toBeInTheDocument();
   });
 
 

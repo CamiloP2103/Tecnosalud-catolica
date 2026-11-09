@@ -2,37 +2,41 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import Registro from '../components/pages/Registro/Registro';
 
-const DEPARTAMENTOS = [{ id: 1, nombre: 'Antioquia', ciudades: [{ id: 10, nombre: 'Medellín' }] }];
-const EPS = [{ id: 5, nombre: 'Sanitas' }];
+const DEPARTAMENTOS = [{ codigo: 'ANT', nombre: 'Antioquia', municipios: [{ codigo: '05001', nombre: 'Medellín' }] }];
 
 const respuestaJson = (datos) => ({ ok: true, json: async () => datos });
 
-// Simula los catálogos del servicio de Registro
+// Simula los catálogos geográficos del servicio de Registro
 const mockFetchCatalogos = () =>
   vi.fn().mockImplementation(async (url) => {
     if (url.endsWith('/departamentos')) return respuestaJson(DEPARTAMENTOS);
-    if (url.endsWith('/eps')) return respuestaJson(EPS);
     return respuestaJson({});
   });
 
-describe('Registro', () => {
-  it('debe mostrar un error al enviar el formulario vacío', () => {
+describe('Registro - Perfil Farmacia', () => {
+  it('debe mostrar un error al enviar el formulario vacío', async () => {
     vi.stubGlobal('fetch', mockFetchCatalogos());
     render(<Registro />);
-    fireEvent.click(screen.getByRole('button', { name: 'Completar Afiliación' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('Por favor completa el campo: Nombres');
+    
+    // Esperar que carguen los departamentos
+    await waitFor(() => {
+      expect(screen.getByRole('combobox', { name: /Ciudad \/ Municipio/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar Farmacia y Activar Cuenta' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Por favor completa el campo: Nombre del responsable / Establecimiento');
   });
 
-  it('debe cargar ciudades y EPS desde el servicio y no enviar el registro antes de tiempo', async () => {
+  it('debe cargar los municipios desde el servicio y no enviar el registro antes de tiempo', async () => {
     const fetchMock = mockFetchCatalogos();
     vi.stubGlobal('fetch', fetchMock);
     render(<Registro />);
 
-    expect(screen.getByRole('button', { name: 'Completar Afiliación' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Registrar Farmacia y Activar Cuenta' })).toBeInTheDocument();
     
-    // Esperar a que cargue la EPS (que sí se muestra directamente o al interactuar)
+    // Esperar a que cargue el selector de municipios
     await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: /EPS/i })).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: /Ciudad \/ Municipio/i })).toBeInTheDocument();
     });
 
     // Ningún POST de registro hasta que se envíe el formulario
