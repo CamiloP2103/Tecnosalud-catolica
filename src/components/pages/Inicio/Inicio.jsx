@@ -5,16 +5,6 @@ import './Inicio.css';
 
 function Inicio({ onNavigate }) {
   
-
-  useEffect(() => {
-    setHoraCarga(new Date().toLocaleTimeString('es-CO', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    }));
-  }, []);
-
   return (
     <div className="page page--inicio">
       <section
@@ -29,7 +19,7 @@ function Inicio({ onNavigate }) {
           <p className="inicio-hero__text">
             En Tecnosalud EPS combinamos, innovación y compromiso para
             ofrecerte servicios de salud accesibles, seguros y confiables para ti y tu familia
-            que pueden ser de tu agrado.
+            que pueden ser de su agrado.
           </p>
           <button
             type="button"

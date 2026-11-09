@@ -360,7 +360,7 @@ function PanelAfiliaciones() {
       setModalExitoAfiliacion(true);
       setFormAfiliacion(estadoInicialAfiliacion);
     } catch {
-      setErrorMsgAfiliacion('No se pudo conectar con el servicio de registro.');
+      setErrorMsgAfiliacion('No se pudo conectar con el micro-servicio de registro.');
     } finally {
       setCargandoAfiliacion(false);
     }

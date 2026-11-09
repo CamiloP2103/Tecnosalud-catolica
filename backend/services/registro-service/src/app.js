@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { validarRegistro } = require('./validators');
 const { errorBaseDatos } = require('./errores');
-// (Se eliminó la importación de catalogos estáticos ya que se consultan vía repo)
+// (Se eliminó la importación de catalogos estáticos ya que se consultan vía repositorio)
 
 const escaparHtml = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

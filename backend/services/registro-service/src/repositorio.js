@@ -1,4 +1,4 @@
-// Acceso a db_registro: catálogos colombianos, afiliados e historial de estados.
+// Acceso a db_registro: catálogos colombianos, afiliados e historial de estados de afiliado
 
 class ErrorNegocio extends Error {
   constructor(status, mensaje) {

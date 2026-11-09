@@ -250,7 +250,7 @@ function Registro() {
       setForm(estadoInicial);
       generarCaptchaLocal();
     } catch {
-      setErrorMsg('No se pudo conectar con el servicio de registro. Verifica que esté corriendo en el puerto 3004.');
+      setErrorMsg('No se pudo conectar con el micro-servicio de registro. Verifica que esté corriendo en el puerto 3004.');
     }
   };
 

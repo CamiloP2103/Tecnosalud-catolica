@@ -83,7 +83,7 @@ function ResumenGeneral({ resumenes, irA }) {
       </div>
 
       <div className="adm-rejilla">
-        <Tarjeta titulo="Estado de los microservicios">
+        <Tarjeta titulo="Estado de los micro-servicios">
           <ul className="adm-servicios">
             {Object.entries(NOMBRES_SERVICIO).map(([clave, nombre]) => {
               const error = resumenes[clave]?.error;

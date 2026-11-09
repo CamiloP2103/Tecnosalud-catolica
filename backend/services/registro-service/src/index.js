@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { crearApp } = require('./app');
 const pool = require('./config/db');
-const { crearRepositorio } = require('./repositorio'); // Importamos los repositorios
+const { crearRepositorio } = require('./repositorio'); // Importamos los repositorios.
 
 // Instanciamos el repositorio inyectándole la conexión a la base de datos
 const repo = crearRepositorio(pool);
