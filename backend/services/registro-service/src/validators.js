@@ -72,9 +72,9 @@ function validarRegistro(body = {}) {
     errores.contactoEmergenciaParentesco = 'El parentesco de emergencia no es válido';
   }
 
-  if (body.aceptaTratamientoDatos !== true) {
-    errores.aceptaTratamientoDatos = 'Debes autorizar el tratamiento de datos personales (Ley 1581 de 2012)';
-  }
+  //if (body.aceptaTratamientoDatos !== true ) {
+   // errores.aceptaTratamientoDatos = 'Debes autorizar el tratamiento de datos personales (Ley 1581 de 2012)';
+ // }
 
   // Fecha de nacimiento
   let fechaNacimiento = body.fechaNacimiento;
