@@ -138,7 +138,7 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
             (nombres, apellidos, tipo_documento_codigo, documento, fecha_nacimiento, genero_codigo, correo, telefono,
              direccion, municipio_codigo, tipo_afiliacion_codigo, eps_codigo, regimen_codigo, salario,
              contacto_emergencia_nombre, contacto_emergencia_telefono, contacto_emergencia_parentesco_codigo, acepta_tratamiento_datos, estado)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, 'PENDIENTE')`,
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, false, 'PENDIENTE')`,
           parametrosSeguros
         );
 
