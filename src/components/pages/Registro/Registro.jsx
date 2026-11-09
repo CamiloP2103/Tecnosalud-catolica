@@ -41,7 +41,7 @@ const estadoInicial = {
   contactoEmergenciaNombre: '',
   contactoEmergenciaTelefono: '',
   contactoEmergenciaParentescoCodigo: '',
-  aceptaTratamientoDatos: false,
+  aceptaTratamientoDatos: true, // Se mantiene por defecto en true ya que se retiró el checkbox visual
 };
 
 const camposRequeridos = {
@@ -153,10 +153,6 @@ function Registro() {
       return 'El teléfono de emergencia debe tener entre 7 y 10 dígitos.';
     }
 
-    if (!form.aceptaTratamientoDatos) {
-      return 'Debes autorizar el tratamiento de datos personales conforme a la Ley 1581 de 2012.';
-    }
-
     if (parseInt(captchaInput, 10) !== captchaChallenge.resultado) {
       return 'El resultado del captcha es incorrecto. Intenta de nuevo.';
     }
@@ -205,7 +201,7 @@ function Registro() {
       contactoEmergenciaTelefono: form.contactoEmergenciaTelefono,
       contactoEmergenciaParentescoCodigo: form.contactoEmergenciaParentescoCodigo,
       contactoEmergenciaParentesco: form.contactoEmergenciaParentescoCodigo,
-      aceptaTratamientoDatos: form.aceptaTratamientoDatos,
+      aceptaTratamientoDatos: true,
     };
     
     try {
@@ -504,28 +500,6 @@ function Registro() {
               </select>
             </label>
           </div>
-        </fieldset>
-
-        {/* SECCIÓN 5: POLÍTICA DE DATOS */}
-        <fieldset className="form__section form__section--legal">
-          <legend>Tratamiento de Datos Personales</legend>
-          <div className="form__legal-notice">
-            <p>
-              En cumplimiento de la Ley 1581 de 2012, sus datos serán tratados para gestionar su acceso al perfil y servicios de farmacia.
-            </p>
-          </div>
-          <label className="form__checkbox-label">
-            <input
-              type="checkbox"
-              name="aceptaTratamientoDatos"
-              checked={form.aceptaTratamientoDatos}
-              onChange={handleChange}
-              required
-            />
-            <span>
-              Autorizo el tratamiento de mis datos personales para la creación de mi cuenta de perfil de farmacia. *
-            </span>
-          </label>
         </fieldset>
 
         {/* CONTROL DE SEGURIDAD LOCAL */}
