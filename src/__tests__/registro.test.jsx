@@ -23,8 +23,8 @@ describe('Registro - Perfil Farmacia', () => {
       expect(screen.getByRole('combobox', { name: /Ciudad \/ Municipio/i })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Registrar Farmacia y Activar Cuenta' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('Por favor completa el campo: Nombre del responsable / Establecimiento');
+    fireEvent.click(screen.getByRole('button', { name: 'Completar Registro de Usuario' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Por favor completa el campo: Nombres');
   });
 
   it('debe cargar los municipios desde el servicio y no enviar el registro antes de tiempo', async () => {
@@ -32,7 +32,7 @@ describe('Registro - Perfil Farmacia', () => {
     vi.stubGlobal('fetch', fetchMock);
     render(<Registro />);
 
-    expect(screen.getByRole('button', { name: 'Registrar Farmacia y Activar Cuenta' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Completar Registro de Usuario' })).toBeInTheDocument();
     
     // Esperar a que cargue el selector de municipios
     await waitFor(() => {

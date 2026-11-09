@@ -30,29 +30,33 @@ const estadoInicial = {
   nacimientoDia: '',
   nacimientoMes: '',
   nacimientoAnio: '',
-  generoCodigo: 'OTRO',
+  generoCodigo: 'M',
   correo: '',
   telefono: '',
   direccion: '',
   municipioCodigo: '',
-  tipoAfiliacionCodigo: 'FARMACIA', // Perfil exclusivo de Farmacia
+  tipoAfiliacionCodigo: 'PROFESIONAL', // Rol o perfil aplicable al personal de farmacia
   epsCodigo: 'NINGUNA',
   regimenCodigo: 'PARTICULAR',
   salario: '',
-  contactoEmergenciaNombre: 'Administrador Farmacia',
+  contactoEmergenciaNombre: 'Soporte Tecnosalud',
   contactoEmergenciaTelefono: '3000000000',
   contactoEmergenciaParentescoCodigo: 'otro',
   aceptaTratamientoDatos: false,
 };
 
 const camposRequeridos = {
-  nombres: 'Nombre del responsable / Establecimiento',
-  apellidos: 'Apellidos del representante',
+  nombres: 'Nombres',
+  apellidos: 'Apellidos',
   tipoDocumentoCodigo: 'Tipo de documento',
-  documento: 'Número de documento / NIT',
-  correo: 'Correo electrónico comercial',
-  telefono: 'Teléfono de contacto',
-  direccion: 'Dirección física del establecimiento',
+  documento: 'Número de documento',
+  nacimientoDia: 'Día de nacimiento',
+  nacimientoMes: 'Mes de nacimiento',
+  nacimientoAnio: 'Año de nacimiento',
+  generoCodigo: 'Género',
+  correo: 'Correo electrónico',
+  telefono: 'Teléfono / Celular',
+  direccion: 'Dirección de residencia',
   municipioCodigo: 'Ciudad / Municipio',
 };
 
@@ -127,7 +131,7 @@ function Registro() {
 
     const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!regexEmail.test(form.correo.trim())) {
-      return 'Por favor ingresa un correo electrónico válido (ej. farmacia@dominio.com).';
+      return 'Por favor ingresa un correo electrónico válido (ej. usuario@dominio.com).';
     }
 
     if (form.telefono.length < 7 || form.telefono.length > 10) {
@@ -135,7 +139,7 @@ function Registro() {
     }
 
     if (!form.aceptaTratamientoDatos) {
-      return 'Debes autorizar el tratamiento de datos comerciales y de red conforme a la normatividad vigente.';
+      return 'Debes autorizar el tratamiento de datos personales conforme a la Ley 1581 de 2012.';
     }
 
     if (parseInt(captchaInput, 10) !== captchaChallenge.resultado) {
@@ -159,8 +163,7 @@ function Registro() {
       return;
     }
 
-    // Fecha por defecto requerida por la estructura base
-    const fechaNacimiento = '2000-01-01';
+    const fechaNacimiento = `${form.nacimientoAnio}-${form.nacimientoMes}-${form.nacimientoDia}`;
 
     const datosEnviar = {
       nombres: form.nombres,
@@ -177,8 +180,8 @@ function Registro() {
       municipioCodigo: form.municipioCodigo,
       ciudad: form.municipioCodigo,
       municipio: form.municipioCodigo,
-      tipoAfiliacionCodigo: 'FARMACIA',
-      tipoAfiliacion: 'FARMACIA',
+      tipoAfiliacionCodigo: 'PROFESIONAL',
+      tipoAfiliacion: 'PROFESIONAL',
       epsCodigo: 'NINGUNA',
       eps: 'NINGUNA',
       regimenCodigo: 'PARTICULAR',
@@ -199,7 +202,7 @@ function Registro() {
       }, SERVICIO_REGISTRO);
 
       if (!ok) {
-        setErrorMsg(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar el registro de la farmacia.');
+        setErrorMsg(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar el registro de usuario.');
         return;
       }
 
@@ -219,8 +222,8 @@ function Registro() {
 
   return (
     <section className="page page--form">
-      <h2>Registro y Autogestión - Perfil Farmacia</h2>
-      <p>Inscribe tu establecimiento farmacéutico en la red Tecnosalud para recibir credenciales de acceso y activación por correo.</p>
+      <h2>Registro de Usuario - Perfil Farmacia</h2>
+      <p>Completa tus datos personales para habilitar tu acceso al módulo de farmacia con autogestión y activación por correo.</p>
 
       {errorMsg && (
         <div className="form__alert-error" role="alert">
@@ -235,45 +238,46 @@ function Registro() {
       )}
 
       <form onSubmit={handleSubmit} noValidate>
-        {/* SECCIÓN 1: DATOS DE LA FARMACIA Y REPRESENTANTE */}
+        {/* SECCIÓN 1: DATOS PERSONALES */}
         <fieldset className="form__section">
-          <legend>Información del Establecimiento y Representante</legend>
+          <legend>Datos Personales e Identificación</legend>
           <div className="form__grid">
             <label>
-              Nombre del Establecimiento / Responsable *
+              Nombres *
               <input
                 type="text"
                 name="nombres"
                 value={form.nombres}
                 onChange={handleChange}
-                placeholder="Ej. Farmacia Central / Juan Pérez"
+                placeholder="Ej. Juan Carlos"
                 required
               />
             </label>
 
             <label>
-              Apellidos del Representante *
+              Apellidos *
               <input
                 type="text"
                 name="apellidos"
                 value={form.apellidos}
                 onChange={handleChange}
-                placeholder="Ej. Gómez"
+                placeholder="Ej. Pérez Gómez"
                 required
               />
             </label>
 
             <label>
-              Tipo de Documento *
+              Tipo de documento *
               <select name="tipoDocumentoCodigo" value={form.tipoDocumentoCodigo} onChange={handleChange} required>
                 <option value="CC">Cédula de Ciudadanía (CC)</option>
+                <option value="TI">Tarjeta de Identidad (TI)</option>
                 <option value="CE">Cédula de Extranjería (CE)</option>
                 <option value="PA">Pasaporte (PA)</option>
               </select>
             </label>
 
             <label>
-              Número de Documento / NIT *
+              Número de documento *
               <input
                 type="text"
                 name="documento"
@@ -285,27 +289,80 @@ function Registro() {
                 required
               />
             </label>
+
+            <div className="form__date-wrapper">
+              <span className="form__date-title">Fecha de nacimiento *</span>
+              <div className="form__date-group">
+                <select
+                  name="nacimientoDia"
+                  value={form.nacimientoDia}
+                  onChange={handleChange}
+                  required
+                  aria-label="Día de nacimiento"
+                >
+                  <option value="">Día</option>
+                  {DIAS.map((dia) => (
+                    <option key={dia} value={dia}>{dia}</option>
+                  ))}
+                </select>
+
+                <select
+                  name="nacimientoMes"
+                  value={form.nacimientoMes}
+                  onChange={handleChange}
+                  required
+                  aria-label="Mes de nacimiento"
+                >
+                  <option value="">Mes</option>
+                  {MESES.map((mes) => (
+                    <option key={mes.valor} value={mes.valor}>{mes.nombre}</option>
+                  ))}
+                </select>
+
+                <select
+                  name="nacimientoAnio"
+                  value={form.nacimientoAnio}
+                  onChange={handleChange}
+                  required
+                  aria-label="Año de nacimiento"
+                >
+                  <option value="">Año</option>
+                  {ANIOS.map((anio) => (
+                    <option key={anio} value={anio}>{anio}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <label>
+              Género *
+              <select name="generoCodigo" value={form.generoCodigo} onChange={handleChange} required>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+                <option value="OTRO">Otro / Prefiero no decir</option>
+              </select>
+            </label>
           </div>
         </fieldset>
 
         {/* SECCIÓN 2: CONTACTO Y UBICACIÓN */}
         <fieldset className="form__section">
-          <legend>Ubicación y Contacto Comercial</legend>
+          <legend>Información de Contacto y Ubicación</legend>
           <div className="form__grid">
             <label>
-              Correo electrónico de la Farmacia *
+              Correo electrónico *
               <input
                 type="email"
                 name="correo"
                 value={form.correo}
                 onChange={handleChange}
-                placeholder="farmacia@ejemplo.com"
+                placeholder="nombre@ejemplo.com"
                 required
               />
             </label>
 
             <label>
-              Teléfono / Celular de contacto *
+              Teléfono / Celular *
               <input
                 type="tel"
                 name="telefono"
@@ -319,19 +376,19 @@ function Registro() {
               />
             </label>
 
-            <label className="form__col-full">
-              Dirección física del establecimiento *
+            <label>
+              Dirección de residencia *
               <input
                 type="text"
                 name="direccion"
                 value={form.direccion}
                 onChange={handleChange}
-                placeholder="Ej. Calle 45 # 12-34 Local 2"
+                placeholder="Ej. Calle 45 # 12-34"
                 required
               />
             </label>
 
-            <label className="form__col-full">
+            <label>
               Ciudad / Municipio (Colombia) *
               <select name="municipioCodigo" value={form.municipioCodigo} onChange={handleChange} required>
                 <option value="">Selecciona tu municipio...</option>
@@ -351,11 +408,10 @@ function Registro() {
 
         {/* SECCIÓN 3: POLÍTICA DE DATOS */}
         <fieldset className="form__section form__section--legal">
-          <legend>Términos de Red Comercial y Tratamiento de Datos</legend>
+          <legend>Tratamiento de Datos Personales</legend>
           <div className="form__legal-notice">
             <p>
-              Al registrar su establecimiento farmacéutico en <strong>Tecnosalud</strong>, autoriza el tratamiento 
-              de la información comercial y de despacho conforme a la Ley estatutaria 1581 de 2012 para la integración en la red logística y de dispensación.
+              En cumplimiento de la Ley 1581 de 2012, sus datos serán tratados para gestionar su acceso al perfil y servicios de farmacia.
             </p>
           </div>
           <label className="form__checkbox-label">
@@ -367,7 +423,7 @@ function Registro() {
               required
             />
             <span>
-              Acepto los términos de integración a la red de farmacias y la política de protección de datos. *
+              Autorizo el tratamiento de mis datos personales para la creación de mi cuenta de perfil de farmacia. *
             </span>
           </label>
         </fieldset>
@@ -398,20 +454,20 @@ function Registro() {
           </label>
         </div>
 
-        <button type="submit" className="form__submit-btn">Registrar Farmacia y Activar Cuenta</button>
+        <button type="submit" className="form__submit-btn">Completar Registro de Usuario</button>
       </form>
 
       {modalExito && (
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-content">
-            <h3>¡Registro de Farmacia Exitoso!</h3>
-            <p>Hemos procesado la inscripción de tu establecimiento en <strong>Tecnosalud</strong>.</p>
+            <h3>¡Registro Exitoso!</h3>
+            <p>Hemos procesado tu alta para el perfil de farmacia en <strong>Tecnosalud</strong>.</p>
             <div className="modal-info-box">
-              <p>Se ha enviado un mensaje con tu <strong>contraseña temporal</strong> y enlace de activación a:</p>
+              <p>Se ha enviado tu contraseña temporal al correo:</p>
               <span className="modal-email-highlight">{correoEnviado}</span>
             </div>
             <p className="modal-instruction">
-              Ingresa a tu correo electrónico para verificar la cuenta y acceder al portal con el perfil de farmacia.
+              Revisa tu bandeja de entrada para activar tu cuenta y acceder al módulo de farmacia.
             </p>
             <button type="button" className="modal-btn-confirm" onClick={cerrarModal}>
               Entendido
