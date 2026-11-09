@@ -352,7 +352,7 @@ function PanelAfiliaciones() {
       }, SERVICIO_REGISTRO);
 
       if (!ok) {
-        setMensajeSolicitudes(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar el registro.');
+        setError(datos.error || Object.values(datos.errores || {})[0] || 'No se pudo completar el registro.');
         return;
       }
 
