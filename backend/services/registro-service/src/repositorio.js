@@ -186,6 +186,21 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
       };
     },
 
+    async activarAfiliadoYConsentimiento({ correo, documento, aceptaTratamientoDatos }) {
+      let query = `UPDATE afiliados SET acepta_tratamiento_datos = ?, estado = 'ACTIVO' WHERE `;
+      let params = [aceptaTratamientoDatos];
+
+      if (correo) {
+        query += `correo = ?`;
+        params.push(correo);
+      } else {
+        query += `documento = ?`;
+        params.push(documento);
+      }
+
+      const [resultado] = await this.pool.query(query, params);
+      return resultado.affectedRows > 0;
+    },
     async listarAfiliados({ estado, buscar, limite = 50 } = {}) {
       const condiciones = [];
       const parametros = [];

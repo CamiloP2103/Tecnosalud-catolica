@@ -247,7 +247,7 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
 
   // 4. RECUPERAR CLAVE: RESTABLECER
   router.post('/recuperar-clave/restablecer', async (req, res) => {
-    const { token, nuevaContrasena } = req.body || {};
+    const { token, nuevaContrasena, aceptaTratamientoDatos } = req.body || {};
     if (typeof token !== 'string' || typeof nuevaContrasena !== 'string' || !token || !nuevaContrasena) return res.status(400).json({ error: 'Faltan datos.' });
     if (nuevaContrasena.trim().length < LARGO_MINIMO_CLAVE) return res.status(400).json({ error: `La contraseña debe tener al menos ${LARGO_MINIMO_CLAVE} caracteres.` });
 
@@ -259,11 +259,33 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
       if (registroToken.usado) return res.status(400).json({ error: 'Este enlace ya ha sido utilizado.' });
       if (new Date() > new Date(registroToken.expira_en)) return res.status(400).json({ error: 'El enlace ha expirado. Solicita uno nuevo.' });
 
+      // Opcional: Obtener el correo o documento del usuario asociado para pasarlo a registro-service
+      const [usuarios] = await pool.query('SELECT email, documento FROM usuarios WHERE id = ? LIMIT 1', [registroToken.usuario_id]);
+      const datosUsuario = usuarios[0] || {};
+
       const salt = await bcrypt.genSalt(10);
       const nuevoHash = await bcrypt.hash(nuevaContrasena.trim(), salt);
 
-      await pool.query('UPDATE usuarios SET contrasena_hash = ?, intentos_fallidos = 0,activo = 1, bloqueado_hasta = NULL WHERE id = ?', [nuevoHash, registroToken.usuario_id]);
+      // 1. Actualizamos contraseña y activamos usuario en db_auth
+      await pool.query('UPDATE usuarios SET contrasena_hash = ?, intentos_fallidos = 0, activo = 1, bloqueado_hasta = NULL WHERE id = ?', [nuevoHash, registroToken.usuario_id]);
       await pool.query('UPDATE tokens_recuperacion SET usado = TRUE WHERE id = ?', [registroToken.id]);
+
+      // 2. Sincronizamos el consentimiento y estado activo en db_registro (a través del microservicio de registro)
+      if (datosUsuario.email || datosUsuario.documento) {
+        try {
+          await fetch(`${process.env.REGISTRO_SERVICE_URL || 'http://localhost:3004'}/api/registro/activar-consentimiento`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              correo: datosUsuario.email,
+              documento: datosUsuario.documento,
+              aceptaTratamientoDatos: aceptaTratamientoDatos ? 1 : 0
+            })
+          });
+        } catch (errorRegistro) {
+          console.error('[auth-service] No se pudo sincronizar el consentimiento en registro-service:', errorRegistro.message);
+        }
+      }
 
       return res.json({ mensaje: 'Contraseña actualizada correctamente. Puedes ingresar con esta contraseña' });
     } catch (error) {

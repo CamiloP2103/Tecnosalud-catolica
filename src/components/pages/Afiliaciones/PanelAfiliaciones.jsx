@@ -44,7 +44,7 @@ const estadoInicialAfiliacion = {
   contactoEmergenciaNombre: '',
   contactoEmergenciaTelefono: '',
   contactoEmergenciaParentescoCodigo: '',
-  aceptaTratamientoDatos: true,
+  aceptaTratamientoDatos: false,
 };
 
 function PanelAfiliaciones() {
@@ -340,7 +340,7 @@ function PanelAfiliaciones() {
       contactoEmergenciaTelefono: formAfiliacion.contactoEmergenciaTelefono,
       contactoEmergenciaParentescoCodigo: formAfiliacion.contactoEmergenciaParentescoCodigo,
       contactoEmergenciaParentesco: formAfiliacion.contactoEmergenciaParentescoCodigo,
-      aceptaTratamientoDatos: true,
+      aceptaTratamientoDatos: false,
     };
     
     try {

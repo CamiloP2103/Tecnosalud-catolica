@@ -217,6 +217,28 @@ function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
     return res.status(201).json({ id: nuevoId, departamento_codigo: departamentoCodigo, nombre });
   }));
 
+  // --- ACTUALIZAR CONSENTIMIENTO Y ACTIVAR AFILIADO ---
+  router.patch('/activar-consentimiento', manejar(async (req, res) => {
+    const { correo, documento, aceptaTratamientoDatos } = req.body;
+    
+    if (!correo && !documento) {
+      return res.status(400).json({ error: 'Se requiere el correo o documento para actualizar el registro.' });
+    }
+
+    // Llamamos al repositorio para hacer el UPDATE en db_registro.afiliados
+    const actualizado = await repo.activarAfiliadoYConsentimiento({
+      correo,
+      documento,
+      aceptaTratamientoDatos: aceptaTratamientoDatos ? 1 : 0
+    });
+
+    if (!actualizado) {
+      return res.status(404).json({ error: 'Afiliado no encontrado en el sistema de registros.' });
+    }
+
+    return res.json({ ok: true, mensaje: 'Afiliación y consentimiento actualizados correctamente.' });
+  }));
+
   app.use('/api/registro', router);
 
   return app;
