@@ -121,14 +121,10 @@ function Registro() {
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
-    setForm((prev) => {
-      const nuevoForm = { ...prev, [name]: type === 'checkbox' ? checked : value };
-      if (name === 'regimenCodigo' && value.toUpperCase() === 'CONTRIBUTIVO') {
-        const epsTecnosalud = listaEps.find(epsItem => (epsItem.nombre || '').toLowerCase().includes('tecnosalud'));
-        if (epsTecnosalud) nuevoForm.epsCodigo = epsTecnosalud.codigo || epsTecnosalud.id || epsTecnosalud.nombre;
-      }
-      return nuevoForm;
-    });
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
   const handleNumericChange = (event) => {
@@ -446,7 +442,6 @@ function Registro() {
                 name="epsCodigo" 
                 value={form.epsCodigo} 
                 onChange={handleChange} 
-                disabled={form.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO'}
                 required
               >
                 <option value="">Selecciona tu EPS...</option>
