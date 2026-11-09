@@ -203,7 +203,7 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
       WHERE correo = ? OR documento = ?
     `;
     
-    const [resultado] = await this.pool.query(query, [
+    const [resultado] = await pool.query(query, [
       aceptaTratamientoDatos, 
       correo || '', 
       documento || ''
