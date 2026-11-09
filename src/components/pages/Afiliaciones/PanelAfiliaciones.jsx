@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import './PanelAfiliaciones.css'; // Reutilizamos los estilos institucionales
+import './PanelAfiliaciones.css'; 
 import { llamarServicio, SERVICIO_REGISTRO } from '../../../utils/servicios';
 
 const API_REGISTRO = import.meta.env.VITE_API_REGISTRO_URL || 'https://tecnosalud-registro-2026.azurewebsites.net/api/registro';
@@ -7,44 +7,22 @@ const API_AUTH = import.meta.env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2
 
 const DIAS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
 const MESES = [
-  { valor: '01', nombre: 'Enero' },
-  { valor: '02', nombre: 'Febrero' },
-  { valor: '03', nombre: 'Marzo' },
-  { valor: '04', nombre: 'Abril' },
-  { valor: '05', nombre: 'Mayo' },
-  { valor: '06', nombre: 'Junio' },
-  { valor: '07', nombre: 'Julio' },
-  { valor: '08', nombre: 'Agosto' },
-  { valor: '09', nombre: 'Septiembre' },
-  { valor: '10', nombre: 'Octubre' },
-  { valor: '11', nombre: 'Noviembre' },
-  { valor: '12', nombre: 'Diciembre' },
+  { valor: '01', nombre: 'Enero' }, { valor: '02', nombre: 'Febrero' }, { valor: '03', nombre: 'Marzo' },
+  { valor: '04', nombre: 'Abril' }, { valor: '05', nombre: 'Mayo' }, { valor: '06', nombre: 'Junio' },
+  { valor: '07', nombre: 'Julio' }, { valor: '08', nombre: 'Agosto' }, { valor: '09', nombre: 'Septiembre' },
+  { valor: '10', nombre: 'Octubre' }, { valor: '11', nombre: 'Noviembre' }, { valor: '12', nombre: 'Diciembre' },
 ];
 
 const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: anioActual - 1920 + 1 }, (_, i) => String(anioActual - i));
 
 const estadoInicialAfiliacion = {
-  nombres: '',
-  apellidos: '',
-  tipoDocumentoCodigo: 'CC',
-  documento: '',
-  nacimientoDia: '',
-  nacimientoMes: '',
-  nacimientoAnio: '',
-  generoCodigo: '',
-  correo: '',
-  telefono: '',
-  direccion: '',
-  municipioCodigo: '',
-  tipoAfiliacionCodigo: '',
-  epsCodigo: '',
-  regimenCodigo: '',
-  salario: '',
-  contactoEmergenciaNombre: '',
-  contactoEmergenciaTelefono: '',
-  contactoEmergenciaParentescoCodigo: '',
-  aceptaTratamientoDatos: false,
+  nombres: '', apellidos: '', tipoDocumentoCodigo: 'CC', documento: '',
+  nacimientoDia: '', nacimientoMes: '', nacimientoAnio: '', generoCodigo: '',
+  correo: '', telefono: '', direccion: '', municipioCodigo: '',
+  tipoAfiliacionCodigo: '', epsCodigo: '', regimenCodigo: '', salario: '',
+  contactoEmergenciaNombre: '', contactoEmergenciaTelefono: '',
+  contactoEmergenciaParentescoCodigo: '', aceptaTratamientoDatos: false,
 };
 
 function PanelAfiliaciones() {
@@ -55,7 +33,6 @@ function PanelAfiliaciones() {
   const [solicitudes, setSolicitudes] = useState([]);
   const [cargandoSolicitudes, setCargandoSolicitudes] = useState(false);
   const [mensajeSolicitudes, setMensajeSolicitudes] = useState('');
-  
 
   // Estados para Crear Usuario EPS
   const [formUsuario, setFormUsuario] = useState({
@@ -72,12 +49,17 @@ function PanelAfiliaciones() {
   const [departamentos, setDepartamentos] = useState([]);
   const [municipios, setMunicipios] = useState([]);
   const [listaEps, setListaEps] = useState([]);
+  const [generos, setGeneros] = useState([]);
+  const [parentescos, setParentescos] = useState([]);
   const [cargandoGeo, setCargandoGeo] = useState(false);
   
-  // Formularios de Creación Geográfica
+  // Formularios de Creación Geográfica y Catálogos
   const [nombreDepartamento, setNombreDepartamento] = useState('');
   const [nombreMunicipio, setNombreMunicipio] = useState('');
   const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState('');
+  const [nombreGenero, setNombreGenero] = useState('');
+  const [nombreParentesco, setNombreParentesco] = useState('');
+  const [nombreEps, setNombreEps] = useState('');
   const [mensajeGeo, setMensajeGeo] = useState({ tipo: '', texto: '' });
 
   // Estados del Formulario de Nueva Afiliación
@@ -93,7 +75,7 @@ function PanelAfiliaciones() {
     if (seccionActiva === 'solicitudes') {
       cargarSolicitudesPendientes();
     } else if (seccionActiva === 'geografia' || seccionActiva === 'nueva-afiliacion') {
-      cargarCatalogosGeograficos();
+      cargarCatalogosCompletos();
     }
   }, [seccionActiva]);
 
@@ -110,7 +92,7 @@ function PanelAfiliaciones() {
       } else {
         setMensajeSolicitudes(data.error || 'No se pudieron cargar las solicitudes.');
       }
-    } catch (error) {
+    } catch {
       setMensajeSolicitudes('Error de conexión al cargar solicitudes.');
     } finally {
       setCargandoSolicitudes(false);
@@ -133,7 +115,7 @@ function PanelAfiliaciones() {
         const data = await res.json();
         alert(data.error || 'No se pudo aprobar la solicitud.');
       }
-    } catch (error) {
+    } catch {
       alert('Error de red al aprobar la solicitud.');
     }
   };
@@ -165,29 +147,104 @@ function PanelAfiliaciones() {
       } else {
         setMensajeCrear({ tipo: 'error', texto: data.error || 'Error al crear el usuario.' });
       }
-    } catch (error) {
+    } catch {
       setMensajeCrear({ tipo: 'error', texto: 'Error de conexión con el servicio de autenticación.' });
     } finally {
       setCargandoCrear(false);
     }
   };
 
-  const cargarCatalogosGeograficos = async () => {
+  const cargarCatalogosCompletos = async () => {
     setCargandoGeo(true);
     try {
       const timestamp = Date.now();
-      const [resDeptos, resMun, resEps] = await Promise.all([
+      const [resDeptos, resMun, resEps, resCatalogos] = await Promise.all([
         fetch(`${API_REGISTRO}/departamentos?_t=${timestamp}`),
         fetch(`${API_REGISTRO}/municipios?_t=${timestamp}`),
-        fetch(`${API_REGISTRO}/eps?_t=${timestamp}`)
+        fetch(`${API_REGISTRO}/eps?_t=${timestamp}`),
+        fetch(`${API_REGISTRO}/catalogos?_t=${timestamp}`)
       ]);
       if (resDeptos.ok) setDepartamentos(await resDeptos.json());
       if (resMun.ok) setMunicipios(await resMun.json());
       if (resEps.ok) setListaEps(await resEps.json());
+      if (resCatalogos.ok) {
+        const catData = await resCatalogos.json();
+        setGeneros(catData.listas?.generos || []);
+        setParentescos(catData.listas?.parentescos || []);
+      }
     } catch (error) {
-      console.error('Error cargando catálogos geográficos:', error);
+      console.error('Error cargando catálogos:', error);
     } finally {
       setCargandoGeo(false);
+    }
+  };
+
+  const handleCrearGenero = async (e) => {
+    e.preventDefault();
+    setMensajeGeo({ tipo: '', texto: '' });
+    if (!nombreGenero.trim()) return;
+    try {
+      const res = await fetch(`${API_REGISTRO}/generos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ nombre: nombreGenero.trim() })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMensajeGeo({ tipo: 'exito', texto: 'Género creado correctamente.' });
+        setNombreGenero('');
+        cargarCatalogosCompletos();
+      } else {
+        setMensajeGeo({ tipo: 'error', texto: data.error || 'Error al crear género.' });
+      }
+    } catch {
+      setMensajeGeo({ tipo: 'error', texto: 'Error de conexión.' });
+    }
+  };
+
+  const handleCrearParentesco = async (e) => {
+    e.preventDefault();
+    setMensajeGeo({ tipo: '', texto: '' });
+    if (!nombreParentesco.trim()) return;
+    try {
+      const res = await fetch(`${API_REGISTRO}/parentescos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ nombre: nombreParentesco.trim() })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMensajeGeo({ tipo: 'exito', texto: 'Parentesco creado correctamente.' });
+        setNombreParentesco('');
+        cargarCatalogosCompletos();
+      } else {
+        setMensajeGeo({ tipo: 'error', texto: data.error || 'Error al crear parentesco.' });
+      }
+    } catch {
+      setMensajeGeo({ tipo: 'error', texto: 'Error de conexión.' });
+    }
+  };
+
+  const handleCrearEps = async (e) => {
+    e.preventDefault();
+    setMensajeGeo({ tipo: '', texto: '' });
+    if (!nombreEps.trim()) return;
+    try {
+      const res = await fetch(`${API_REGISTRO}/eps`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ nombre: nombreEps.trim() })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMensajeGeo({ tipo: 'exito', texto: 'EPS creada correctamente.' });
+        setNombreEps('');
+        cargarCatalogosCompletos();
+      } else {
+        setMensajeGeo({ tipo: 'error', texto: data.error || 'Error al crear EPS.' });
+      }
+    } catch {
+      setMensajeGeo({ tipo: 'error', texto: 'Error de conexión.' });
     }
   };
 
@@ -209,11 +266,11 @@ function PanelAfiliaciones() {
       if (res.ok) {
         setMensajeGeo({ tipo: 'exito', texto: 'Departamento creado exitosamente.' });
         setNombreDepartamento('');
-        cargarCatalogosGeograficos();
+        cargarCatalogosCompletos();
       } else {
         setMensajeGeo({ tipo: 'error', texto: data.error || 'No se pudo crear el departamento.' });
       }
-    } catch (error) {
+    } catch {
       setMensajeGeo({ tipo: 'error', texto: 'Error de conexión al crear departamento.' });
     }
   };
@@ -236,22 +293,20 @@ function PanelAfiliaciones() {
       if (res.ok) {
         setMensajeGeo({ tipo: 'exito', texto: 'Ciudad/Municipio creado exitosamente.' });
         setNombreMunicipio('');
-        cargarCatalogosGeograficos();
+        cargarCatalogosCompletos();
       } else {
         setMensajeGeo({ tipo: 'error', texto: data.error || 'No se pudo crear la ciudad.' });
       }
-    } catch (error) {
+    } catch {
       setMensajeGeo({ tipo: 'error', texto: 'Error de conexión al crear ciudad.' });
     }
   };
 
-  // Lógica del Formulario de Afiliación con la regla de Régimen Contributivo -> Tecnosalud EPS
   const handleAfiliacionChange = (event) => {
     const { name, value, type, checked } = event.target;
     setFormAfiliacion((prev) => {
       const nuevoForm = { ...prev, [name]: type === 'checkbox' ? checked : value };
 
-      // Si selecciona régimen contributivo, asignamos Tecnosalud EPS por defecto
       if (name === 'regimenCodigo' && value.toUpperCase() === 'CONTRIBUTIVO') {
         const epsTecnosalud = listaEps.find(epsItem => 
           (epsItem.nombre || '').toLowerCase().includes('tecnosalud') || 
@@ -314,7 +369,6 @@ function PanelAfiliaciones() {
 
     setCargandoAfiliacion(true);
     const fechaNacimiento = `${formAfiliacion.nacimientoAnio}-${formAfiliacion.nacimientoMes}-${formAfiliacion.nacimientoDia}`;
-    console.log('[FRONTEND-STATE] form actual:', formAfiliacion);
     const datosEnviar = {
       nombres: formAfiliacion.nombres,
       apellidos: formAfiliacion.apellidos,
@@ -411,7 +465,7 @@ function PanelAfiliaciones() {
             className={`adm-menu__opcion ${seccionActiva === 'geografia' ? 'adm-menu__opcion--activa' : ''}`}
             onClick={() => { setSeccionActiva('geografia'); setMenuAbierto(false); }}
           >
-            <span>Gestión Geográfica</span>
+            <span>Gestión Geográfica y Catálogos</span>
           </button>
         </nav>
       </aside>
@@ -420,7 +474,7 @@ function PanelAfiliaciones() {
         <header className="adm-encabezado">
           <div>
             <h2>Panel de Gestión - Perfil Afiliaciones</h2>
-            <p>Administración de solicitudes, padrón de usuarios y cobertura geográfica en Tecnosalud.</p>
+            <p>Administración de solicitudes, padrón de usuarios, catálogos y cobertura geográfica en Tecnosalud.</p>
           </div>
         </header>
 
@@ -548,7 +602,7 @@ function PanelAfiliaciones() {
                         })}
                       </select>
                       {formAfiliacion.regimenCodigo.toUpperCase() === 'CONTRIBUTIVO' && (
-                        <small style={{ color: '#0369a1', fontWeight: 'normal', marginTop: '0.2rem' }}>* Régimen Contributivo asignado automáticamente a Tecnosalud EPS.</small>
+                        <small style={{ color: '#0369a1', fontWeight: 'normal', marginTop: '0.2rem' }}>Régimen Contributivo asignado automáticamente a Tecnosalud EPS.</small>
                       )}
                     </label>
 
@@ -624,9 +678,9 @@ function PanelAfiliaciones() {
                       Género *
                       <select name="generoCodigo" value={formAfiliacion.generoCodigo} onChange={handleAfiliacionChange} className="adm-btn" style={{ width: '100%', background: '#fff' }} required>
                         <option value="">Selecciona una opción</option>
-                        <option value="M">Masculino</option>
-                        <option value="F">Femenino</option>
-                        <option value="OTRO">Otro / Prefiero no decir</option>
+                        {generos.map((g, idx) => (
+                          <option key={idx} value={g.codigo || g.nombre}>{g.nombre}</option>
+                        ))}
                       </select>
                     </label>
                   </div>
@@ -687,15 +741,9 @@ function PanelAfiliaciones() {
                       Parentesco del contacto de emergencia *
                       <select name="contactoEmergenciaParentescoCodigo" value={formAfiliacion.contactoEmergenciaParentescoCodigo} onChange={handleAfiliacionChange} className="adm-btn" style={{ width: '100%', background: '#fff' }} required>
                         <option value="">Selecciona el parentesco...</option>
-                        <option value="conyuge">Cónyuge o compañero(a)</option>
-                        <option value="padre">Padre</option>
-                        <option value="madre">Madre</option>
-                        <option value="hijo">Hijo(a)</option>
-                        <option value="hermano">Hermano(a)</option>
-                        <option value="abuelo">Abuelo(a)</option>
-                        <option value="tio">Tío(a)</option>
-                        <option value="amigo">Amigo(a)</option>
-                        <option value="otro">Otro</option>
+                        {parentescos.map((p, idx) => (
+                          <option key={idx} value={p.codigo || p.nombre}>{p.nombre}</option>
+                        ))}
                       </select>
                     </label>
                   </div>
@@ -765,9 +813,9 @@ function PanelAfiliaciones() {
           <section className="adm-seccion" style={{ display: 'grid', gap: '1.5rem' }}>
             <div className="adm-tarjeta">
               <div className="adm-tarjeta__encabezado">
-                <h3>Creación de Departamentos y Ciudades</h3>
+                <h3>Gestión de Catálogos y Cobertura Geográfica</h3>
               </div>
-              <p className="adm-nota">Amplía la cobertura geográfica añadiendo nuevos departamentos o municipios a la red.</p>
+              <p className="adm-nota">Amplía la cobertura geográfica y gestiona los catálogos del sistema.</p>
 
               {mensajeGeo.texto && (
                 <div className="adm-aviso" style={{ marginTop: '1rem', background: mensajeGeo.tipo === 'exito' ? '#ccfbf1' : '#fee2e2', color: mensajeGeo.tipo === 'exito' ? '#115e59' : '#b91c1c' }}>
@@ -775,32 +823,40 @@ function PanelAfiliaciones() {
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1rem' }}>
-                <form onSubmit={handleCrearDepartamento} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)' }}>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nuevo Departamento</h4>
-                  <input
-                    type="text"
-                    placeholder="Nombre del departamento"
-                    value={nombreDepartamento}
-                    onChange={(e) => setNombreDepartamento(e.target.value)}
-                    required
-                    className="adm-buscador"
-                    style={{ width: '100%' }}
-                  />
-                  <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start' }}>
-                    Crear Departamento
-                  </button>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                
+                {/* Crear Género */}
+                <form onSubmit={handleCrearGenero} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nuevo Género</h4>
+                  <input type="text" placeholder="Nombre del género" value={nombreGenero} onChange={(e) => setNombreGenero(e.target.value)} required className="adm-buscador" style={{ width: '100%' }} />
+                  <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start' }}>Crear Género</button>
                 </form>
 
+                {/* Crear Parentesco */}
+                <form onSubmit={handleCrearParentesco} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nuevo Parentesco</h4>
+                  <input type="text" placeholder="Nombre del parentesco" value={nombreParentesco} onChange={(e) => setNombreParentesco(e.target.value)} required className="adm-buscador" style={{ width: '100%' }} />
+                  <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start' }}>Crear Parentesco</button>
+                </form>
+
+                {/* Crear EPS */}
+                <form onSubmit={handleCrearEps} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nueva EPS</h4>
+                  <input type="text" placeholder="Nombre de la EPS" value={nombreEps} onChange={(e) => setNombreEps(e.target.value)} required className="adm-buscador" style={{ width: '100%' }} />
+                  <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start' }}>Crear EPS</button>
+                </form>
+
+                {/* Crear Departamento */}
+                <form onSubmit={handleCrearDepartamento} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nuevo Departamento</h4>
+                  <input type="text" placeholder="Nombre del departamento" value={nombreDepartamento} onChange={(e) => setNombreDepartamento(e.target.value)} required className="adm-buscador" style={{ width: '100%' }} />
+                  <button type="submit" className="adm-btn adm-btn--azul" style={{ justifySelf: 'start' }}>Crear Departamento</button>
+                </form>
+
+                {/* Crear Municipio */}
                 <form onSubmit={handleCrearMunicipio} style={{ display: 'grid', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid var(--adm-borde)' }}>
                   <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--adm-azul)' }}>Nueva Ciudad / Municipio</h4>
-                  <select
-                    value={departamentoSeleccionado}
-                    onChange={(e) => setDepartamentoSeleccionado(e.target.value)}
-                    required
-                    className="adm-btn"
-                    style={{ width: '100%', background: '#fff' }}
-                  >
+                  <select value={departamentoSeleccionado} onChange={(e) => setDepartamentoSeleccionado(e.target.value)} required className="adm-btn" style={{ width: '100%', background: '#fff' }}>
                     <option value="">Selecciona departamento...</option>
                     {departamentos.map((dep, idx) => (
                       <option key={idx} value={dep.codigo || dep.id || dep.nombre}>
@@ -808,50 +864,47 @@ function PanelAfiliaciones() {
                       </option>
                     ))}
                   </select>
-                  <input
-                    type="text"
-                    placeholder="Nombre de la ciudad"
-                    value={nombreMunicipio}
-                    onChange={(e) => setNombreMunicipio(e.target.value)}
-                    required
-                    className="adm-buscador"
-                    style={{ width: '100%' }}
-                  />
-                  <button type="submit" className="adm-btn adm-btn--verde" style={{ justifySelf: 'start' }}>
-                    Crear Ciudad
-                  </button>
+                  <input type="text" placeholder="Nombre de la ciudad" value={nombreMunicipio} onChange={(e) => setNombreMunicipio(e.target.value)} required className="adm-buscador" style={{ width: '100%' }} />
+                  <button type="submit" className="adm-btn adm-btn--verde" style={{ justifySelf: 'start' }}>Crear Ciudad</button>
                 </form>
+
               </div>
             </div>
 
             <div className="adm-tarjeta">
               <div className="adm-tarjeta__encabezado">
-                <h3>Cobertura Geográfica Actual</h3>
-                <button type="button" className="adm-btn" onClick={cargarCatalogosGeograficos} disabled={cargandoGeo}>
+                <h3>Listados Actuales de Cobertura y Catálogos</h3>
+                <button type="button" className="adm-btn" onClick={cargarCatalogosCompletos} disabled={cargandoGeo}>
                   {cargandoGeo ? 'Cargando...' : 'Actualizar Listados'}
                 </button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginTop: '1rem' }}>
                 <div>
-                  <h4 style={{ marginBottom: '0.5rem', color: 'var(--adm-azul)' }}>Departamentos Habilitados ({departamentos.length})</h4>
+                  <h4 style={{ marginBottom: '0.5rem', color: 'var(--adm-azul)' }}>Géneros ({generos.length})</h4>
                   <ul style={{ listStyle: 'none', padding: 0, maxHeight: '220px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
-                    {departamentos.map((dep, idx) => (
-                      <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>
-                        {dep.nombre || dep}
-                      </li>
-                    ))}
+                    {generos.map((g, idx) => <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>{g.nombre}</li>)}
                   </ul>
                 </div>
 
                 <div>
-                  <h4 style={{ marginBottom: '0.5rem', color: 'var(--adm-azul)' }}>Ciudades / Municipios ({municipios.length})</h4>
+                  <h4 style={{ marginBottom: '0.5rem', color: 'var(--adm-azul)' }}>Parentescos ({parentescos.length})</h4>
                   <ul style={{ listStyle: 'none', padding: 0, maxHeight: '220px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
-                    {municipios.map((mun, idx) => (
-                      <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>
-                        {mun.nombre || mun}
-                      </li>
-                    ))}
+                    {parentescos.map((p, idx) => <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>{p.nombre}</li>)}
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 style={{ marginBottom: '0.5rem', color: 'var(--adm-azul)' }}>EPS Activas ({listaEps.length})</h4>
+                  <ul style={{ listStyle: 'none', padding: 0, maxHeight: '220px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
+                    {listaEps.map((e, idx) => <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>{e.nombre}</li>)}
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 style={{ marginBottom: '0.5rem', color: 'var(--adm-azul)' }}>Departamentos ({departamentos.length})</h4>
+                  <ul style={{ listStyle: 'none', padding: 0, maxHeight: '220px', overflowY: 'auto', border: '1px solid var(--adm-borde)', borderRadius: '8px' }}>
+                    {departamentos.map((dep, idx) => <li key={idx} style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' }}>{dep.nombre || dep}</li>)}
                   </ul>
                 </div>
               </div>

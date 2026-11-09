@@ -217,6 +217,35 @@ function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
     return res.status(201).json({ id: nuevoId, departamento_codigo: departamentoCodigo, nombre });
   }));
 
+  // --- GESTIÓN DE CATÁLOGOS (GÉNEROS, PARENTESCOS, EPS) ---
+
+router.post('/generos', verificarTokenAdmin, manejar(async (req, res) => {
+  const { nombre } = req.body;
+  if (!nombre || !nombre.trim()) {
+    return res.status(400).json({ error: 'El nombre del género es obligatorio.' });
+  }
+  const id = await repo.crearGenero(nombre);
+  res.status(201).json({ ok: true, id, mensaje: 'Género creado exitosamente.' });
+}));
+
+router.post('/parentescos', verificarTokenAdmin, manejar(async (req, res) => {
+  const { nombre } = req.body;
+  if (!nombre || !nombre.trim()) {
+    return res.status(400).json({ error: 'El nombre del parentesco es obligatorio.' });
+  }
+  const id = await repo.crearParentesco(nombre);
+  res.status(201).json({ ok: true, id, mensaje: 'Parentesco creado exitosamente.' });
+}));
+
+router.post('/eps', verificarTokenAdmin, manejar(async (req, res) => {
+  const { nombre } = req.body;
+  if (!nombre || !nombre.trim()) {
+    return res.status(400).json({ error: 'El nombre de la EPS es obligatorio.' });
+  }
+  const id = await repo.crearEps(nombre);
+  res.status(201).json({ ok: true, id, mensaje: 'EPS creada exitosamente.' });
+}));
+
   // --- ACTUALIZAR CONSENTIMIENTO Y ACTIVAR AFILIADO ---
   router.patch('/activar-consentimiento', manejar(async (req, res) => {
     const { correo, documento, aceptaTratamientoDatos } = req.body;

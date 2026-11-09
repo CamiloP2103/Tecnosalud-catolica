@@ -275,7 +275,35 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
       );
       return resultado.insertId;
     },
+    async crearGenero(nombre) {
+      const base = nombre.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+      const codigo = base || 'GEN';
+      const [resultado] = await pool.execute(
+        'INSERT INTO generos (codigo, nombre) VALUES (?, ?)',
+        [codigo, nombre.trim()]
+      );
+      return resultado.insertId;
+    },
 
+    async crearParentesco(nombre) {
+      const base = nombre.trim().toLowerCase().replace(/[^a-z]/g, '').slice(0, 10);
+      const codigo = base || 'otro';
+      const [resultado] = await pool.execute(
+        'INSERT INTO parentescos (codigo, nombre) VALUES (?, ?)',
+        [codigo, nombre.trim()]
+      );
+      return resultado.insertId;
+    },
+
+    async crearEps(nombre) {
+      const base = nombre.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
+      const codigo = `EPS_${base}`.slice(0, 15);
+      const [resultado] = await pool.execute(
+        'INSERT INTO eps (codigo, nombre, activa) VALUES (?, ?, TRUE)',
+        [codigo, nombre.trim()]
+      );
+      return resultado.insertId;
+    },
     async cambiarEstado(id, estadoNuevo, { cambiadoPor, observacion }) {
       if (!ESTADOS.includes(estadoNuevo)) throw new ErrorNegocio(400, `Estado inválido. Usa: ${ESTADOS.join(', ')}.`);
       const conexion = await pool.getConnection();
