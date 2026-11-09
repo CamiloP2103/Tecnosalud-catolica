@@ -1,7 +1,7 @@
 const EMAIL_VALIDO = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const TIPOS_DOC = ['CC', 'TI', 'CE', 'PA', 'RC', 'PPT'];
 const GENEROS = ['M', 'F', 'OTRO', 'Otro'];
-const TIPOS_AFILIACION = ['PACIENTE', 'PROFESIONAL', 'EMPRESA', 'paciente', 'profesional', 'empresa'];
+const TIPOS_AFILIACION = ['PACIENTE', 'PROFESIONAL', 'EMPRESA', 'paciente', 'profesional', 'empresa','FARMACIA'];
 const REGIMENES = ['CONTRIBUTIVO', 'SUBSIDIADO', 'ESPECIAL', 'PARTICULAR', 'contributivo', 'subsidiado', 'especial', 'particular'];
 const PARENTESCOS = ['conyuge', 'padre', 'madre', 'hijo', 'hermano', 'abuelo', 'tio', 'amigo', 'otro'];
 
