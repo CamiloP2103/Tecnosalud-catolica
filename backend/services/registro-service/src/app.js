@@ -111,7 +111,7 @@ function crearApp({ frontendUrl, notificar, puerto, repo, authServiceUrl }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            tipo_doc: datos.tipoDocumentoCodigo || datos.tipoDocumento || 'CC',
+            tipo_doc: datos.tipoDocumentoCodigo || datos.tipoDocumentoCodigo || 'CC',
             documento: datos.documento,
             email: datos.correo,
             nombre: `${datos.nombres} ${datos.apellidos}`,
