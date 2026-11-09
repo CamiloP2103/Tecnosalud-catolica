@@ -97,7 +97,7 @@ function crearRepositorio(pool, { reloj = () => Date.now() } = {}) {
           municipio = null; 
         }
 
-        const tipoAfiliacion = datos.tipoAfiliacionCodigo || datos.tipoAfiliacion || null;
+        const tipoAfiliacion = datos.tipoAfiliacionCodigo || null;
         const eps = datos.epsCodigo || datos.eps || null;
         const regimen = datos.regimenCodigo || datos.regimen || null;
         

@@ -19,7 +19,7 @@ const MESES = [
 ];
 
 const anioActual = new Date().getFullYear();
-const ANIOS = Array.from({ length: anioActual - 1920 + 1 }, (_, i) => String(anioActual - i));
+const ANIOS = Array.from({ length: anioActual - 1900 + 1 }, (_, i) => String(anioActual - i));
 const API_REGISTRO = import.meta.env.VITE_API_REGISTRO_URL || 'http://localhost:3004/api/registro';
 
 const estadoInicial = {
@@ -35,7 +35,7 @@ const estadoInicial = {
   telefono: '',
   direccion: '',
   municipioCodigo: '',
-  tipoAfiliacionCodigo: 'PROFESIONAL',
+  tipoAfiliacionCodigo: 'FARMACIA',
   epsCodigo: '',
   regimenCodigo: '',
   contactoEmergenciaNombre: '',
