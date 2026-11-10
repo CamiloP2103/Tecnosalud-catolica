@@ -438,11 +438,11 @@ const enviarMiConstancia = async () => {
                           if (rol === 'afiliaciones'){
                             onNavigate('afiliaciones');
                             } else {  
-                                if (rol === 'farmacias'){
+                                if (rol === 'farmacia'){
                                 onNavigate('farmacias');
-                                }  else{
-                                onNavigate('servicios');
-                                }
+                                  }  else{
+                                  onNavigate('servicios');
+                                  }
                             }
                     }
                 }
