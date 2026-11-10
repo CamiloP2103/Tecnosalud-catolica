@@ -35,7 +35,7 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem, userRole }) {
       return userRole && userRole.toLowerCase() === 'afiliaciones';
     }
     if (item.id === 'farmacias') {
-      return userRole && userRole.toLowerCase() === 'farmacias';
+      return userRole && userRole.toLowerCase() === 'farmacia';
     }
     return true;
   });
