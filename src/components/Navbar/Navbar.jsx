@@ -34,8 +34,13 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem, userRole }) {
     if (item.id === 'afiliaciones') {
       return userRole && userRole.toLowerCase() === 'afiliaciones';
     }
+    if (item.id === 'farmacias') {
+      return userRole && userRole.toLowerCase() === 'farmacias';
+    }
     return true;
   });
+
+  
 
   // Fusionamos ctaItem dentro de los ítems filtrados del menú
   const allNavItems = ctaItem ? [...filteredNavItems, ctaItem] : filteredNavItems;
