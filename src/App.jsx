@@ -178,7 +178,7 @@ function App() {
     if (userRole && userRole.toLowerCase() === 'afiliaciones') {
       navItems.push({ id: 'afiliaciones', label: 'Afiliaciones' });
     }
-    if (userRole && userRole.toLowerCase() === 'farmacias') {
+    if (userRole && userRole.toLowerCase() === 'farmacia') {
       navItems.push({ id: 'farmacias', label: 'Farmacias' });
     }
   }
