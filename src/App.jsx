@@ -172,12 +172,14 @@ function App() {
     if (userRole && userRole.toLowerCase() === 'paciente') {
       navItems.push(
         { id: 'servicios', label: 'Servicios Clínicos' },
-        { id: 'farmacias', label: 'Farmacias' },
         { id: 'documentos', label: 'Documentos clínicos' }
       );
     }  
     if (userRole && userRole.toLowerCase() === 'afiliaciones') {
       navItems.push({ id: 'afiliaciones', label: 'Afiliaciones' });
+    }
+    if (userRole && userRole.toLowerCase() === 'farmacias') {
+      navItems.push({ id: 'farmacias', label: 'Farmacias' });
     }
   }
 

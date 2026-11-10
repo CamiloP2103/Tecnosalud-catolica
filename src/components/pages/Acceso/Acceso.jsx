@@ -353,11 +353,14 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
                         if (rol === 'medico' ) {
                         onNavigate('historiaclinica'); // Navega al perfil de Medico 
                         } else {
+                                if (rol === 'farmacia' ) {
+                                onNavigate('farmacias'); // Navega al perfil de Farmacia 
+                                } else {
                                   onNavigate('servicios');
                                 }
+                              } 
                       }
               }
-
     }
   };
 
@@ -435,7 +438,11 @@ const enviarMiConstancia = async () => {
                           if (rol === 'afiliaciones'){
                             onNavigate('afiliaciones');
                             } else {  
-                              onNavigate('servicios');
+                                if (rol === 'farmacias'){
+                                onNavigate('farmacias');
+                                }  else{
+                                onNavigate('servicios');
+                                }
                             }
                     }
                 }
@@ -447,7 +454,9 @@ const enviarMiConstancia = async () => {
                     ? 'Ir al Perfil Afiliaciones'
                     : ['Historiaclinica', 'Historiaclinica'].includes(usuarioLogueado?.rol?.toLowerCase())
                       ? 'Ir al Perfil Medicos'
-                      : 'Ir a Servicios Clínicos'}
+                      : ['Farmacias', 'Farmacias'].includes(usuarioLogueado?.rol?.toLowerCase())
+                        ? 'Ir al Perfil Farmacias'
+                          : 'Ir a Servicios Farmacias'}
             </button>
             <button
               type="button"
