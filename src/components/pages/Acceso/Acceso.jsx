@@ -415,7 +415,7 @@ const enviarMiConstancia = async () => {
               onClick={enviarMiConstancia}
               disabled={enviandoConstancia}
             >
-              {enviandoConstancia ? 'Enviando constancia...' : 'Enviarme mi constancia de registro (PDF)'}
+              {enviandoConstancia ? 'Enviando constancia...' : 'Enviarme mi constancia de registro al correo (PDF)'}
             </button>
             <p className="acceso-constancia__ayuda">
               Te llega al correo un PDF con tus datos y tu fecha de registro. Para abrirlo usa tu número de identificación.
