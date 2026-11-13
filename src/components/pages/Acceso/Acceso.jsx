@@ -351,7 +351,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
               onNavigate('afiliaciones'); // Navega al perfil de afiliaciones 
               } else {
                         if (rol === 'medico' ) {
-                        onNavigate('historiaclinica'); // Navega al perfil de Medico 
+                        onNavigate('medico-atencion'); // Navega al perfil de Medico 
                         } else {
                                 if (rol === 'farmacia' ) {
                                 onNavigate('farmacias'); // Navega al perfil de Farmacia 
@@ -433,30 +433,28 @@ const enviarMiConstancia = async () => {
                 if (onNavigate) {
                   const rol = usuarioLogueado?.rol?.toLowerCase();
                   if (rol === 'admin' || rol === 'administrador') {
-                    onNavigate('admin'); // Cambia por tu ruta de administrador
+                    onNavigate('admin');
+                  } else if (rol === 'afiliaciones') {
+                    onNavigate('afiliaciones');
+                  } else if (rol === 'medico' || rol === 'profesional') {
+                    onNavigate('medico-atencion'); // 👈 Ruta del médico
+                  } else if (rol === 'farmacia') {
+                    onNavigate('farmacias');
                   } else {
-                          if (rol === 'afiliaciones'){
-                            onNavigate('afiliaciones');
-                            } else {  
-                                if (rol === 'farmacia'){
-                                onNavigate('farmacias');
-                                  }  else{
-                                  onNavigate('servicios');
-                                  }
-                            }
-                    }
+                    onNavigate('servicios');
+                  }
                 }
               }}
             >
-              {['admin', 'admin'].includes(usuarioLogueado?.rol?.toLowerCase())
+              {['admin', 'administrador'].includes(usuarioLogueado?.rol?.toLowerCase())
                 ? 'Ir al Perfil Administrador'
-                : ['afiliaciones', 'afiliaciones'].includes(usuarioLogueado?.rol?.toLowerCase())
-                    ? 'Ir al Perfil Afiliaciones'
-                    : ['Historiaclinica', 'Historiaclinica'].includes(usuarioLogueado?.rol?.toLowerCase())
-                      ? 'Ir al Perfil Medicos'
-                      : ['Farmacias', 'Farmacias'].includes(usuarioLogueado?.rol?.toLowerCase())
-                        ? 'Ir al Perfil Farmacias'
-                          : 'Ir a Servicios Farmacias'}
+                : ['afiliaciones'].includes(usuarioLogueado?.rol?.toLowerCase())
+                  ? 'Ir al Perfil Afiliaciones'
+                  : ['medico', 'profesional'].includes(usuarioLogueado?.rol?.toLowerCase())
+                    ? 'Ir al Panel Médico' // 👈 Texto del botón para médico
+                    : ['farmacia'].includes(usuarioLogueado?.rol?.toLowerCase())
+                      ? 'Ir al Perfil Farmacias'
+                      : 'Ir a Servicios Clínicos'}
             </button>
             <button
               type="button"

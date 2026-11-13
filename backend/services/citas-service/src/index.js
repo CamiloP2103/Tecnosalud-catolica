@@ -1,3 +1,6 @@
+const historiasRoutes = require('./src/routes/historiasRoutes');
+app.use('/api/citas/historias', historiasRoutes); // o la ruta base que prefieras
+
 require('dotenv').config();
 const { existsSync, readFileSync } = require('node:fs');
 const path = require('node:path');

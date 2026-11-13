@@ -37,7 +37,11 @@ function Navbar({ currentPage, onNavigate, navItems, ctaItem, userRole }) {
     if (item.id === 'farmacias') {
       return userRole && userRole.toLowerCase() === 'farmacia';
     }
+    if (item.id === 'medico-atencion') {
+      return userRole && (userRole.toLowerCase() === 'medico' || userRole.toLowerCase() === 'profesional');
+    }
     return true;
+
   });
 
   

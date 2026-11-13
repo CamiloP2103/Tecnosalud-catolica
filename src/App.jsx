@@ -21,6 +21,7 @@ const NotFound = lazy(() => import('./components/pages/NotFound/NotFound'));
 const RestablecerClave = lazy(() => import('./components/pages/Acceso/RestablecerClave'));
 const PanelAdmin = lazy(() => import('./components/pages/admin/PanelAdmin'));
 const PanelAfiliaciones = lazy(() => import('./components/pages/Afiliaciones/PanelAfiliaciones'));
+const AtencionMedica = lazy(() => import('./components/pages/Medico/AtencionMedica'));
 
 const baseNavItems = [
   { id: 'inicio', label: 'Inicio' },
@@ -50,7 +51,7 @@ const baseNavItems = [
 const accesoItem = { id: 'acceso', label: 'Acceso' };
 
 // Páginas que exigen sesión iniciada (RutaProtegida valida el JWT)
-const PAGINAS_PROTEGIDAS = ['servicios', 'farmacias', 'documentos', 'admin', 'afiliaciones'];
+const PAGINAS_PROTEGIDAS = ['servicios', 'farmacias', 'documentos', 'admin', 'afiliaciones','medico-atencion'];
 
 // Mapeo único y global de páginas
 const pages = {
@@ -71,6 +72,7 @@ const pages = {
   admin: PanelAdmin,
   afiliaciones: PanelAfiliaciones,
   'restablecer-clave': RestablecerClave,
+  'medico-atencion': AtencionMedica,
 };
 
 // Función limpia para extraer solo la ruta y descartar el '?token=...'
@@ -180,6 +182,11 @@ function App() {
     }
     if (userRole && userRole.toLowerCase() === 'farmacia') {
       navItems.push({ id: 'farmacias', label: 'Farmacias' });
+    }
+    
+    // ➕ Agregar condición para el rol de médico (según como retorne tu backend el rol, ej: 'medico' o 'profesional')
+    if (userRole && (userRole.toLowerCase() === 'medico' || userRole.toLowerCase() === 'profesional')) {
+      navItems.push({ id: 'medico-atencion', label: 'Atención Médica' });
     }
   }
 
