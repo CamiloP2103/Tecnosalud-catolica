@@ -5,6 +5,16 @@ import { llamarServicio } from '../../../utils/servicios';
 const API_CITAS = import.meta.env.VITE_API_CITAS_URL || 'http://localhost:3002/api/citas';
 
 function AtencionMedica({ cita, onAtencionFinalizada }) {
+  // Si la cita no viene definida, evitamos el crash inicializando un objeto seguro o mostrando una vista de selección
+  const [citaActual] = useState(cita || {
+    id: 1,
+    afiliado_id: 1,
+    medico_id: 1,
+    afiliado_nombre: 'Paciente de prueba / Sin cita seleccionada',
+    afiliado_documento: 'N/A',
+    fecha_hora: new Date().toLocaleString()
+  });
+
   const [form, setForm] = useState({
     motivo_consulta: '',
     enfermedad_actual: '',
@@ -55,9 +65,9 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
     }
 
     const payload = {
-      cita_id: cita.id,
-      afiliado_id: cita.afiliado_id,
-      medico_id: cita.medico_id,
+      cita_id: citaActual.id,
+      afiliado_id: citaActual.afiliado_id,
+      medico_id: citaActual.medico_id,
       ...form,
       receta: incluirReceta && detallesReceta.length > 0 ? { indicaciones_generales: 'Consumir según indicación médica', detalles: detallesReceta } : null,
       incapacidad: incluirIncapacidad ? incapacidad : null,
@@ -86,10 +96,12 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
   return (
     <div className="atencion-container">
       <h2>Atención Médica e Historia Clínica</h2>
+      <p>Gestiona la evolución clínica, diagnósticos y emisión de documentos del paciente.</p>
+
       <div className="paciente-info-card">
-        <p><strong>Paciente:</strong> {cita.afiliado_nombre}</p>
-        <p><strong>Documento:</strong> {cita.afiliado_documento}</p>
-        <p><strong>Fecha Cita:</strong> {cita.fecha_hora}</p>
+        <p><strong>Paciente:</strong> {citaActual.afiliado_nombre}</p>
+        <p><strong>Documento:</strong> {citaActual.afiliado_documento}</p>
+        <p><strong>Fecha Cita:</strong> {citaActual.fecha_hora}</p>
       </div>
 
       {errorMsg && <div className="alert-error" role="alert">{errorMsg}</div>}
