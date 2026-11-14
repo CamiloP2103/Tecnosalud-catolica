@@ -1,5 +1,4 @@
-﻿import { useState } from "react";
-import "./Nosotros.css";
+﻿import "./Nosotros.css";
 
 const contributors = [
   { login: "caenjiro" },
@@ -10,8 +9,6 @@ const contributors = [
 ].sort((a, b) => a.login.localeCompare(b.login, "es", { sensitivity: "base" }));
 
 function Nosotros({ seccion }) {
-  const [visitas, setVisitas] = useState(0);
-
   const socialLinks = [
     {
       label: "GitHub Institucional",
@@ -461,18 +458,6 @@ function Nosotros({ seccion }) {
           </div>
         </div>
       )}
-
-      <div className="visits">
-        <span>Visitas registradas a esta sección:</span>
-        <strong>{visitas}</strong>
-        <button
-          type="button"
-          className="visits__btn"
-          onClick={() => setVisitas((value) => value + 1)}
-        >
-          Registrar visita
-        </button>
-      </div>
     </section>
   );
 }

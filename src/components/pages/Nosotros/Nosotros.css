@@ -273,42 +273,6 @@
   font-weight: 600;
 }
 
-.visits {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 1rem 1.5rem;
-  color: #475569;
-  font-size: 0.95rem;
-}
-
-.visits strong {
-  color: #1d4ed8;
-  font-size: 1.1rem;
-}
-
-.visits__btn {
-  margin-left: 0.5rem;
-  padding: 0.4rem 0.9rem;
-  background-color: #1d4ed8;
-  color: #ffffff;
-  border: none;
-  border-radius: 6px;
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.visits__btn:hover {
-  background-color: #1e40af;
-}
-
 .trabajo-intro {
   display: flex;
   align-items: flex-start;
@@ -490,13 +454,7 @@
   }
 
   .nosotros-card--about,
-  .trabajo-intro,
-  .visits {
+  .trabajo-intro {
     flex-direction: column;
-  }
-
-  .visits__btn {
-    margin-left: 0;
-    margin-top: 0.5rem;
   }
 }
