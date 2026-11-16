@@ -19,34 +19,29 @@ function AgendaMedico({ onAtender }) {
     setCargando(true);
     setErrorMsg('');
     try {
-      const { ok, datos } = await llamarServicio(`${API_CITAS}/medico/${medicoId}/citas`);
-      if (!ok) {
+      // Extraemos el token de autenticación para evitar el error 401
+      const token = sesion.token || localStorage.getItem('token');
+
+      // Pasamos las cabeceras con el Token JWT en la petición
+      const respuesta = await llamarServicio(`${API_CITAS}/medico/${medicoId}/citas`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      // Validamos la respuesta del servicio
+      if (!respuesta || !respuesta.ok) {
         setErrorMsg('No se pudo sincronizar la agenda médica.');
+        setCargando(false);
         return;
       }
-      setCitas(datos.citas || datos || []);
-    } catch {
-      // Datos de prueba por defecto si el backend aún no responde o para desarrollo local
-      setCitas([
-        {
-          id: 101,
-          afiliado_id: 1,
-          medico_id: medicoId,
-          afiliado_nombre: 'Carlos Enrique Jiménez',
-          afiliado_documento: '12345678',
-          fecha_hora: '2026-06-07 08:30:00',
-          estado: 'PROGRAMADA'
-        },
-        {
-          id: 102,
-          afiliado_id: 2,
-          medico_id: medicoId,
-          afiliado_nombre: 'Ana María Gómez',
-          afiliado_documento: '87654321',
-          fecha_hora: '2026-06-07 09:30:00',
-          estado: 'PROGRAMADA'
-        }
-      ]);
+
+      // Soportamos tanto si devuelve { citas: [...] } como un array directo
+      const datosCitas = respuesta.datos?.citas || respuesta.datos || [];
+      setCitas(datosCitas);
+    } catch (error) {
+      console.error('Error al cargar agenda:', error);
+      setErrorMsg('Error de conexión al cargar la agenda.');
     } finally {
       setCargando(false);
     }
@@ -54,7 +49,7 @@ function AgendaMedico({ onAtender }) {
 
   useEffect(() => {
     cargarAgenda();
-  }, []);
+  }, [medicoId]);
 
   // Si el médico hizo clic en "Atender", renderizamos el formulario clínico pasando la cita real
   if (citaSeleccionada) {
@@ -63,7 +58,10 @@ function AgendaMedico({ onAtender }) {
         <button 
           type="button" 
           className="btn-volver-agenda"
-          onClick={() => { onAtender }}
+          onClick={() => {
+            setCitaSeleccionada(null);
+            if (typeof onAtender === 'function') onAtender();
+          }}
         >
           ← Volver a la Agenda
         </button>
@@ -104,9 +102,9 @@ function AgendaMedico({ onAtender }) {
             <tbody>
               {citas.map((c) => (
                 <tr key={c.id}>
-                  <td>{c.fecha_hora}</td>
-                  <td><strong>{c.afiliado_nombre}</strong></td>
-                  <td>{c.afiliado_documento}</td>
+                  <td>{c.fecha} {c.hora}</td>
+                  <td><strong>{c.afiliado_nombre || c.usuarioEmail}</strong></td>
+                  <td>{c.afiliado_documento || c.usuarioDoc || 'N/D'}</td>
                   <td>
                     <span className={`badge-estado badge-estado--${(c.estado || 'programada').toLowerCase()}`}>
                       {c.estado || 'PROGRAMADA'}
