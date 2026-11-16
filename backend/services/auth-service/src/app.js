@@ -151,7 +151,7 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
       registrarIntento({ usuarioId: user.id, email: emailIngresado, ipCliente, exitoso: true });
       notificarSeguridadLogin({ destinatario: user.email, nombreUsuario: user.nombre, exito: true, ipCliente });
 
-      const token = jwt.sign({ id: user.id, email: user.email, rol: user.rol, doc: user.documento }, jwtSecret, { expiresIn: '5m' });
+      const token = jwt.sign({ id: user.id, email: user.email, rol: user.rol, doc: user.documento }, jwtSecret, { expiresIn: '4h' });
 
       return res.json({ token, usuario: { id: user.id, nombre: user.nombre, email: user.email, tipoDoc: user.tipo_doc, documento: user.documento, rol: user.rol } });
     } catch (error) {
@@ -162,16 +162,16 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
 
   // 2. RECUPERAR USUARIO: CONSULTAR (Restaurado y corregido)
   router.post('/recuperar-usuario/consultar', async (req, res) => {
-    const { tipoDocumento, documento } = req.body;
+    const { tipoDoc, documento } = req.body;
     
-    if (!tipoDocumento || !documento) {
+    if (!tipoDoc || !documento) {
       return res.status(400).json({ error: 'El tipo y número de documento son obligatorios.' });
     }
 
     try {
       const [usuarios] = await pool.query(
         'SELECT id, email, bloqueado_hasta, intentos_fallidos FROM usuarios WHERE tipo_doc = ? AND documento = ? LIMIT 1', 
-        [tipoDocumento, documento]
+        [tipoDoc, documento]
       );
 
       if (usuarios.length === 0) {

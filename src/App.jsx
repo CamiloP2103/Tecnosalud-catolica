@@ -51,7 +51,7 @@ const baseNavItems = [
 const accesoItem = { id: 'acceso', label: 'Acceso' };
 
 // Páginas que exigen sesión iniciada (RutaProtegida valida el JWT)
-const PAGINAS_PROTEGIDAS = ['servicios', 'farmacias', 'documentos', 'admin', 'afiliaciones','medico-atencion'];
+const PAGINAS_PROTEGIDAS = ['servicios', 'farmacias', 'documentos', 'admin', 'afiliaciones', 'medico-atencion'];
 
 // Mapeo único y global de páginas
 const pages = {
@@ -118,7 +118,7 @@ function App() {
     return verificarTokenVigente() ? (localStorage.getItem('tecnosalud_rol') || '') : '';
   });
 
-  // Validación periódica o al montar la app
+  // Validación periódica, manejo de Hash y Temporizador de Inactividad Real
   useEffect(() => {
     if (!verificarTokenVigente()) {
       setSesionActiva(false);
@@ -133,13 +133,49 @@ function App() {
     handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
 
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    // ⏱️ CONTROL DE INACTIVIDAD (45 minutos sin interacción del usuario)
+    let timerInactividad;
+    const TIEMPO_LIMITE_INACTIVIDAD = 45 * 60 * 1000; 
+
+    const cerrarSesionPorInactividad = () => {
+      const tokenActual = localStorage.getItem('tecnosalud_token');
+      if (tokenActual) {
+        localStorage.removeItem('tecnosalud_token');
+        localStorage.removeItem('tecnosalud_sesion_activa');
+        localStorage.removeItem('tecnosalud_rol');
+        
+        setSesionActiva(false);
+        setUserRole('');
+        
+        alert('Por seguridad, tu sesión se ha cerrado debido a 45 minutos de inactividad.');
+        window.location.hash = '';
+      }
+    };
+
+    const reiniciarTemporizador = () => {
+      clearTimeout(timerInactividad);
+      timerInactividad = setTimeout(cerrarSesionPorInactividad, TIEMPO_LIMITE_INACTIVIDAD);
+    };
+
+    const eventosActividad = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    eventosActividad.forEach((evento) => {
+      window.addEventListener(evento, reiniciarTemporizador);
+    });
+
+    reiniciarTemporizador();
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      clearTimeout(timerInactividad);
+      eventosActividad.forEach((evento) => {
+        window.removeEventListener(evento, reiniciarTemporizador);
+      });
+    };
   }, []);
 
   const ActivePage = pages[currentPage] || NotFound;
 
   const handleNavigate = (pageId) => {
-    // Eliminamos la validación local estricta al navegar para evitar falsos cierres de sesión
     const nextPage = pages[pageId] ? pageId : '404';
     setCurrentPage(nextPage);
     window.location.hash = nextPage === 'inicio' ? '' : `/${nextPage}`;
@@ -178,8 +214,6 @@ function App() {
     if (userRole && userRole.toLowerCase() === 'farmacia') {
       navItems.push({ id: 'farmacias', label: 'Farmacias' });
     }
-    
-    // ➕ Agregar condición para el rol de médico (según como retorne tu backend el rol, ej: 'medico' o 'profesional')
     if (userRole && (userRole.toLowerCase() === 'medico' || userRole.toLowerCase() === 'profesional')) {
       navItems.push({ id: 'medico-atencion', label: 'Atención Médica' });
     }
