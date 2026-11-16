@@ -1,5 +1,5 @@
-const express = require('express');
-const router = express.Router();
+const { Router } = require('express');
+const router = Router();
 const { registrarAtencionMedica, obtenerHistorialAfiliado } = require('../controllers/historiasClinicasController');
 
 // Endpoint para guardar la historia clínica y emitir documentos en la consulta

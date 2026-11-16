@@ -4,7 +4,7 @@ const { requiereSesion, requiereAdmin } = require('./autenticacion');
 const { ahoraBogota, sumarDias, esFechaValida, franjasLibres, validarFranja } = require('./agenda');
 const { errorBaseDatos } = require('./errores');
 
-// ➕ Importar las rutas de historias clínicas
+// ➕ Importar las rutas de historias clínicas bajo CommonJS
 const historiasRoutes = require('./routes/historiasRoutes');
 
 const ESTADOS_ADMIN = ['ATENDIDA', 'NO_ASISTIO', 'CANCELADA'];
@@ -196,9 +196,7 @@ function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reloj = () 
     return res.json(await repo.cambiarEstado(id, estado));
   }));
 
-
   // ➕ INTEGRACIÓN DE LAS RUTAS DE HISTORIAS CLÍNICAS
-  // Quedarán disponibles bajo la ruta base: /api/citas/historias/...
   router.use('/historias', conSesion, historiasRoutes);
 
   app.use('/api/citas', router);
@@ -213,4 +211,5 @@ function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reloj = () 
   return app;
 }
 
+// ✅ Exportación correcta para CommonJS
 module.exports = { crearApp };

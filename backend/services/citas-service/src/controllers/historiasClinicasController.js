@@ -1,8 +1,8 @@
-const db = require('../config/db'); // Conexión a db_citas
+const { getConnection, query } = require('../config/db'); // Conexión a db_citas
 
 // Registrar la atención completa del paciente (Historia Clínica + Documentos)
 const registrarAtencionMedica = async (req, res) => {
-  const connection = await db.getConnection();
+  const connection = await getConnection();
   try {
     await connection.beginTransaction();
 
@@ -18,7 +18,7 @@ const registrarAtencionMedica = async (req, res) => {
       diagnostico_secundario,
       plan_manejo,
       observaciones,
-      receta,        // Objeto opcional con { indicaciones_generales, detalles: [...] }
+      receta,       // Objeto opcional con { indicaciones_generales, detalles: [...] }
       incapacidad,   // Objeto opcional con { fecha_inicio, fecha_fin, dias, causa_externa }
       orden_proc,    // Objeto opcional con { tipo_procedimiento, descripcion_clinica, recomendaciones }
       certificado    // Objeto opcional con { tipo_certificado, contenido, validez_dias }
@@ -114,7 +114,7 @@ const registrarAtencionMedica = async (req, res) => {
 const obtenerHistorialAfiliado = async (req, res) => {
   try {
     const { afiliado_id } = req.params;
-    const [historias] = await db.query(
+    const [historias] = await query(
       `SELECT hc.*, m.nombres AS medico_nombres, m.apellidos AS medico_apellidos 
        FROM historias_clinicas hc
        JOIN medicos m ON hc.medico_id = m.id
