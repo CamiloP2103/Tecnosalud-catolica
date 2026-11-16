@@ -1,4 +1,4 @@
-const historiasRoutes = require('./src/routes/historiasRoutes');
+const historiasRoutes = require('./routes/historiasRoutes');
 app.use('/api/citas/historias', historiasRoutes); // o la ruta base que prefieras
 
 require('dotenv').config();
