@@ -1,11 +1,14 @@
 const { Router } = require('express');
 const router = Router();
-const { registrarAtencionMedica, obtenerHistorialAfiliado } = require('../controllers/historiasClinicasController');
 
-// Endpoint para guardar la historia clínica y emitir documentos en la consulta
+// 1. Importar el controlador completo
+const historiasController = require('../controllers/historiasClinicasController');
+
+// 2. Extraer las funciones de forma segura
+const { registrarAtencionMedica, obtenerHistorialAfiliado } = historiasController;
+
+// 3. Declarar las rutas usando las funciones definidas
 router.post('/atencion', registrarAtencionMedica);
-
-// Endpoint para consultar las historias clínicas de un paciente específico
 router.get('/afiliado/:afiliado_id', obtenerHistorialAfiliado);
 
 module.exports = router;

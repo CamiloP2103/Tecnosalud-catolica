@@ -140,6 +140,14 @@ function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reloj = () 
     return res.json(await repo.cancelarCita(id, req.usuario.id, ahoraBogota(reloj())));
   }));
 
+  // ---- Módulo Médico: Agenda del profesional (Resuelve el 404 del panel médico) ----
+  router.get('/medico/:id/citas', conSesion, manejar(async (req, res) => {
+    const medicoId = idValido(req.params.id);
+    if (!medicoId) return res.status(400).json({ error: 'ID de médico inválido.' });
+    const citas = await repo.listarCitasMedico(medicoId);
+    res.json({ total: citas.length, citas });
+  }));
+
   // ---- Administración (rol ADMIN) ----
   router.get('/admin/resumen', conSesion, requiereAdmin, manejar(async (req, res) => {
     const hoy = ahoraBogota(reloj()).fecha;
@@ -211,5 +219,4 @@ function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reloj = () 
   return app;
 }
 
-// ✅ Exportación correcta para CommonJS
 module.exports = { crearApp };
