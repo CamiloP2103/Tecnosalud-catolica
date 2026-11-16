@@ -675,7 +675,6 @@ const enviarMiConstancia = async () => {
       {modalRecuperarClave && (
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-content">
-            <div className="modal-icon">🔑</div>
             <h3>Recuperar Contraseña</h3>
 
             {alertaRecuperarClave && (
