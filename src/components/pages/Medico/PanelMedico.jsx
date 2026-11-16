@@ -81,5 +81,4 @@ function PanelMedico() {
   );
 }
 
-exports = PanelMedico;
 export default PanelMedico;
