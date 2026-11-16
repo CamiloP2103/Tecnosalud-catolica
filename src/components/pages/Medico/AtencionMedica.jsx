@@ -112,9 +112,9 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
       <p>Gestiona la evolución clínica, diagnósticos y emisión de documentos del paciente.</p>
 
       <div className="paciente-info-card">
-        <p><strong>Paciente:</strong> {citaActual.afiliado_nombre || 'No especificado'}</p>
-        <p><strong>Documento:</strong> {citaActual.afiliado_documento || citaActual.usuarioDoc || 'N/A'}</p>
-        <p><strong>Fecha y Hora:</strong> {citaActual.fecha ? `${citaActual.fecha} - ${citaActual.hora}` : (citaActual.fecha_hora || 'N/A')}</p>
+        <p><strong>Paciente:</strong> {citaActual.afiliado_nombre}</p>
+        <p><strong>Documento:</strong> {citaActual.afiliado_documento}</p>
+        <p><strong>Fecha Cita:</strong> {citaActual.fecha_hora}</p>
       </div>
 
       {errorMsg && <div className="alert-error" role="alert">{errorMsg}</div>}
