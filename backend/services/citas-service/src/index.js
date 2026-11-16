@@ -1,20 +1,17 @@
-const historiasRoutes = require('./routes/historiasRoutes');
-app.use('/api/citas/historias', historiasRoutes); // o la ruta base que prefieras
-
 require('dotenv').config();
-const { existsSync, readFileSync } = require('node:fs');
-const path = require('node:path');
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 // 1. Importaciones de tu arquitectura (Base de datos real de Azure)
-const pool = require('./config/db');
-const { crearRepositorio } = require('./repositorio');
-const { crearApp } = require('./app');
+import pool from './config/db';
+import { crearRepositorio } from './repositorio';
+import { crearApp } from './app';
 
 // 2. Variables de entorno y puertos
 const PORT = Number(process.env.PORT || 3003);
 
 // 3. Lógica de los compañeros para leer el JWT desde auth-service
-const AUTH_ENV_PATH = path.join(__dirname, '../../auth-service/.env');
+const AUTH_ENV_PATH = join(__dirname, '../../auth-service/.env');
 const AUTH_ENV = existsSync(AUTH_ENV_PATH)
   ? require('dotenv').parse(readFileSync(AUTH_ENV_PATH))
   : {};
@@ -48,7 +45,7 @@ function resetCitas() {
   }
 }
 
-// 5. Inicializar la aplicación conectando todo
+// 5. Inicializar la aplicación conectando todo mediante la fábrica
 const app = crearApp({
   repo,
   jwtSecret: JWT_SECRET,
@@ -57,7 +54,12 @@ const app = crearApp({
   puerto: PORT,
 });
 
-// 6. Arrancar el servidor (si no se está ejecutando en entorno de pruebas estricto)
+// ✅ 6. INTEGRAR LAS RUTAS DE HISTORIAS CLÍNICAS AQUí
+// (Se hace de forma segura cuando 'app' ya ha sido creado por crearApp)
+import historiasRoutes from './routes/historiasRoutes';
+app.use('/api/citas/historias', historiasRoutes);
+
+// 7. Arrancar el servidor (si no se está ejecutando en entorno de pruebas estricto)
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`Microservicio de Citas activo en el puerto ${PORT} (/api/citas)`);
@@ -65,6 +67,8 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // Exportaciones compatibles con CommonJS y ES Modules (para Vitest)
-module.exports = app;
-module.exports.JWT_SECRET = JWT_SECRET;
-module.exports.resetCitas = resetCitas;
+export default app;
+const _JWT_SECRET = JWT_SECRET;
+export { _JWT_SECRET as JWT_SECRET };
+const _resetCitas = resetCitas;
+export { _resetCitas as resetCitas };
