@@ -61,11 +61,12 @@ function AgendaMedico({ onAtender }) {
       }
 
       const datosCitas = respuesta.datos?.citas || respuesta.datos || [];
-      // Si la lista viene vacía, podemos mostrar el respaldo o dejarlo vacío según prefieras
-      setCitas(datosCitas.length > 0 ? datosCitas : citasMockDeRespaldo);
+      // Si la lista viene vacía, dejamos el arreglo vacío para que el componente renderice el mensaje de "Sin citas"
+      setCitas(datosCitas);
     } catch (error) {
-      console.warn('Error de red al conectar con el servicio de citas. Usando datos locales.', error);
-      setCitas(citasMockDeRespaldo);
+      console.error('Error al cargar agenda:', error);
+      setErrorMsg('Error de conexión al cargar la agenda.');
+      setCitas([]); // En caso de error de red, dejamos la lista vacía en lugar de mostrar datos falsos
     } finally {
       setCargando(false);
     }
