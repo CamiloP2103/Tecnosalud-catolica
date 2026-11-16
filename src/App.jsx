@@ -22,6 +22,7 @@ const RestablecerClave = lazy(() => import('./components/pages/Acceso/Restablece
 const PanelAdmin = lazy(() => import('./components/pages/admin/PanelAdmin'));
 const PanelAfiliaciones = lazy(() => import('./components/pages/Afiliaciones/PanelAfiliaciones'));
 const AtencionMedica = lazy(() => import('./components/pages/Medico/AtencionMedica'));
+const AgendaMedico = lazy(() => import('./components/pages/Medico/AgendaMedico'));
 
 const baseNavItems = [
   { id: 'inicio', label: 'Inicio' },
@@ -73,6 +74,7 @@ const pages = {
   afiliaciones: PanelAfiliaciones,
   'restablecer-clave': RestablecerClave,
   'medico-atencion': AtencionMedica,
+  'medico-atencion': AgendaMedico,
 };
 
 // Función limpia para extraer solo la ruta y descartar el '?token=...'
