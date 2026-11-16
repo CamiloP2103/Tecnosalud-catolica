@@ -5,15 +5,22 @@ import { llamarServicio } from '../../../utils/servicios';
 const API_CITAS = import.meta.env.VITE_API_CITAS_URL || 'http://localhost:3002/api/citas';
 
 function AtencionMedica({ cita, onAtencionFinalizada }) {
-  // Si la cita no viene definida, evitamos el crash inicializando un objeto seguro o mostrando una vista de selección
-  const [citaActual] = useState(cita || {
-    id: 1,
-    afiliado_id: 1,
-    medico_id: 1,
-    afiliado_nombre: 'Paciente de prueba / Sin cita seleccionada',
-    afiliado_documento: 'N/A',
-    fecha_hora: new Date().toLocaleString()
+  // Inicializamos de forma segura por si llega vacía
+  const [citaActual, setCitaActual] = useState(cita || {
+    id: '',
+    afiliado_id: '',
+    medico_id: '',
+    afiliado_nombre: '',
+    afiliado_documento: '',
+    fecha_hora: ''
   });
+
+  // 🔑 Sincronizamos si la prop 'cita' cambia o se actualiza al venir desde la agenda
+  useEffect(() => {
+    if (cita) {
+      setCitaActual(cita);
+    }
+  }, [cita]);
 
   const [form, setForm] = useState({
     motivo_consulta: '',
