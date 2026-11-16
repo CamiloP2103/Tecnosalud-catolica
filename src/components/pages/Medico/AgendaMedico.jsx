@@ -5,7 +5,7 @@ import AtencionMedica from './AtencionMedica';
 
 const API_CITAS = import.meta.env.VITE_API_CITAS_URL || 'http://localhost:3002/api/citas';
 
-function AgendaMedico() {
+function AgendaMedico({ onAtender }) {
   const [citas, setCitas] = useState([]);
   const [citaSeleccionada, setCitaSeleccionada] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -63,7 +63,7 @@ function AgendaMedico() {
         <button 
           type="button" 
           className="btn-volver-agenda"
-          onClick={() => setCitaSeleccionada(null)}
+          onClick={() => { onAtender }}
         >
           ← Volver a la Agenda
         </button>
