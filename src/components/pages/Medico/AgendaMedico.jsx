@@ -14,7 +14,7 @@ function AgendaMedico({ onAtender }) {
   // Obtenemos los datos del usuario logueado (médico) desde el localStorage
   const sesion = JSON.parse(localStorage.getItem('tecnosalud_sesion_activa') || '{}');
   const medicoId = sesion.id || sesion.medico_id || 49;
-
+  
   // Datos de prueba robustos en caso de que no haya token o el backend devuelva 401
   const citasMockDeRespaldo = [
     {
@@ -44,7 +44,7 @@ function AgendaMedico({ onAtender }) {
     setErrorMsg('');
     try {
       // Extraemos el token si existe, o usamos un string vacío
-      const token = sesion.token || localStorage.getItem('token') || '';
+      const token = sesion.token || localStorage.getItem('tecnosalud_token') || '';
 
       const respuesta = await llamarServicio(`${API_CITAS}/medico/${medicoId}/citas`, {
         headers: {
