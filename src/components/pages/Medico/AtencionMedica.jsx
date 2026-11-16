@@ -6,7 +6,7 @@ const API_CITAS = import.meta.env.VITE_API_CITAS_URL || 'http://localhost:3002/a
 
 function AtencionMedica({ cita, onAtencionFinalizada }) {
   // Inicializamos de forma segura por si llega vacía
-  console.log("Cita recibida en AtencionMedica:", cita);
+  
   const [citaActual, setCitaActual] = useState(cita || {
     id: '',
     afiliado_id: '',

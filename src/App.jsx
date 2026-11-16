@@ -139,12 +139,7 @@ function App() {
   const ActivePage = pages[currentPage] || NotFound;
 
   const handleNavigate = (pageId) => {
-    // Doble validación al navegar por si el token expiró en segundo plano
-    if (!verificarTokenVigente()) {
-      setSesionActiva(false);
-      setUserRole('');
-    }
-
+    // Eliminamos la validación local estricta al navegar para evitar falsos cierres de sesión
     const nextPage = pages[pageId] ? pageId : '404';
     setCurrentPage(nextPage);
     window.location.hash = nextPage === 'inicio' ? '' : `/${nextPage}`;
