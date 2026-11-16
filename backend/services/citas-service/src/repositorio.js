@@ -116,11 +116,11 @@ function crearRepositorio(pool) {
       return filas;
     },
 
-    // ➕ Listar citas asignadas a un médico específico (Resuelve el 404 del panel médico)
+    // ➕ Listar citas asignadas a un médico específico (Soporta ID de médico o ID de usuario)
     async listarCitasMedico(medicoId) {
       const [filas] = await pool.query(
-        `SELECT ${COLUMNAS_CITA} ${DESDE_CITA} WHERE c.medico_id = ? ORDER BY c.fecha ASC, c.hora ASC LIMIT 200`,
-        [medicoId]
+        `SELECT ${COLUMNAS_CITA} ${DESDE_CITA} WHERE (m.id = ? OR m.usuario_id = ?) ORDER BY c.fecha ASC, c.hora ASC LIMIT 200`,
+        [medicoId, medicoId]
       );
       return filas;
     },
