@@ -6,6 +6,7 @@ const API_CITAS = import.meta.env.VITE_API_CITAS_URL || 'http://localhost:3002/a
 
 function AtencionMedica({ cita, onAtencionFinalizada }) {
   // Inicializamos de forma segura por si llega vacía
+  console.log("Cita recibida en AtencionMedica:", cita);
   const [citaActual, setCitaActual] = useState(cita || {
     id: '',
     afiliado_id: '',
@@ -73,8 +74,8 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
 
     const payload = {
       cita_id: citaActual.id,
-      afiliado_id: citaActual.afiliado_id,
-      medico_id: citaActual.medico_id,
+      afiliado_id: citaActual.afiliado_id || citaActual.usuarioId || citaActual.usuario_id,
+      medico_id: citaActual.medico_id || citaActual.medicoId,
       ...form,
       receta: incluirReceta && detallesReceta.length > 0 ? { indicaciones_generales: 'Consumir según indicación médica', detalles: detallesReceta } : null,
       incapacidad: incluirIncapacidad ? incapacidad : null,
@@ -112,9 +113,9 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
       <p>Gestiona la evolución clínica, diagnósticos y emisión de documentos del paciente.</p>
 
       <div className="paciente-info-card">
-        <p><strong>Paciente:</strong> {citaActual.afiliado_nombre}</p>
-        <p><strong>Documento:</strong> {citaActual.afiliado_documento}</p>
-        <p><strong>Fecha Cita:</strong> {citaActual.fecha_hora}</p>
+        <p><strong>Paciente:</strong> {citaActual.afiliado_nombre || citaActual.usuario_email || citaActual.usuarioEmail || 'Paciente General'}</p>
+        <p><strong>Documento:</strong> {citaActual.afiliado_documento || citaActual.usuario_doc || citaActual.usuarioDoc || 'N/A'}</p>
+        <p><strong>Fecha y Hora:</strong> {citaActual.fecha ? `${citaActual.fecha} - ${citaActual.hora}` : (citaActual.fecha_hora || 'N/A')}</p>
       </div>
 
       {errorMsg && <div className="alert-error" role="alert">{errorMsg}</div>}
