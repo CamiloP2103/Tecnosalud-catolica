@@ -79,11 +79,17 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
 
   useEffect(() => {
     const sesionGuardada = localStorage.getItem('tecnosalud_sesion_activa');
-    if (sesionGuardada) {
+    const tokenGuardado = localStorage.getItem('tecnosalud_token');
+
+    // Si existen ambos en el navegador, la sesión es válida sin importar las props del padre
+    if (sesionGuardada && tokenGuardado) {
       try {
-        setUsuarioLogueado(JSON.parse(sesionGuardada));
+        const usuarioParseado = JSON.parse(sesionGuardada);
+        setUsuarioLogueado(usuarioParseado);
       } catch (e) {
+        // Si el JSON está corrupto, limpiamos de forma segura
         localStorage.removeItem('tecnosalud_sesion_activa');
+        localStorage.removeItem('tecnosalud_token');
         setUsuarioLogueado(null);
       }
     } else {
@@ -100,7 +106,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     }
 
     generarCaptchaLocal();
-  }, [sesionActiva]);
+  }, [sesionActiva]); 
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;

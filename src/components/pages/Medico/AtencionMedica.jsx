@@ -75,9 +75,15 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
     };
 
     try {
+      // 🔑 Recuperamos el token almacenado
+      const token = localStorage.getItem('tecnosalud_token') || '';
+
       const { ok, datos } = await llamarServicio(`${API_CITAS}/historias/atencion`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // 👈 ¡Inyectamos el token aquí para evitar el error de sesión!
+        },
         body: JSON.stringify(payload),
       });
 
