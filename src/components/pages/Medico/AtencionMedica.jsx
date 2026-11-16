@@ -62,6 +62,28 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
     setMedicamentoActual({ medicamento: '', dosis: '', via_administracion: 'Oral', frecuencia: '', duracion_tratamiento: '', cantidad: 1 });
   };
 
+  // 🧮 Cálculo automático de días de incapacidad
+  const calcularDiasIncapacidad = (inicio, fin) => {
+    if (!inicio || !fin) return 1;
+    const fechaInicio = new Date(inicio);
+    const fechaFin = new Date(fin);
+    const diferenciaMs = fechaFin - fechaInicio;
+    const dias = Math.round(diferenciaMs / (1000 * 60 * 60 * 24)) + 1;
+    return dias > 0 ? dias : 1;
+  };
+
+  const handleIncapacidadChange = (campo, valor) => {
+    setIncapacidad((prev) => {
+      const nuevoEstado = { ...prev, [campo]: valor };
+      if (campo === 'fecha_inicio' || campo === 'fecha_fin') {
+        const inicio = campo === 'fecha_inicio' ? valor : prev.fecha_inicio;
+        const fin = campo === 'fecha_fin' ? valor : prev.fecha_fin;
+        nuevoEstado.dias = calcularDiasIncapacidad(inicio, fin);
+      }
+      return nuevoEstado;
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
@@ -90,7 +112,7 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // 👈 ¡Inyectamos el token aquí para evitar el error de sesión!
+          'Authorization': `Bearer ${token}` 
         },
         body: JSON.stringify(payload),
       });
@@ -172,9 +194,31 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
           </legend>
           {incluirIncapacidad && (
             <div className="form-grid sub-form">
-              <label>Fecha Inicio <input type="date" value={incapacidad.fecha_inicio} onChange={(e) => setIncapacidad({...incapacidad, fecha_inicio: e.target.value})} /></label>
-              <label>Fecha Fin <input type="date" value={incapacidad.fecha_fin} onChange={(e) => setIncapacidad({...incapacidad, fecha_fin: e.target.value})} /></label>
-              <label>Días <input type="number" value={incapacidad.dias} onChange={(e) => setIncapacidad({...incapacidad, dias: e.target.value})} /></label>
+              <label>
+                Fecha Inicio 
+                <input 
+                  type="date" 
+                  value={incapacidad.fecha_inicio} 
+                  onChange={(e) => handleIncapacidadChange('fecha_inicio', e.target.value)} 
+                />
+              </label>
+              <label>
+                Fecha Fin 
+                <input 
+                  type="date" 
+                  value={incapacidad.fecha_fin} 
+                  onChange={(e) => handleIncapacidadChange('fecha_fin', e.target.value)} 
+                />
+              </label>
+              <label>
+                Días Totales (Automático) 
+                <input 
+                  type="number" 
+                  value={incapacidad.dias} 
+                  readOnly 
+                  style={{ backgroundColor: '#f0f2f5', cursor: 'not-allowed' }} 
+                />
+              </label>
             </div>
           )}
         </fieldset>
