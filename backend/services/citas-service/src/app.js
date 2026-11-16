@@ -4,6 +4,9 @@ const { requiereSesion, requiereAdmin } = require('./autenticacion');
 const { ahoraBogota, sumarDias, esFechaValida, franjasLibres, validarFranja } = require('./agenda');
 const { errorBaseDatos } = require('./errores');
 
+// ➕ Importar las rutas de historias clínicas
+const historiasRoutes = require('./routes/historiasRoutes');
+
 const ESTADOS_ADMIN = ['ATENDIDA', 'NO_ASISTIO', 'CANCELADA'];
 
 const escaparHtml = (s) =>
