@@ -193,6 +193,11 @@ function crearApp({ repo, jwtSecret, frontendUrl, notificar, puerto, reloj = () 
     return res.json(await repo.cambiarEstado(id, estado));
   }));
 
+
+  // ➕ INTEGRACIÓN DE LAS RUTAS DE HISTORIAS CLÍNICAS
+  // Quedarán disponibles bajo la ruta base: /api/citas/historias/...
+  router.use('/historias', conSesion, historiasRoutes);
+
   app.use('/api/citas', router);
 
   // eslint-disable-next-line no-unused-vars
