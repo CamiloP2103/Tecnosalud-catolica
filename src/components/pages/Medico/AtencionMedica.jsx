@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './AtencionMedica.css';
 import { llamarServicio } from '../../../utils/servicios';
 
