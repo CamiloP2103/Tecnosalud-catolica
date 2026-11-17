@@ -281,8 +281,9 @@ function crearRepositorio(pool) {
       const [rows] = await pool.query(
         `SELECT h.*, a.nombre AS afiliado_nombre, a.documento AS afiliado_documento 
         FROM historias_clinicas h 
-        INNER JOIN afiliados a ON h.afiliado_id = a.id 
-        WHERE h.medico_id = ? ORDER BY h.fecha_atencion DESC`,
+        INNER JOIN afiliados a ON h.afiliado_id = a.id
+        INNER JOIN medicos m ON m.id  = h.medico_id 
+        WHERE m.usuario_id = ? ORDER BY h.fecha_atencion DESC`,
         [medicoId]
       );
       return rows;
