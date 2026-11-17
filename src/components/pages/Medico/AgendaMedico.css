@@ -45,15 +45,23 @@
 .agenda-table th {
   background-color: #f8fafc;
   color: #334155;
-  padding: 1rem;
+  padding: 16px 14px; /* 👈 Más espacio vertical y horizontal */
   font-weight: 600;
   border-bottom: 1px solid #e2e8f0;
 }
 
 .agenda-table td {
-  padding: 1rem;
+  padding: 16px 14px; /* 👈 Más espacio para que no se vea amontonado */
   border-bottom: 1px solid #f1f5f9;
   color: #1e293b;
+  vertical-align: middle;
+}
+
+/* 👈 Ancho y formato seguro para evitar que la fecha se rompa */
+.agenda-table th:first-child,
+.agenda-table td:first-child {
+  min-width: 140px;
+  white-space: nowrap;
 }
 
 .agenda-table tr:hover {
