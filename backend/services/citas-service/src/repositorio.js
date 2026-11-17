@@ -298,7 +298,12 @@ function crearRepositorio(pool) {
          FROM horarios WHERE medico_id = ? ORDER BY (dia_semana)`,
         [medicoId]
       );
-      return filas;
+      const mapaDias = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 7: 'Domingo' };
+
+      return filas.map(f => ({
+        ...f,
+        diaSemana: mapaDias[f.diaSemana] || 'Lunes'
+      }));
     },
 
     async guardarHorariosMedico(medicoId, horariosNuevos) {
@@ -309,11 +314,14 @@ function crearRepositorio(pool) {
         // Por simplicidad en la configuración semanal, borramos los horarios anteriores del médico y reinsertamos los nuevos
         await connection.query(`DELETE FROM horarios WHERE medico_id = ?`, [medicoId]);
 
+        const mapaInverso = { 'Lunes': 1, 'Martes': 2, 'Miércoles': 3, 'Jueves': 4, 'Viernes': 5, 'Sábado': 6, 'Domingo': 7 };        
+
         if (horariosNuevos && horariosNuevos.length > 0) {
           for (const item of horariosNuevos) {
+            const diaNum = mapaInverso[item.diaSemana] || Number(item.diaSemana) || 1;
             await connection.query(
               `INSERT INTO horarios (medico_id, dia_semana, hora_inicio, hora_fin) VALUES (?, ?, ?, ?)`,
-              [medicoId, item.diaSemana, item.horaInicio, item.horaFin]
+              [medicoId, diaNum, item.horaInicio, item.horaFin]
             );
           }
         }
