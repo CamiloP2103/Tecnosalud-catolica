@@ -265,10 +265,12 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
 
       const salt = await bcrypt.genSalt(10);
       const nuevoHash = await bcrypt.hash(nuevaContrasena.trim(), salt);
+      const UsuarioRegistro =  datosUsuario.documento; 
 
       // 1. Actualizamos contraseña y activamos usuario en db_auth
       await pool.query('UPDATE usuarios SET contrasena_hash = ?, intentos_fallidos = 0, activo = 1, bloqueado_hasta = NULL WHERE id = ?', [nuevoHash, registroToken.usuario_id]);
       await pool.query('UPDATE tokens_recuperacion SET usado = TRUE WHERE id = ?', [registroToken.id]);
+      await pool.query('UPDATE db_registro.afiliados SET usuario_id = ? WHERE documento = ?', [registroToken.usuario_id,UsuarioRegistro]);
 
       // 2. Sincronizamos el consentimiento y estado activo en db_registro (a través del microservicio de registro)
       if (datosUsuario.email || datosUsuario.documento) {
