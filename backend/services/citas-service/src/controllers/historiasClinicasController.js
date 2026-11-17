@@ -30,8 +30,21 @@ const obtenerHistorialAfiliado = async (req, res) => {
   }
 };
 
+// Ejemplo en tu controlador de historias
+async function obtenerHistoriasPorMedico(req, res) {
+  const { medicoId } = req.params;
+  try {
+    const historias = await repositorio.obtenerHistoriasPorMedico(medicoId);
+    return res.json({ historias });
+  } catch (error) {
+    console.error('[citas-service] Error en controlador al obtener historial:', error);
+    return res.status(500).json({ error: 'Error interno al obtener el historial clínico.' });
+  }
+}
+
 // Exportar correctamente después de declararlas
 module.exports = {
   registrarAtencionMedica,
-  obtenerHistorialAfiliado
+  obtenerHistorialAfiliado,
+  obtenerHistoriasPorMedico
 };

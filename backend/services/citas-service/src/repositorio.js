@@ -266,7 +266,6 @@ function crearRepositorio(pool) {
         connection.release();
       }
     },
-
     async listarHistoriasPorAfiliado(afiliado_id) {
       const [filas] = await pool.query(
         `SELECT hc.*, m.nombres AS medico_nombres, m.apellidos AS medico_apellidos 
@@ -278,6 +277,17 @@ function crearRepositorio(pool) {
       );
       return filas;
     },
+    async obtenerHistoriasPorMedico(medicoId) {
+      const [rows] = await pool.query(
+        `SELECT h.*, a.nombre AS afiliado_nombre, a.documento AS afiliado_documento 
+        FROM historias_clinicas h 
+        INNER JOIN afiliados a ON h.afiliado_id = a.id 
+        WHERE h.medico_id = ? ORDER BY h.fecha_atencion DESC`,
+        [medicoId]
+      );
+      return rows;
+    },
+ 
   };
 }
 

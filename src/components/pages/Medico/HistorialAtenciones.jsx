@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import './AtencionMedica.css'; // Puedes reutilizar los estilos de tarjeta y tablas
+import './AtencionMedica.css';
 import { llamarServicio } from '../../../utils/servicios';
 
 const API_CITAS = import.meta.env.VITE_API_CITAS_URL || 'http://localhost:3002/api/citas';
@@ -16,7 +16,6 @@ function HistorialAtenciones() {
       try {
         const token = localStorage.getItem('tecnosalud_token') || '';
         
-        // Recuperamos el ID del médico logueado desde la sesión activa guardada en localStorage
         const sesionStr = localStorage.getItem('tecnosalud_sesion_activa') || '{}';
         const sesion = JSON.parse(sesionStr);
         const medicoId = sesion.id;
@@ -27,19 +26,21 @@ function HistorialAtenciones() {
           return;
         }
 
-        // Petición al microservicio de citas para obtener el historial del médico
-        const { ok, datos } = await llamarServicio(`${API_CITAS}/historias/medico/${medicoId}`, {
+        const respuesta = await llamarServicio(`${API_CITAS}/historias/medico/${medicoId}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
 
-        if (!ok) {
-          setErrorMsg(datos.error || 'No se pudo cargar el historial de atenciones.');
+        // 🛡️ Validación segura para evitar fallos si la API devuelve 404 u otro error
+        if (!respuesta || !respuesta.ok) {
+          setErrorMsg(respuesta?.datos?.error || 'El módulo de historial aún no está disponible en el servidor de citas (404).');
+          setCargando(false);
           return;
         }
 
+        const datos = respuesta.datos;
         setHistorias(datos.historias || datos || []);
       } catch (error) {
         console.error(error);
@@ -63,7 +64,7 @@ function HistorialAtenciones() {
         <p style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>Cargando historial médico...</p>
       ) : historias.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', marginTop: '1.5rem' }}>
-          <p>No se encuentran atenciones médicas registradas en el sistema todavía.</p>
+          <p>No se encuentran atenciones médicas registradas o el endpoint del servidor está pendiente de despliegue.</p>
         </div>
       ) : (
         <div className="tabla-historial-container" style={{ overflowX: 'auto', marginTop: '1.5rem' }}>
