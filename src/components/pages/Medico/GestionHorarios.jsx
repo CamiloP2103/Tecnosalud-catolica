@@ -36,7 +36,7 @@ function GestionHorarios() {
       }
 
       // Consultamos los horarios usando el endpoint que conecta con el usuario_id
-      const respuesta = await llamarServicio(`${API_CITAS}/horarios/usuario/${usuarioId}`, {
+      const respuesta = await llamarServicio(`${API_CITAS}/historias/horarios/usuario/${usuarioId}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -86,7 +86,7 @@ function GestionHorarios() {
 
     try {
       const token = localStorage.getItem('tecnosalud_token') || '';
-      const respuesta = await llamarServicio(`${API_CITAS}/horarios/medico/${medicoId}`, {
+      const respuesta = await llamarServicio(`${API_CITAS}/historias/horarios/medico/${medicoId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
