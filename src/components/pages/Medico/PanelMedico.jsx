@@ -49,7 +49,7 @@ function PanelMedico() {
               className={`sidebar-btn ${seccionActiva === 'historial' ? 'active' : ''}`}
               onClick={() => setSeccionActiva('historial')}
             >
-              📁 Historial de Atenciones
+                Historial de Atenciones
             </button>
           </li>
           {/* 👈 2. Nuevo botón para el menú de Horarios */}
@@ -86,6 +86,9 @@ function PanelMedico() {
             <p>Consulta de registros médicos previos, recetas e incapacidades emitidas por el profesional.</p>
           </div>
         )}
+        {seccionActiva === 'horarios' && (
+          <GestionHorarios />
+        )}  
       </main>
     </div>
   );
