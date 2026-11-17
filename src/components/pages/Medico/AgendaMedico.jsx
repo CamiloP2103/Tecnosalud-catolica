@@ -106,6 +106,22 @@ function AgendaMedico({ onAtender }) {
       <h2>Agenda Médica y Pacientes Programados</h2>
       <p>Selecciona un paciente de tu lista diaria para gestionar su atención médica e historia clínica.</p>
 
+      {/* 🚀 1. TARJETAS DE INDICADORES RÁPIDOS (DASHBOARD DEL DÍA) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', margin: '1.5rem 0' }}>
+        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
+          <span style={{ display: 'block', fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>TOTAL CITAS</span>
+          <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#145da0' }}>{citas.length}</span>
+        </div>
+        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
+          <span style={{ display: 'block', fontSize: '0.85rem', color: '#1d4ed8', fontWeight: 'bold' }}>PROGRAMADAS</span>
+          <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#1d4ed8' }}>{citas.filter(c => c.estado === 'PROGRAMADA').length}</span>
+        </div>
+        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
+          <span style={{ display: 'block', fontSize: '0.85rem', color: '#15803d', fontWeight: 'bold' }}>ATENDIDAS</span>
+          <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#15803d' }}>{citas.filter(c => c.estado === 'ATENDIDA').length}</span>
+        </div>
+      </div>
+
       {errorMsg && <div className="alert-error" role="alert">{errorMsg}</div>}
 
       {cargando ? (

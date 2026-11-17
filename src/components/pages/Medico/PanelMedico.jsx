@@ -4,6 +4,7 @@ import AgendaMedico from './AgendaMedico';
 import AtencionMedica from './AtencionMedica';
 import HistorialAtenciones from './HistorialAtenciones';
 import GestionHorarios from './GestionHorarios';
+import PerfilMedico from './PerfilMedico';
 
 function PanelMedico() {
   const [seccionActiva, setSeccionActiva] = useState('agenda'); // 'agenda' | 'atencion' | 'historial'
@@ -15,6 +16,7 @@ function PanelMedico() {
   };
 
   return (
+    
     <div className="panel-medico-layout">
       {/* Menú Lateral / Sidebar */}
       <aside className="panel-medico-sidebar">
@@ -61,7 +63,16 @@ function PanelMedico() {
                 >
                Mis Horarios
                 </button>
-           </li> 
+           </li>
+           <li>
+                <button
+                    type="button"
+                    className={`sidebar-btn ${seccionActiva === 'perfil' ? 'active' : ''}`}
+                    onClick={() => setSeccionActiva('perfil')}
+                >
+                    👨‍⚕️ Mi Perfil
+                </button>
+            </li> 
         </ul>
       </aside>
 
@@ -88,7 +99,8 @@ function PanelMedico() {
         )}
         {seccionActiva === 'horarios' && (
           <GestionHorarios />
-        )}  
+        )}
+        {seccionActiva === 'perfil' && <PerfilMedico />}  
       </main>
     </div>
   );
