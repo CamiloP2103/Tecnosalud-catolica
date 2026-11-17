@@ -133,9 +133,9 @@ function App() {
     handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
 
-    // ⏱️ CONTROL DE INACTIVIDAD (45 minutos sin interacción del usuario)
+    // ⏱️ CONTROL DE INACTIVIDAD (15 minutos sin interacción del usuario)
     let timerInactividad;
-    const TIEMPO_LIMITE_INACTIVIDAD = 45 * 60 * 1000; 
+    const TIEMPO_LIMITE_INACTIVIDAD = 15 * 60 * 1000; 
 
     const cerrarSesionPorInactividad = () => {
       const tokenActual = localStorage.getItem('tecnosalud_token');
