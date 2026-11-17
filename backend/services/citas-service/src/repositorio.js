@@ -295,7 +295,7 @@ function crearRepositorio(pool) {
         `SELECT id, medico_id AS medicoId, dia_semana AS diaSemana, 
                 TIME_FORMAT(hora_inicio, '%H:%i') AS horaInicio, 
                 TIME_FORMAT(hora_fin, '%H:%i') AS horaFin 
-         FROM horarios WHERE medico_id = ? ORDER BY FIELD(dia_semana, 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo')`,
+         FROM horarios WHERE medico_id = ? ORDER BY (dia_semana)`,
         [medicoId]
       );
       return filas;
