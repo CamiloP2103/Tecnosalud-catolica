@@ -2,6 +2,7 @@ import { useState } from 'react';
 import './PanelMedico.css';
 import AgendaMedico from './AgendaMedico';
 import AtencionMedica from './AtencionMedica';
+import HistorialAtenciones from './HistorialAtenciones';
 
 function PanelMedico() {
   const [seccionActiva, setSeccionActiva] = useState('agenda'); // 'agenda' | 'atencion' | 'historial'
@@ -70,10 +71,8 @@ function PanelMedico() {
         {seccionActiva === 'historial' && (
           <div className="historial-modulo-card">
             <h2>Historial de Atenciones Clínicas</h2>
+            <HistorialAtenciones />
             <p>Consulta de registros médicos previos, recetas e incapacidades emitidas por el profesional.</p>
-            <div className="placeholder-box">
-              <p>Módulo de historial y trazabilidad documental sincronizado con <code>db_citas</code>.</p>
-            </div>
           </div>
         )}
       </main>
