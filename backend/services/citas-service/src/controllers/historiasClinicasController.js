@@ -34,7 +34,7 @@ const obtenerHistorialAfiliado = async (req, res) => {
 async function obtenerHistoriasPorMedico(req, res) {
   const { medicoId } = req.params;
   try {
-    const historias = await repositorio.obtenerHistoriasPorMedico(medicoId);
+    const historias = await repo.obtenerHistoriasPorMedico(medicoId);
     return res.json({ historias });
   } catch (error) {
     console.error('[citas-service] Error en controlador al obtener historial:', error);
