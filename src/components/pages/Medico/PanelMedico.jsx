@@ -3,6 +3,7 @@ import './PanelMedico.css';
 import AgendaMedico from './AgendaMedico';
 import AtencionMedica from './AtencionMedica';
 import HistorialAtenciones from './HistorialAtenciones';
+import GestionHorarios from './GestionHorarios';
 
 function PanelMedico() {
   const [seccionActiva, setSeccionActiva] = useState('agenda'); // 'agenda' | 'atencion' | 'historial'
@@ -28,7 +29,7 @@ function PanelMedico() {
               className={`sidebar-btn ${seccionActiva === 'agenda' ? 'active' : ''}`}
               onClick={() => setSeccionActiva('agenda')}
             >
-              📅 Mi Agenda y Citas
+                Mi Agenda y Citas
             </button>
           </li>
           <li>
@@ -39,7 +40,7 @@ function PanelMedico() {
               disabled={!citaActual}
               title={!citaActual ? 'Selecciona una cita desde la agenda primero' : ''}
             >
-              🩺 Atención Médica Actual
+                Atención Médica Actual
             </button>
           </li>
           <li>
@@ -51,6 +52,16 @@ function PanelMedico() {
               📁 Historial de Atenciones
             </button>
           </li>
+          {/* 👈 2. Nuevo botón para el menú de Horarios */}
+          <li>
+                <button
+                type="button"
+                className={`sidebar-btn ${seccionActiva === 'horarios' ? 'active' : ''}`}
+                onClick={() => setSeccionActiva('horarios')}
+                >
+               Mis Horarios
+                </button>
+           </li> 
         </ul>
       </aside>
 

@@ -288,6 +288,45 @@ function crearRepositorio(pool) {
       );
       return rows;
     },
+
+    // ---- Gestión de Horarios del Médico ----
+    async obtenerHorariosMedico(medicoId) {
+      const [filas] = await pool.query(
+        `SELECT id, medico_id AS medicoId, dia_semana AS diaSemana, 
+                TIME_FORMAT(hora_inicio, '%H:%i') AS horaInicio, 
+                TIME_FORMAT(hora_fin, '%H:%i') AS horaFin 
+         FROM horarios WHERE medico_id = ? ORDER BY FIELD(dia_semana, 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo')`,
+        [medicoId]
+      );
+      return filas;
+    },
+
+    async guardarHorariosMedico(medicoId, horariosNuevos) {
+      const connection = await pool.getConnection();
+      try {
+        await connection.beginTransaction();
+
+        // Por simplicidad en la configuración semanal, borramos los horarios anteriores del médico y reinsertamos los nuevos
+        await connection.query(`DELETE FROM horarios WHERE medico_id = ?`, [medicoId]);
+
+        if (horariosNuevos && horariosNuevos.length > 0) {
+          for (const item of horariosNuevos) {
+            await connection.query(
+              `INSERT INTO horarios (medico_id, dia_semana, hora_inicio, hora_fin) VALUES (?, ?, ?, ?)`,
+              [medicoId, item.diaSemana, item.horaInicio, item.horaFin]
+            );
+          }
+        }
+
+        await connection.commit();
+        return { ok: true, mensaje: 'Horarios actualizados correctamente.' };
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    },
  
   };
 }

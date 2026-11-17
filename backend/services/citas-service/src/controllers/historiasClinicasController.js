@@ -42,9 +42,44 @@ async function obtenerHistoriasPorMedico(req, res) {
   }
 }
 
+// Obtener horarios del médico logueado
+const obtenerHorarios = async (req, res) => {
+  try {
+    const { usuarioId } = req.params; // O podemos resolverlo buscando el medico_id por usuario_id
+    const [medicoRows] = await pool.query('SELECT id FROM medicos WHERE usuario_id = ? LIMIT 1', [usuarioId]);
+    
+    if (medicoRows.length === 0) {
+      return res.status(404).json({ ok: false, error: 'No se encontró el perfil de médico para este usuario.' });
+    }
+    
+    const medicoId = medicoRows[0].id;
+    const horarios = await repo.obtenerHorariosMedico(medicoId);
+    return res.json({ ok: true, horarios, medicoId });
+  } catch (error) {
+    console.error('Error al obtener horarios:', error);
+    return res.status(500).json({ ok: false, error: 'Error interno al consultar los horarios.' });
+  }
+};
+
+// Guardar/Actualizar horarios del médico
+const actualizarHorarios = async (req, res) => {
+  try {
+    const { medicoId } = req.params;
+    const { horarios } = req.body; // Array de { diaSemana, horaInicio, horaFin }
+    
+    const resultado = await repo.guardarHorariosMedico(medicoId, horarios);
+    return res.json(resultado);
+  } catch (error) {
+    console.error('Error al guardar horarios:', error);
+    return res.status(500).json({ ok: false, error: 'Error interno al actualizar los horarios.' });
+  }
+};
+
 // Exportar correctamente después de declararlas
 module.exports = {
   registrarAtencionMedica,
   obtenerHistorialAfiliado,
-  obtenerHistoriasPorMedico
+  obtenerHistoriasPorMedico,
+  obtenerHorarios,
+  actualizarHorarios
 };
