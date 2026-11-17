@@ -147,7 +147,7 @@ function App() {
         setSesionActiva(false);
         setUserRole('');
         
-        alert('Por seguridad, tu sesión se ha cerrado debido a 45 minutos de inactividad.');
+        alert('Por seguridad, tu sesión se ha cerrado debido a 15 minutos de inactividad.');
         window.location.hash = '';
       }
     };
