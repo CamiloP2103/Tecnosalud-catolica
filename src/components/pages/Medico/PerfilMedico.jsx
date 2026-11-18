@@ -18,7 +18,7 @@ function PerfilMedico() {
         if (!usuarioId) return;
 
         // Consultamos la información del médico asociada al usuario
-        const resp = await llamarServicio(`${API_CITAS}/horarios/usuario/${usuarioId}`, {
+        const resp = await llamarServicio(`${API_CITAS}/historias/horarios/usuario/${usuarioId}`, {
           method: 'GET',
           headers: { 'Authorization': `Bearer ${token}` }
         });
