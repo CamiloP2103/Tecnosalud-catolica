@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import fondoInicio from './Images/Fondo_Inicio.webp';
-import './Inicio.css';
+import './Styles/Inicio.css';
 
 
 function Inicio({ onNavigate }) {

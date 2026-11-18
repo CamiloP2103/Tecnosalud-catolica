@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import './PanelAdmin.css';
+import './Styles/PanelAdmin.css';
 import { pedir } from './api';
 import {
   IconoActualizar, IconoAfiliacion, IconoCalendario, IconoCorreo, IconoDocumento, IconoFarmacia, IconoMenu, IconoPedido,

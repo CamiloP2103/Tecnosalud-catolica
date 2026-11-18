@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import './Registro.css';
+import './Styles/Registro.css';
 import { llamarServicio, SERVICIO_REGISTRO } from '../../../utils/servicios';
 
 const DIAS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));

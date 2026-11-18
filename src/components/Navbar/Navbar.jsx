@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import './Navbar.css';
+import './Styles/Navbar.css';
 import IconoTecnosalud from './Images/Icono.png';
 
 function Navbar({ currentPage, onNavigate, navItems, ctaItem, userRole }) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import './AtencionMedica.css';
+import './Styles/AtencionMedica.css';
 import { llamarServicio } from '../../../utils/servicios';
 
 const API_CITAS = import.meta.env.VITE_API_CITAS_URL || 'http://localhost:3002/api/citas/historias';

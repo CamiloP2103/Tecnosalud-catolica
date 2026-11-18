@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import './AgendaMedico.css';
+import './Styles/AgendaMedico.css';
 import { llamarServicio } from '../../../utils/servicios';
 import AtencionMedica from './AtencionMedica';
 

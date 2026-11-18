@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import './CitasMedicas.css';
+import './Styles/CitasMedicas.css';
 
 const CITAS_API = (import.meta.env.VITE_CITAS_API_URL || 'http://localhost:3003').replace(/\/+$/, '');
 

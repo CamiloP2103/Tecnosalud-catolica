@@ -1,4 +1,4 @@
-import './MuerteDigna.css';
+import './Styles/MuerteDigna.css';
 
 const DIMENSIONES_DERECHO = [
   {

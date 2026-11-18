@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import './Acceso.css';
+import './Styles/Acceso.css';
 import { llamarServicio, mensajeDeError, SERVICIO_AUTH } from '../../../utils/servicios';
 
 const API_AUTH = import.meta.env.VITE_API_AUTH_URL || 'http://localhost:3002/api/auth';

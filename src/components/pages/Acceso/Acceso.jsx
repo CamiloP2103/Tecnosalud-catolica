@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import './Acceso.css';
+import './Styles/Acceso.css';
 import { llamarServicio, mensajeDeError, SERVICIO_AUTH } from '../../../utils/servicios';
 
 // URL del Microservicio de Autenticación (/api/auth según diagrama)

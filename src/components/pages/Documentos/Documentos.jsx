@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import './Documentos.css';
+import './Styles/Documentos.css';
 import { llamarServicio, mensajeSinConexion, SERVICIO_DOCUMENTOS } from '../../../utils/servicios';
 
 // URL del Microservicio de Documentos

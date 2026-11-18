@@ -1,4 +1,4 @@
-﻿import "./Nosotros.css";
+﻿import "./Styles/Nosotros.css";
 
 const contributors = [
   { login: "caenjiro" },

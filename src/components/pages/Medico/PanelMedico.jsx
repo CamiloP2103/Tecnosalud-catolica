@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import './PanelMedico.css';
+import './Styles/PanelMedico.css';
 import AgendaMedico from './AgendaMedico';
 import AtencionMedica from './AtencionMedica';
 import HistorialAtenciones from './HistorialAtenciones';

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import './ServiciosSalud.css';
+import './Styles/ServiciosSalud.css';
 import { llamarServicio, mensajeDeError, SERVICIO_CITAS } from '../../../utils/servicios';
 
 // URL del Microservicio de Citas

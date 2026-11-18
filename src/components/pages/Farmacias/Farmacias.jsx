@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import './Farmacias.css';
+import './Styles/Farmacias.css';
 import { llamarServicio, mensajeDeError, SERVICIO_FARMACIAS } from '../../../utils/servicios';
 
 // URL del Microservicio de Farmacias

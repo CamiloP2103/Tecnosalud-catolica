@@ -1,4 +1,4 @@
-import './Breadcrumbs.css';
+import './Styles/Breadcrumbs.css';
 
 const breadcrumbMap = {
   inicio: 'Inicio',

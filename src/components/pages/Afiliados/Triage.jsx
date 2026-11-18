@@ -1,4 +1,4 @@
-import './Triage.css';
+import './Styles/Triage.css';
 
 const NIVELES_TRIAGE = [
   {

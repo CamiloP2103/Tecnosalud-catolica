@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import './PanelAfiliaciones.css'; 
+import './Styles/PanelAfiliaciones.css'; 
 import { llamarServicio, SERVICIO_REGISTRO } from '../../../utils/servicios';
 
 const API_REGISTRO = import.meta.env.VITE_API_REGISTRO_URL || 'https://tecnosalud-registro-2026.azurewebsites.net/api/registro';
