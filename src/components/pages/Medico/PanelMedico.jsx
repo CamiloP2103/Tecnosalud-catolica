@@ -70,7 +70,7 @@ function PanelMedico() {
                     className={`sidebar-btn ${seccionActiva === 'perfil' ? 'active' : ''}`}
                     onClick={() => setSeccionActiva('perfil')}
                 >
-                    👨‍⚕️ Mi Perfil
+                    Mi Perfil
                 </button>
             </li> 
         </ul>
