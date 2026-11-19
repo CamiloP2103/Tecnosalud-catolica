@@ -7,16 +7,21 @@ import GestionHorarios from './GestionHorarios';
 import PerfilMedico from './PerfilMedico';
 
 function PanelMedico() {
-  const [seccionActiva, setSeccionActiva] = useState('agenda'); // 'agenda' | 'atencion' | 'historial'
+  const [seccionActiva, setSeccionActiva] = useState('agenda');
   const [citaActual, setCitaActual] = useState(null);
 
   const handleAtenderCita = (cita) => {
+    if (!cita) return;
     setCitaActual(cita);
     setSeccionActiva('atencion');
   };
 
+  const handleFinalizarAtencion = () => {
+    setCitaActual(null);
+    setSeccionActiva('agenda');
+  };
+
   return (
-    
     <div className="panel-medico-layout">
       {/* Menú Lateral / Sidebar */}
       <aside className="panel-medico-sidebar">
@@ -31,7 +36,7 @@ function PanelMedico() {
               className={`sidebar-btn ${seccionActiva === 'agenda' ? 'active' : ''}`}
               onClick={() => setSeccionActiva('agenda')}
             >
-                Mi Agenda y Citas
+              Mi Agenda y Citas
             </button>
           </li>
           <li>
@@ -40,9 +45,9 @@ function PanelMedico() {
               className={`sidebar-btn ${seccionActiva === 'atencion' ? 'active' : ''}`}
               onClick={() => setSeccionActiva('atencion')}
               disabled={!citaActual}
-              title={!citaActual ? 'Selecciona una cita desde la agenda primero' : ''}
+              title={!citaActual ? 'Selecciona una cita desde la agenda primero' : 'Continuar con la atención en curso'}
             >
-                Atención Médica Actual
+              Atención Médica Actual
             </button>
           </li>
           <li>
@@ -51,28 +56,27 @@ function PanelMedico() {
               className={`sidebar-btn ${seccionActiva === 'historial' ? 'active' : ''}`}
               onClick={() => setSeccionActiva('historial')}
             >
-                Historial de Atenciones
+              Historial de Atenciones
             </button>
           </li>
-          {/* 👈 2. Nuevo botón para el menú de Horarios */}
           <li>
-                <button
-                type="button"
-                className={`sidebar-btn ${seccionActiva === 'horarios' ? 'active' : ''}`}
-                onClick={() => setSeccionActiva('horarios')}
-                >
-               Mis Horarios
-                </button>
-           </li>
-           <li>
-                <button
-                    type="button"
-                    className={`sidebar-btn ${seccionActiva === 'perfil' ? 'active' : ''}`}
-                    onClick={() => setSeccionActiva('perfil')}
-                >
-                    Mi Perfil
-                </button>
-            </li> 
+            <button
+              type="button"
+              className={`sidebar-btn ${seccionActiva === 'horarios' ? 'active' : ''}`}
+              onClick={() => setSeccionActiva('horarios')}
+            >
+              Mis Horarios
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              className={`sidebar-btn ${seccionActiva === 'perfil' ? 'active' : ''}`}
+              onClick={() => setSeccionActiva('perfil')}
+            >
+              Mi Perfil
+            </button>
+          </li>
         </ul>
       </aside>
 
@@ -81,13 +85,10 @@ function PanelMedico() {
         {seccionActiva === 'agenda' && (
           <AgendaMedico onAtender={handleAtenderCita} />
         )}
-        {seccionActiva === 'atencion' && (
+        {seccionActiva === 'atencion' && citaActual && (
           <AtencionMedica
             cita={citaActual}
-            onAtencionFinalizada={() => {
-              setCitaActual(null);
-              setSeccionActiva('agenda');
-            }}
+            onAtencionFinalizada={handleFinalizarAtencion}
           />
         )}
         {seccionActiva === 'historial' && (
@@ -100,7 +101,7 @@ function PanelMedico() {
         {seccionActiva === 'horarios' && (
           <GestionHorarios />
         )}
-        {seccionActiva === 'perfil' && <PerfilMedico />}  
+        {seccionActiva === 'perfil' && <PerfilMedico />}
       </main>
     </div>
   );

@@ -63,8 +63,34 @@ const DOSIS_RESPALDO = [
   '1 sobre'
 ];
 
+const FORM_INICIAL = {
+  motivo_consulta: '',
+  enfermedad_actual: '',
+  antecedentes: '',
+  examen_fisico: '',
+  diagnostico_principal: '',
+  diagnostico_secundario: '',
+  plan_manejo: '',
+  observaciones: '',
+};
+
+const MED_INICIAL = {
+  medicamento: '',
+  dosis: '',
+  via_administracion: 'Oral',
+  frecuencia: '',
+  duracion_tratamiento: '',
+  cantidad: 1
+};
+
+const INCAP_INICIAL = {
+  fecha_inicio: '',
+  fecha_fin: '',
+  dias: 1,
+  causa_externa: 'Enfermedad general'
+};
+
 function AtencionMedica({ cita, onAtencionFinalizada }) {
-  // Inicializamos de forma segura por si llega vacía
   const [citaActual, setCitaActual] = useState(cita || {
     id: '',
     afiliado_id: '',
@@ -74,25 +100,14 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
     fecha_hora: ''
   });
 
-  // 🔑 Sincronizamos si la prop 'cita' cambia o se actualiza al venir desde la agenda
   useEffect(() => {
     if (cita) {
       setCitaActual(cita);
     }
   }, [cita]);
 
-  const [form, setForm] = useState({
-    motivo_consulta: '',
-    enfermedad_actual: '',
-    antecedentes: '',
-    examen_fisico: '',
-    diagnostico_principal: '',
-    diagnostico_secundario: '',
-    plan_manejo: '',
-    observaciones: '',
-  });
+  const [form, setForm] = useState(FORM_INICIAL);
 
-  // Catálogos clínicos (CIE-10 EPS Colombia, Medicamentos POS/PBS y Dosis)
   const [diagnosticosLista, setDiagnosticosLista] = useState(DIAGNOSTICOS_RESPALDO);
   const [medicamentosLista, setMedicamentosLista] = useState(MEDICAMENTOS_RESPALDO);
   const [dosisLista, setDosisLista] = useState(DOSIS_RESPALDO);
@@ -112,7 +127,9 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
           if (Array.isArray(resp.datos.diagnosticos) && resp.datos.diagnosticos.length > 0) {
             setDiagnosticosLista(
               resp.datos.diagnosticos.map((d) =>
-                typeof d === 'string' ? d : `${d.codigoCie10 || d.codigo_cie10} - ${d.descripcion}`
+                typeof d === 'string'
+                  ? d
+                  : `${d.codigoCie10 || d.codigo_cie10} - ${d.descripcion}`
               )
             );
           }
@@ -141,33 +158,14 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
     cargarCatalogos();
   }, []);
 
-  // Estados opcionales para documentos clínicos
-  const [incluirReceta, incluirRecetaSet] = useState(false);
+  const [incluirReceta, setIncluirReceta] = useState(false);
   const [detallesReceta, setDetallesReceta] = useState([]);
-  const [medicamentoActual, setMedicamentoActual] = useState({
-    medicamento: '',
-    dosis: '',
-    via_administracion: 'Oral',
-    frecuencia: '',
-    duracion_tratamiento: '',
-    cantidad: 1
-  });
+  const [medicamentoActual, setMedicamentoActual] = useState(MED_INICIAL);
 
-  const [incluirIncapacidad, incluirIncapacidadSet] = useState(false);
-  const [incapacidad, setIncapacidad] = useState({
-    fecha_inicio: '',
-    fecha_fin: '',
-    dias: 1,
-    causa_externa: 'Enfermedad general'
-  });
+  const [incluirIncapacidad, setIncluirIncapacidad] = useState(false);
+  const [incapacidad, setIncapacidad] = useState(INCAP_INICIAL);
 
-  const [incluirOrden, incluirOrdenSet] = useState(false);
-  const [orden, setOrden] = useState({
-    tipo_procedimiento: '',
-    descripcion_clinica: '',
-    recomendaciones: ''
-  });
-
+  const [guardando, setGuardando] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [exitoMsg, setExitoMsg] = useState('');
 
@@ -178,25 +176,22 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
 
   const agregarMedicamento = () => {
     if (!medicamentoActual.medicamento || !medicamentoActual.dosis) {
-      alert('Selecciona o ingresa al menos el medicamento y la dosis.');
+      setErrorMsg('Selecciona o ingresa al menos el medicamento y la dosis antes de añadirlo.');
       return;
     }
-    setDetallesReceta([...detallesReceta, medicamentoActual]);
-    setMedicamentoActual({
-      medicamento: '',
-      dosis: '',
-      via_administracion: 'Oral',
-      frecuencia: '',
-      duracion_tratamiento: '',
-      cantidad: 1
-    });
+    setErrorMsg('');
+    setDetallesReceta((prev) => [...prev, medicamentoActual]);
+    setMedicamentoActual(MED_INICIAL);
   };
 
-  // 🧮 Cálculo automático de días de incapacidad
+  const quitarMedicamento = (idx) => {
+    setDetallesReceta((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const calcularDiasIncapacidad = (inicio, fin) => {
     if (!inicio || !fin) return 1;
-    const fechaInicio = new Date(inicio);
-    const fechaFin = new Date(fin);
+    const fechaInicio = new Date(`${inicio}T00:00:00`);
+    const fechaFin = new Date(`${fin}T00:00:00`);
     const diferenciaMs = fechaFin - fechaInicio;
     const dias = Math.round(diferenciaMs / (1000 * 60 * 60 * 24)) + 1;
     return dias > 0 ? dias : 1;
@@ -219,8 +214,13 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
     setErrorMsg('');
     setExitoMsg('');
 
-    if (!form.motivo_consulta || !form.diagnostico_principal || !form.plan_manejo) {
+    if (!form.motivo_consulta.trim() || !form.diagnostico_principal.trim() || !form.plan_manejo.trim()) {
       setErrorMsg('Por favor completa los campos obligatorios de la historia clínica (Motivo, Diagnóstico Principal y Plan de Manejo).');
+      return;
+    }
+
+    if (incluirReceta && detallesReceta.length === 0) {
+      setErrorMsg('Marcaste "Emitir Receta Médica": añade al menos un fármaco o desmarca la opción.');
       return;
     }
 
@@ -228,14 +228,16 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
       ? { indicaciones_generales: 'Consumir según indicación médica', detalles: detallesReceta }
       : null;
 
+    const sesionStr = localStorage.getItem('tecnosalud_sesion_activa') || '{}';
+    const sesion = JSON.parse(sesionStr);
+
     const payload = {
       cita_id: citaActual.id,
       afiliado_id: citaActual.afiliado_id || citaActual.usuarioId || citaActual.usuario_id,
-      medico_id: citaActual.medico_id || citaActual.medicoId,
+      medico_id: citaActual.medico_id || citaActual.medicoId || sesion.medico_id || sesion.id,
       ...form,
       receta: recetaPayload,
       incapacidad: incluirIncapacidad ? incapacidad : null,
-      orden_proc: incluirOrden ? orden : null,
       emitir_documentos: true,
       documento_resumen: {
         tipo: 'CONSULTA_DIAGNOSTICO_RECETA',
@@ -247,8 +249,8 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
       }
     };
 
+    setGuardando(true);
     try {
-      // 🔑 Recuperamos el token almacenado
       const token = localStorage.getItem('tecnosalud_token') || '';
 
       const { ok, datos } = await llamarServicio(`${API_CITAS}/historias/atencion`, {
@@ -261,14 +263,21 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
       });
 
       if (!ok) {
-        setErrorMsg(datos.error || 'No se pudo guardar la historia clínica.');
+        setErrorMsg(datos?.error || 'No se pudo guardar la historia clínica.');
         return;
       }
 
       setExitoMsg('¡Atención médica registrada y documentos emitidos exitosamente!');
+      setForm(FORM_INICIAL);
+      setDetallesReceta([]);
+      setIncluirReceta(false);
+      setIncapacidad(INCAP_INICIAL);
+      setIncluirIncapacidad(false);
       if (onAtencionFinalizada) onAtencionFinalizada();
     } catch {
       setErrorMsg('Error de conexión con el servidor de citas.');
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -287,7 +296,6 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
       {exitoMsg && <div className="alert-success" role="status">{exitoMsg}</div>}
 
       <form onSubmit={handleSubmit}>
-        {/* SECCIÓN 1: EVOLUCIÓN */}
         <fieldset className="form-section">
           <legend>Anamnesis y Examen Físico</legend>
           <label>Motivo de Consulta *<textarea name="motivo_consulta" value={form.motivo_consulta} onChange={handleChange} required rows={2} /></label>
@@ -296,7 +304,6 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
           <label>Examen Físico <textarea name="examen_fisico" value={form.examen_fisico} onChange={handleChange} rows={2} /></label>
         </fieldset>
 
-        {/* SECCIÓN 2: DIAGNÓSTICO */}
         <fieldset className="form-section">
           <legend>Diagnóstico y Plan</legend>
           <div className="form-grid diagnostico-grid">
@@ -335,11 +342,17 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
           <label>Plan de Manejo y Tratamiento *<textarea name="plan_manejo" value={form.plan_manejo} onChange={handleChange} required rows={3} /></label>
           <label>Observaciones <textarea name="observaciones" value={form.observaciones} onChange={handleChange} rows={2} /></label>
         </fieldset>
-        
-        {/* SECCIÓN 3: RECETA MÉDICA OPCIONAL */}
+
         <fieldset className="form-section">
           <legend>
-            <input type="checkbox" checked={incluirReceta} onChange={(e) => incluirRecetaSet(e.target.checked)} /> Emitir Receta Médica
+            <input
+              type="checkbox"
+              checked={incluirReceta}
+              onChange={(e) => {
+                setIncluirReceta(e.target.checked);
+                if (!e.target.checked) setDetallesReceta([]);
+              }}
+            /> Emitir Receta Médica
           </legend>
           {incluirReceta && (
             <div className="sub-form">
@@ -380,17 +393,26 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
               <button type="button" onClick={agregarMedicamento} className="btn-secondary">Añadir Fármaco</button>
               <ul>
                 {detallesReceta.map((med, idx) => (
-                  <li key={idx}>{med.medicamento} — {med.dosis} ({med.frecuencia})</li>
+                  <li key={idx}>
+                    {med.medicamento} — {med.dosis} ({med.frecuencia || 'Sin frecuencia'}){' '}
+                    <button type="button" onClick={() => quitarMedicamento(idx)}>Quitar</button>
+                  </li>
                 ))}
               </ul>
             </div>
           )}
         </fieldset>
 
-        {/* SECCIÓN 4: INCAPACIDAD OPCIONAL */}
         <fieldset className="form-section">
           <legend>
-            <input type="checkbox" checked={incluirIncapacidad} onChange={(e) => incluirIncapacidadSet(e.target.checked)} /> Emitir Incapacidad Médica
+            <input
+              type="checkbox"
+              checked={incluirIncapacidad}
+              onChange={(e) => {
+                setIncluirIncapacidad(e.target.checked);
+                if (!e.target.checked) setIncapacidad(INCAP_INICIAL);
+              }}
+            /> Emitir Incapacidad Médica
           </legend>
           {incluirIncapacidad && (
             <div className="form-grid sub-form">
@@ -423,7 +445,9 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
           )}
         </fieldset>
 
-        <button type="submit" className="btn-primary">Finalizar Consulta y Guardar Historia</button>
+        <button type="submit" className="btn-primary" disabled={guardando}>
+          {guardando ? 'Guardando...' : 'Finalizar Consulta y Guardar Historia'}
+        </button>
       </form>
     </div>
   );
