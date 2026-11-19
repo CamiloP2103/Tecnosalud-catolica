@@ -159,7 +159,7 @@ function AgendaMedico({ onAtender }) {
           className="btn-volver-agenda"
           onClick={() => {
             setCitaSeleccionada(null);
-            if (typeof onAtender === 'function') onAtender();
+            cargarAgenda();
           }}
         >
           ← Volver a la Agenda
