@@ -4,6 +4,7 @@ const PDFDocument = require('pdfkit');
 
 const AZUL = '#145da0';
 const MORADO = '#5b21b6';
+const AMBAR = '#b45309';
 const GRIS = '#475569';
 const ZONA_HORARIA = 'America/Bogota';
 
@@ -15,6 +16,21 @@ const fechaLarga = (valor) => {
     timeZone: ZONA_HORARIA,
     dateStyle: 'long',
     timeStyle: 'short',
+  });
+};
+
+const fechaCorta = (valor) => {
+  if (!valor) return 'Sin registro';
+  const str = String(valor).trim();
+  const matchIso = str.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (matchIso) return matchIso[1];
+  const d = new Date(str);
+  if (Number.isNaN(d.getTime())) return str;
+  return d.toLocaleDateString('es-CO', {
+    timeZone: ZONA_HORARIA,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
   });
 };
 
@@ -284,7 +300,95 @@ function generarPdfRecetaMedica(datos, { emitida = new Date() } = {}) {
   });
 }
 
+/**
+ * 3. PDF de Incapacidad Médica
+ */
+function generarPdfIncapacidadMedica(datos, { emitida = new Date() } = {}) {
+  const folio = `INC-${String(datos.historia_clinica_id || datos.id || '000000').padStart(6, '0')}`;
+  const inc = datos.incapacidad && typeof datos.incapacidad === 'object' ? datos.incapacidad : {};
+
+  const diasRaw = datos.dias_incapacidad ?? inc.dias ?? inc.dias_incapacidad ?? null;
+  const textoDias = diasRaw !== null && diasRaw !== ''
+    ? `${diasRaw} ${Number(diasRaw) === 1 ? 'día' : 'días'}`
+    : 'No especificados';
+
+  const fechaInicio = fechaCorta(
+    datos.fecha_inicio_incapacidad || inc.fecha_inicio || inc.fechaInicio || datos.fecha_atencion || datos.fecha || emitida
+  );
+  const fechaFin = fechaCorta(
+    datos.fecha_fin_incapacidad || inc.fecha_fin || inc.fechaFin || ''
+  );
+
+  const esProrroga = Boolean(datos.prorroga ?? inc.prorroga ?? false);
+  const tipoIncapacidad = datos.tipo_incapacidad || inc.tipo || inc.origen || 'Enfermedad general';
+  const observacionesInc = datos.observaciones_incapacidad || inc.observaciones || datos.observaciones || 'Sin observaciones adicionales';
+
+  return iniciarPdf({
+    titulo: 'Certificado de Incapacidad Médica',
+    subject: 'Certificado de incapacidad médica temporal',
+    documentoPaciente: datos.afiliado_documento || datos.documento,
+    colorEncabezado: AMBAR,
+    folio,
+    onListo: (doc, ancho) => {
+      doc.fillColor(AMBAR).font('Helvetica-Bold').fontSize(17).text(
+        'Certificado de Incapacidad Médica',
+        56,
+        140
+      );
+      doc.moveDown(0.35);
+      doc.fillColor(GRIS).font('Helvetica').fontSize(10.5).text(
+        'Soporte clínico de incapacidad laboral o académica emitido en Tecnosalud Católica.',
+        { width: ancho - 112, lineGap: 2 }
+      );
+
+      const campos = [
+        ['Paciente', datos.afiliado_nombre || datos.nombre_paciente || 'Paciente'],
+        ['Documento', datos.afiliado_documento || datos.documento || 'N/A'],
+        ['Fecha de atención', fechaLarga(datos.fecha_atencion || datos.fecha || emitida)],
+        ['Diagnóstico principal', datos.diagnostico_principal || 'No especificado'],
+        ['Tipo / Origen', tipoIncapacidad],
+        ['Duración', textoDias],
+        ['Fecha de inicio', fechaInicio],
+        ['Fecha de terminación', fechaFin],
+        ['Prórroga', esProrroga ? 'Sí' : 'No'],
+        ['Observaciones', observacionesInc],
+      ];
+
+      let y = doc.y + 18;
+      const xEtiqueta = 56;
+      const xValor = 215;
+      const anchoValor = ancho - xValor - 56;
+
+      campos.forEach(([etiqueta, valor], i) => {
+        const textoValor = String(valor ?? '');
+        const altoTexto = doc.heightOfString(textoValor, { width: anchoValor, lineGap: 2 });
+        const altoFila = Math.max(24, altoTexto + 10);
+
+        if (y + altoFila > doc.page.height - 150) {
+          doc.addPage();
+          y = 60;
+        }
+
+        if (i % 2 === 0) {
+          doc.rect(xEtiqueta - 6, y - 4, ancho - 106, altoFila).fill('#fffbeb');
+        }
+        doc.fillColor(GRIS).font('Helvetica-Bold').fontSize(10).text(etiqueta, xEtiqueta, y, { width: xValor - xEtiqueta - 10 });
+        doc.fillColor('#0f172a').font('Helvetica').fontSize(10).text(textoValor, xValor, y, {
+          width: anchoValor,
+          lineGap: 2,
+        });
+        y += altoFila + 4;
+      });
+
+      doc.y = y;
+      renderizarFirmaMedico(doc, ancho, datos, AMBAR);
+      renderizarPieLegal(doc, ancho, emitida, AMBAR);
+    },
+  });
+}
+
 module.exports = {
   generarPdfAtencionDiagnostico,
   generarPdfRecetaMedica,
+  generarPdfIncapacidadMedica,
 };

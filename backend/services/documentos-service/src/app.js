@@ -7,7 +7,11 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const { errorBaseDatos } = require('./errores');
 const { generarConstancia } = require('./constancia');
-const { generarPdfAtencionDiagnostico, generarPdfRecetaMedica,} = require('./documentosClinicosPdf');
+const {
+  generarPdfAtencionDiagnostico,
+  generarPdfRecetaMedica,
+  generarPdfIncapacidadMedica,
+} = require('./documentosClinicosPdf');
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const DOCUMENT_PATTERN = /^[A-Za-z0-9.-]{5,20}$/;
@@ -189,11 +193,10 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
       const pdfBuffer = await generarConstancia(usuario);
       const pdfBase64 = pdfBuffer.toString('base64');
 
-      return res.json({ 
+      return res.json({
         mensaje: 'PDF generado exitosamente',
-        base64: pdfBase64 
+        base64: pdfBase64,
       });
-
     } catch (error) {
       console.error('[documentos-service] Error generando constancia PDF:', error);
       return res.status(500).json({ error: 'Error interno generando el documento PDF.' });
@@ -414,8 +417,14 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
       if (!pacienteDoc) {
         return res.status(400).json({ error: 'El documento del paciente no es válido.' });
       }
-      if (tipo !== 'ATENCION_DIAGNOSTICO' && tipo !== 'RECETA_MEDICA') {
-        return res.status(400).json({ error: 'Tipo de documento inválido. Use ATENCION_DIAGNOSTICO o RECETA_MEDICA.' });
+      if (
+        tipo !== 'ATENCION_DIAGNOSTICO' &&
+        tipo !== 'RECETA_MEDICA' &&
+        tipo !== 'INCAPACIDAD_MEDICA'
+      ) {
+        return res.status(400).json({
+          error: 'Tipo de documento inválido. Use ATENCION_DIAGNOSTICO, RECETA_MEDICA o INCAPACIDAD_MEDICA.',
+        });
       }
 
       const payloadPdf = {
@@ -425,7 +434,9 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
 
       const pdfBuffer = tipo === 'RECETA_MEDICA'
         ? await generarPdfRecetaMedica(payloadPdf)
-        : await generarPdfAtencionDiagnostico(payloadPdf);
+        : tipo === 'INCAPACIDAD_MEDICA'
+          ? await generarPdfIncapacidadMedica(payloadPdf)
+          : await generarPdfAtencionDiagnostico(payloadPdf);
 
       return res.json({
         mensaje: 'PDF clínico generado exitosamente',
@@ -478,6 +489,16 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
       );
       const pdfReceta = tieneReceta ? await generarPdfRecetaMedica(payloadPdf) : null;
 
+      const tieneIncapacidad = Boolean(
+        body.incluir_incapacidad ||
+          body.incapacidad ||
+          body.dias_incapacidad ||
+          body.fecha_inicio_incapacidad
+      );
+      const pdfIncapacidad = tieneIncapacidad
+        ? await generarPdfIncapacidadMedica(payloadPdf)
+        : null;
+
       const adjuntos = [
         {
           filename: `diagnostico_atencion_${pacienteDoc}.pdf`,
@@ -490,6 +511,14 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
         adjuntos.push({
           filename: `receta_medica_${pacienteDoc}.pdf`,
           content: pdfReceta.toString('base64'),
+          contentType: 'application/pdf',
+        });
+      }
+
+      if (pdfIncapacidad) {
+        adjuntos.push({
+          filename: `incapacidad_medica_${pacienteDoc}.pdf`,
+          content: pdfIncapacidad.toString('base64'),
           contentType: 'application/pdf',
         });
       }
@@ -511,7 +540,7 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
           subject: 'Documentos de atención clínica - Tecnosalud Católica',
           text:
             `Hola ${body.afiliado_nombre || 'Paciente'}, adjuntamos sus documentos clínicos en PDF. ` +
-            `Para abrir cada archivo, ingrese su número de identificación sin puntos ni espacios.`,
+            'Para abrir cada archivo, ingrese su número de identificación sin puntos ni espacios.',
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
               <h2 style="color: #145da0; text-align: center;">Tecnosalud Católica</h2>

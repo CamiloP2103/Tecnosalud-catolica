@@ -5,7 +5,6 @@ import { llamarServicio } from '../../../utils/servicios';
 const API_CITAS = import.meta.env.VITE_API_CITAS_URL || 'http://localhost:3002/api/citas';
 const API_DOCUMENTOS = import.meta.env.VITE_API_DOCUMENTOS_URL || 'http://localhost:3003/api/documentos';
 
-
 function HistorialAtenciones() {
   const [historias, setHistorias] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -96,75 +95,9 @@ function HistorialAtenciones() {
     window.URL.revokeObjectURL(url);
   };
 
-  const construirContenidoDocumento = (item, tipoDocumento) => {
-    const paciente = item.afiliado_nombre || item.nombre_paciente || 'Paciente';
-    const docPaciente = item.afiliado_documento || item.documento || 'N/A';
-    const fecha = item.fecha_atencion || item.fecha || 'N/A';
-
-    if (tipoDocumento === 'RECETA_MEDICA') {
-      const lineasReceta = [];
-      if (item.receta?.indicaciones_generales) {
-        lineasReceta.push(`Indicaciones generales: ${item.receta.indicaciones_generales}`);
-      }
-      if (Array.isArray(item.receta?.detalles) && item.receta.detalles.length > 0) {
-        item.receta.detalles.forEach((med, idx) => {
-          lineasReceta.push(
-            `${idx + 1}. ${med.medicamento || 'Medicamento'} | Dosis: ${med.dosis || 'N/A'} | Frecuencia: ${med.frecuencia || 'N/A'} | Duración: ${med.duracion_tratamiento || 'N/A'}`
-          );
-        });
-      } else {
-        lineasReceta.push(`Plan / prescripción registrada: ${item.plan_manejo || 'No especificado'}`);
-      }
-
-      return [
-        `Paciente: ${paciente} (Doc: ${docPaciente})`,
-        `Fecha de atención: ${fecha}`,
-        'Tipo de documento: RECETA MÉDICA',
-        '',
-        ...lineasReceta,
-      ].join('\n');
-    }
-
-    return [
-      `Paciente: ${paciente} (Doc: ${docPaciente})`,
-      `Fecha de atención: ${fecha}`,
-      'Tipo de documento: DIAGNÓSTICO Y ATENCIÓN CLÍNICA',
-      `Motivo de consulta: ${item.motivo_consulta || 'No especificado'}`,
-      `Diagnóstico principal: ${item.diagnostico_principal || 'No especificado'}`,
-      `Diagnóstico secundario: ${item.diagnostico_secundario || 'No especificado'}`,
-      `Plan de manejo: ${item.plan_manejo || 'No especificado'}`,
-      `Observaciones: ${item.observaciones || 'Sin observaciones adicionales'}`,
-    ].join('\n');
-  };
-
-  const descargarDocumentoPorId = async (documentoId, nombreArchivo, token, documentoAcceso) => {
-    const respDescarga = await fetch(`${API_DOCUMENTOS}/${documentoId}/descargar`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify({ documentoAcceso })
-    });
-
-    if (!respDescarga.ok) {
-      let msg = 'No fue posible descargar el documento desde el servicio de documentos.';
-      try {
-        const errData = await respDescarga.json();
-        if (errData?.error) msg = errData.error;
-      } catch {
-        // Ignorar error de parseo si no es JSON
-      }
-      throw new Error(msg);
-    }
-
-    const blob = await respDescarga.blob();
-    dispararDescargaBlob(blob, nombreArchivo);
-  };
-
   /**
-   * Gestiona los dos documentos en documentos-service:
-   * - tipoDocumento: 'ATENCION_DIAGNOSTICO' | 'RECETA_MEDICA'
+   * Gestiona los documentos en documentos-service:
+   * - tipoDocumento: 'ATENCION_DIAGNOSTICO' | 'RECETA_MEDICA' | 'INCAPACIDAD_MEDICA'
    */
   const handleGenerarPdf = async (item, tipoDocumento, index) => {
     const historiaId = item.id || item.historia_clinica_id || index + 1;
@@ -187,7 +120,12 @@ function HistorialAtenciones() {
       }
 
       const esReceta = tipoDocumento === 'RECETA_MEDICA';
-      const sufijoArchivo = esReceta ? 'receta_medica' : 'diagnostico_atencion';
+      const esIncapacidad = tipoDocumento === 'INCAPACIDAD_MEDICA';
+      const sufijoArchivo = esReceta
+        ? 'receta_medica'
+        : esIncapacidad
+          ? 'incapacidad_medica'
+          : 'diagnostico_atencion';
       const nombreArchivo = `${sufijoArchivo}_${pacienteDoc}_${historiaId}.pdf`;
 
       const respHttp = await fetch(`${API_DOCUMENTOS}/generar-pdf-clinico`, {
@@ -214,6 +152,11 @@ function HistorialAtenciones() {
           plan_manejo: item.plan_manejo || '',
           observaciones: item.observaciones || '',
           receta: item.receta || null,
+          incapacidad: item.incapacidad || null,
+          dias_incapacidad: item.dias_incapacidad ?? item.incapacidad?.dias ?? null,
+          fecha_inicio_incapacidad: item.fecha_inicio_incapacidad || item.incapacidad?.fecha_inicio || '',
+          fecha_fin_incapacidad: item.fecha_fin_incapacidad || item.incapacidad?.fecha_fin || '',
+          prorroga: item.prorroga ?? item.incapacidad?.prorroga ?? false,
         }),
       });
 
@@ -276,6 +219,10 @@ function HistorialAtenciones() {
         plan_manejo: item.plan_manejo || '',
         observaciones: item.observaciones || '',
         receta: item.receta || null,
+        incapacidad: item.incapacidad || null,
+        dias_incapacidad: item.dias_incapacidad ?? item.incapacidad?.dias ?? null,
+        fecha_inicio_incapacidad: item.fecha_inicio_incapacidad || item.incapacidad?.fecha_inicio || '',
+        fecha_fin_incapacidad: item.fecha_fin_incapacidad || item.incapacidad?.fecha_fin || '',
         medico_nombre: item.medico_nombre || item.medico || sesion.nombre || '',
         registro_medico: item.registro_medico || item.registroMedico || sesion.registro_medico || '',
         especialidad: item.especialidad || sesion.especialidad || '',
@@ -283,6 +230,11 @@ function HistorialAtenciones() {
           item.receta &&
             ((Array.isArray(item.receta.detalles) && item.receta.detalles.length > 0) ||
               item.receta.indicaciones_generales)
+        ),
+        incluir_incapacidad: Boolean(
+          item.incapacidad ||
+            item.dias_incapacidad ||
+            item.fecha_inicio_incapacidad
         ),
       };
 
@@ -327,7 +279,6 @@ function HistorialAtenciones() {
     if (!valor) return 'N/A';
     const str = String(valor).trim();
 
-    // Si ya viene como "YYYY-MM-DD HH:mm" o "YYYY-MM-DD HH:mm:ss"
     const matchEspacio = str.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{2}:\d{2})/);
     if (matchEspacio) {
       return `${matchEspacio[1]} ${matchEspacio[2]}`;
@@ -349,7 +300,7 @@ function HistorialAtenciones() {
   return (
     <div className="atencion-container historial-ancho-completo">
       <h2>Historial de Atenciones Clínicas</h2>
-      <p>Consulta de registros médicos previos, generación/descarga de documentos (atención y receta) y envío al correo del paciente.</p>
+      <p>Consulta de registros médicos previos, generación/descarga de documentos (atención, receta e incapacidad) y envío al correo del paciente.</p>
 
       {/* Barra de Búsqueda */}
       <div style={{ margin: '1.5rem 0 1rem 0' }}>
@@ -398,6 +349,8 @@ function HistorialAtenciones() {
                 const historiaId = item.id || item.historia_clinica_id || index + 1;
                 const cargandoAtencion = descargandoKey === `ATENCION_DIAGNOSTICO-${historiaId}`;
                 const cargandoReceta = descargandoKey === `RECETA_MEDICA-${historiaId}`;
+                const cargandoIncapacidad = descargandoKey === `INCAPACIDAD_MEDICA-${historiaId}`;
+                const cargandoCorreo = enviandoKey === `CORREO-${historiaId}`;
 
                 return (
                   <tr
@@ -454,21 +407,26 @@ function HistorialAtenciones() {
                             <span>💊</span>
                             <span>{cargandoReceta ? 'Procesando...' : 'Doc. Receta'}</span>
                           </button>
-                          {(() => {
-                            const cargandoCorreo = enviandoKey === `CORREO-${historiaId}`;
-                            return (
-                              <button
-                                type="button"
-                                className="btn-doc-correo"
-                                disabled={cargandoCorreo}
-                                onClick={() => handleEnviarCorreo(item, index)}
-                                title="Enviar documentos al correo del paciente"
-                              >
-                                <span>✉️</span>
-                                <span>{cargandoCorreo ? 'Enviando...' : 'Enviar correo'}</span>
-                              </button>
-                            );
-                          })()}
+                          <button
+                            type="button"
+                            className="btn-doc-pdf btn-doc-incapacidad"
+                            disabled={cargandoIncapacidad}
+                            onClick={() => handleGenerarPdf(item, 'INCAPACIDAD_MEDICA', index)}
+                            title="Generar o descargar documento de incapacidad médica"
+                          >
+                            <span>🏥</span>
+                            <span>{cargandoIncapacidad ? 'Procesando...' : 'Doc. Incapacidad'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-doc-correo"
+                            disabled={cargandoCorreo}
+                            onClick={() => handleEnviarCorreo(item, index)}
+                            title="Enviar documentos al correo del paciente"
+                          >
+                            <span>✉️</span>
+                            <span>{cargandoCorreo ? 'Enviando...' : 'Enviar correo'}</span>
+                          </button>
                         </div>
                       ) : (
                         <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Sin documento</span>
