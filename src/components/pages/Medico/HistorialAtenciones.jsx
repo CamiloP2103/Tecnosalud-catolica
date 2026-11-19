@@ -4,6 +4,7 @@ import { llamarServicio } from '../../../utils/servicios';
 
 const API_CITAS = import.meta.env.VITE_API_CITAS_URL || 'http://localhost:3002/api/citas';
 const API_DOCUMENTOS = import.meta.env.VITE_API_DOCUMENTOS_URL || 'http://localhost:3003/api/documentos';
+const API_NOTIFICACIONES = import.meta.env.VITE_API_NOTIFICACIONES_URL || '';
 
 function HistorialAtenciones() {
   const [historias, setHistorias] = useState([]);
@@ -11,6 +12,8 @@ function HistorialAtenciones() {
   const [errorMsg, setErrorMsg] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [descargandoKey, setDescargandoKey] = useState('');
+  const [enviandoKey, setEnviandoKey] = useState('');
+  const [exitoMsg, setExitoMsg] = useState('');
 
   useEffect(() => {
     const cargarHistorial = async () => {
@@ -236,8 +239,85 @@ function HistorialAtenciones() {
   };
 
   // Sin integración todavía: se conectará luego con el servicio de documentos y notificación
-  const handleEnviarCorreo = (item) => {
-    // TODO: Integrar servicio de documentos y servicio de notificación por correo al paciente
+  const handleEnviarCorreo = async (item, index) => {
+    const historiaId = item.id || item.historia_clinica_id || index + 1;
+    const claveAccion = `CORREO-${historiaId}`;
+    setEnviandoKey(claveAccion);
+    setErrorMsg('');
+    setExitoMsg('');
+
+    try {
+      const token = localStorage.getItem('tecnosalud_token') || '';
+      const sesion = JSON.parse(localStorage.getItem('tecnosalud_sesion_activa') || '{}');
+      const correoDestino = String(
+        item.afiliado_correo || item.usuario_email || item.email || ''
+      ).trim();
+      const pacienteDoc = String(item.afiliado_documento || item.documento || '').trim();
+
+      if (!token) {
+        setErrorMsg('Debes iniciar sesión para enviar documentos clínicos por correo.');
+        return;
+      }
+      if (!correoDestino) {
+        setErrorMsg('El registro del paciente no tiene un correo electrónico asociado.');
+        return;
+      }
+
+      const payload = {
+        destinatario: correoDestino,
+        afiliado_correo: correoDestino,
+        afiliado_nombre: item.afiliado_nombre || item.nombre_paciente || 'Paciente',
+        afiliado_documento: pacienteDoc,
+        historia_clinica_id: item.historia_clinica_id || item.id,
+        cita_id: item.cita_id || null,
+        fecha_atencion: item.fecha_atencion || item.fecha || '',
+        motivo_consulta: item.motivo_consulta || '',
+        diagnostico_principal: item.diagnostico_principal || '',
+        diagnostico_secundario: item.diagnostico_secundario || '',
+        plan_manejo: item.plan_manejo || '',
+        observaciones: item.observaciones || '',
+        receta: item.receta || null,
+        medico_nombre: item.medico_nombre || item.medico || sesion.nombre || '',
+        registro_medico: item.registro_medico || item.registroMedico || sesion.registro_medico || '',
+        especialidad: item.especialidad || sesion.especialidad || '',
+        incluir_receta: Boolean(
+          item.receta &&
+            ((Array.isArray(item.receta.detalles) && item.receta.detalles.length > 0) ||
+              item.receta.indicaciones_generales)
+        ),
+      };
+
+      const urlEnvio = API_NOTIFICACIONES
+        ? `${API_NOTIFICACIONES}/notificaciones/documentos-clinicos`
+        : `${API_DOCUMENTOS}/api/notifications/email`;
+
+      const respHttp = await fetch(urlEnvio, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const dataJson = await respHttp.json().catch(() => ({}));
+      if (!respHttp.ok) {
+        setErrorMsg(
+          dataJson?.error || dataJson?.mensaje || 'No se pudo enviar el correo con los documentos clínicos.'
+        );
+        return;
+      }
+
+      setExitoMsg(
+        dataJson?.mensaje ||
+          `Documentos clínicos enviados correctamente a ${correoDestino}.`
+      );
+    } catch (error) {
+      console.error('Error al enviar correo clínico:', error);
+      setErrorMsg('Error de conexión al intentar enviar los documentos por correo.');
+    } finally {
+      setEnviandoKey('');
+    }
   };
 
   const historiasFiltradas = historias.filter((item) => {
@@ -353,15 +433,21 @@ function HistorialAtenciones() {
                             <span>💊</span>
                             <span>{cargandoReceta ? 'Procesando...' : 'Doc. Receta'}</span>
                           </button>
-                          <button
-                            type="button"
-                            className="btn-doc-correo"
-                            onClick={() => handleEnviarCorreo(item)}
-                            title="Enviar documentos al correo del paciente"
-                          >
-                            <span>✉️</span>
-                            <span>Enviar correo</span>
-                          </button>
+                          {(() => {
+                            const cargandoCorreo = enviandoKey === `CORREO-${historiaId}`;
+                            return (
+                              <button
+                                type="button"
+                                className="btn-doc-correo"
+                                disabled={cargandoCorreo}
+                                onClick={() => handleEnviarCorreo(item, index)}
+                                title="Enviar documentos al correo del paciente"
+                              >
+                                <span>✉️</span>
+                                <span>{cargandoCorreo ? 'Enviando...' : 'Enviar correo'}</span>
+                              </button>
+                            );
+                          })()}
                         </div>
                       ) : (
                         <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Sin documento</span>
