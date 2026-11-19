@@ -101,7 +101,6 @@
   text-align: center;
   color: #475569;
 }
-
 @media (max-width: 768px) {
   .panel-medico-layout {
     flex-direction: column;

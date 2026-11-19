@@ -306,5 +306,4 @@ function AgendaMedico({ onAtender }) {
     </div>
   );
 }
-
 export default AgendaMedico;

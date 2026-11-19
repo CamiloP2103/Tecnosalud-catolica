@@ -106,5 +106,4 @@ function PanelMedico() {
     </div>
   );
 }
-
 export default PanelMedico;

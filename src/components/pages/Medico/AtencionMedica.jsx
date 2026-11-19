@@ -452,5 +452,4 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
     </div>
   );
 }
-
 export default AtencionMedica;
