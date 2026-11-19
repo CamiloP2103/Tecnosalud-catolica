@@ -299,9 +299,12 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
         {/* SECCIÓN 2: DIAGNÓSTICO */}
         <fieldset className="form-section">
           <legend>Diagnóstico y Plan</legend>
-          <div className="form-grid">
-            <label>
-              Diagnóstico Principal (CIE-10 / EPS Colombia) *
+          <div className="form-grid diagnostico-grid">
+            <label className="campo-alineado">
+              <span className="campo-label">
+                Diagnóstico Principal (CIE-10 / EPS Colombia){' '}
+                <span className="campo-obligatorio">*</span>
+              </span>
               <select
                 name="diagnostico_principal"
                 value={form.diagnostico_principal}
@@ -314,8 +317,9 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
                 ))}
               </select>
             </label>
-            <label>
-              Diagnóstico Secundario
+
+            <label className="campo-alineado">
+              <span className="campo-label">Diagnóstico Secundario</span>
               <select
                 name="diagnostico_secundario"
                 value={form.diagnostico_secundario}
@@ -331,7 +335,7 @@ function AtencionMedica({ cita, onAtencionFinalizada }) {
           <label>Plan de Manejo y Tratamiento *<textarea name="plan_manejo" value={form.plan_manejo} onChange={handleChange} required rows={3} /></label>
           <label>Observaciones <textarea name="observaciones" value={form.observaciones} onChange={handleChange} rows={2} /></label>
         </fieldset>
-
+        
         {/* SECCIÓN 3: RECETA MÉDICA OPCIONAL */}
         <fieldset className="form-section">
           <legend>
