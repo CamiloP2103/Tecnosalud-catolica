@@ -4,7 +4,7 @@ import { llamarServicio } from '../../../utils/servicios';
 
 const API_CITAS = import.meta.env.VITE_API_CITAS_URL || 'http://localhost:3002/api/citas';
 const API_DOCUMENTOS = import.meta.env.VITE_API_DOCUMENTOS_URL || 'http://localhost:3003/api/documentos';
-const API_NOTIFICACIONES = import.meta.env.VITE_API_NOTIFICACIONES_URL || '';
+
 
 function HistorialAtenciones() {
   const [historias, setHistorias] = useState([]);
@@ -238,7 +238,6 @@ function HistorialAtenciones() {
     }
   };
 
-  // Sin integración todavía: se conectará luego con el servicio de documentos y notificación
   const handleEnviarCorreo = async (item, index) => {
     const historiaId = item.id || item.historia_clinica_id || index + 1;
     const claveAccion = `CORREO-${historiaId}`;
@@ -287,11 +286,7 @@ function HistorialAtenciones() {
         ),
       };
 
-      const urlEnvio = API_NOTIFICACIONES
-        ? `${API_NOTIFICACIONES}/api/notifications/email`
-        : `${API_DOCUMENTOS}/enviar-correo-clinico`;
-
-      const respHttp = await fetch(urlEnvio, {
+      const respHttp = await fetch(`${API_DOCUMENTOS}/enviar-correo-clinico`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -353,6 +348,7 @@ function HistorialAtenciones() {
       </div>
 
       {errorMsg && <div className="alert-error" role="alert">{errorMsg}</div>}
+      {exitoMsg && <div className="alert-success" role="status">{exitoMsg}</div>}
 
       {cargando ? (
         <p style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>Cargando historial médico...</p>

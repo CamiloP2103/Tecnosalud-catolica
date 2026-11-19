@@ -438,6 +438,113 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
     }
   });
 
+  app.post('/api/documentos/enviar-correo-clinico', autenticar, exigirPersonalClinico, async (req, res) => {
+    try {
+      const body = req.body || {};
+      const destinatario = String(body.destinatario || body.afiliado_correo || '').trim();
+      const pacienteDoc = validarDocumentoPaciente(
+        body.afiliado_documento || body.documento || body.documentoPaciente
+      );
+
+      if (!destinatario || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(destinatario)) {
+        return res.status(400).json({ error: 'El correo electrónico del paciente no es válido.' });
+      }
+      if (!pacienteDoc) {
+        return res.status(400).json({ error: 'El documento del paciente no es válido.' });
+      }
+
+      const notificationsUrl = String(
+        process.env.NOTIFICATIONS_SERVICE_URL || 'http://localhost:3004'
+      ).replace(/\/+$/, '');
+      const notificationApiKey = process.env.NOTIFICATION_API_KEY || '';
+
+      if (!notificationApiKey) {
+        console.error('[documentos-service] Falta NOTIFICATION_API_KEY en el entorno.');
+        return res.status(500).json({
+          error: 'El servicio de documentos no tiene configurada la clave de notificaciones.',
+        });
+      }
+
+      const payloadPdf = {
+        ...body,
+        afiliado_documento: pacienteDoc,
+      };
+
+      const pdfAtencion = await generarPdfAtencionDiagnostico(payloadPdf);
+      const tieneReceta = Boolean(
+        body.receta &&
+          ((Array.isArray(body.receta.detalles) && body.receta.detalles.length > 0) ||
+            body.receta.indicaciones_generales)
+      );
+      const pdfReceta = tieneReceta ? await generarPdfRecetaMedica(payloadPdf) : null;
+
+      const adjuntos = [
+        {
+          filename: `diagnostico_atencion_${pacienteDoc}.pdf`,
+          content: pdfAtencion.toString('base64'),
+          contentType: 'application/pdf',
+        },
+      ];
+
+      if (pdfReceta) {
+        adjuntos.push({
+          filename: `receta_medica_${pacienteDoc}.pdf`,
+          content: pdfReceta.toString('base64'),
+          contentType: 'application/pdf',
+        });
+      }
+
+      const nombrePaciente = String(body.afiliado_nombre || 'Paciente').replace(
+        /[&<>"']/g,
+        (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+      );
+
+      const respNotif = await fetch(`${notificationsUrl}/api/notifications/email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': notificationApiKey,
+          'x-servicio-origen': 'documentos-service',
+        },
+        body: JSON.stringify({
+          to: destinatario,
+          subject: 'Documentos de atención clínica - Tecnosalud Católica',
+          text:
+            `Hola ${body.afiliado_nombre || 'Paciente'}, adjuntamos sus documentos clínicos en PDF. ` +
+            `Para abrir cada archivo, ingrese su número de identificación sin puntos ni espacios.`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
+              <h2 style="color: #145da0; text-align: center;">Tecnosalud Católica</h2>
+              <p>Hola, <strong>${nombrePaciente}</strong>.</p>
+              <p>Adjuntamos los documentos generados en tu atención médica en el portal.</p>
+              <div style="background-color: #eff6ff; border-left: 4px solid #145da0; padding: 12px 16px; margin: 20px 0; border-radius: 4px;">
+                <p style="margin: 0;"><strong>Para abrir cada PDF</strong> escribe tu <strong>número de identificación</strong>, sin puntos ni espacios.</p>
+              </div>
+              <p style="color: #64748b; font-size: 13px;">Si tienes dudas, comunícate con soporte@tecnosalud.com.co.</p>
+            </div>
+          `,
+          attachments: adjuntos,
+        }),
+      });
+
+      const dataNotif = await respNotif.json().catch(() => ({}));
+      if (!respNotif.ok || !dataNotif.exito) {
+        return res.status(502).json({
+          error: dataNotif.mensaje || 'No se pudo enviar el correo a través del servicio de notificaciones.',
+        });
+      }
+
+      return res.json({
+        exito: true,
+        mensaje: `Documentos clínicos enviados correctamente a ${destinatario}.`,
+        messageId: dataNotif.messageId,
+      });
+    } catch (error) {
+      console.error('[documentos-service] Error enviando correo clínico:', error);
+      return res.status(500).json({ error: 'Error interno al enviar los documentos por correo.' });
+    }
+  });
+
   app.use((error, req, res, next) => {
     if (error instanceof multer.MulterError) {
       const status = error.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
