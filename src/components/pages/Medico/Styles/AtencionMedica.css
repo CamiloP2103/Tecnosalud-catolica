@@ -319,9 +319,9 @@ ul li {
 
 .atencion-container.historial-ancho-completo .tabla-historial-container table {
   width: 100%;
-  min-width: 920px;
+  min-width: 960px;
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 .atencion-container.historial-ancho-completo .tabla-historial-container th,
