@@ -319,9 +319,9 @@ ul li {
 
 .atencion-container.historial-ancho-completo .tabla-historial-container table {
   width: 100%;
-  min-width: 780px;
+  min-width: 920px;
   border-collapse: collapse;
-  table-layout: auto;
+  table-layout: fixed;
 }
 
 .atencion-container.historial-ancho-completo .tabla-historial-container th,
@@ -347,4 +347,35 @@ ul li {
   width: 100%;
   justify-content: center;
   box-sizing: border-box;
+}
+
+/* Reparto de columnas: más espacio para Plan de Manejo */
+.atencion-container.historial-ancho-completo .tabla-historial-container th:nth-child(1),
+.atencion-container.historial-ancho-completo .tabla-historial-container td:nth-child(1) {
+  width: 13%;
+}
+
+.atencion-container.historial-ancho-completo .tabla-historial-container th:nth-child(2),
+.atencion-container.historial-ancho-completo .tabla-historial-container td:nth-child(2) {
+  width: 15%;
+}
+
+.atencion-container.historial-ancho-completo .tabla-historial-container th:nth-child(3),
+.atencion-container.historial-ancho-completo .tabla-historial-container td:nth-child(3) {
+  width: 10%;
+}
+
+.atencion-container.historial-ancho-completo .tabla-historial-container th:nth-child(4),
+.atencion-container.historial-ancho-completo .tabla-historial-container td:nth-child(4) {
+  width: 19%;
+}
+
+.atencion-container.historial-ancho-completo .tabla-historial-container th:nth-child(5),
+.atencion-container.historial-ancho-completo .tabla-historial-container td:nth-child(5) {
+  width: 29%;
+}
+
+.atencion-container.historial-ancho-completo .tabla-historial-container th:nth-child(6),
+.atencion-container.historial-ancho-completo .tabla-historial-container td:nth-child(6) {
+  width: 14%;
 }
