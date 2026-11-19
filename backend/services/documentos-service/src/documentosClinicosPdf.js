@@ -305,7 +305,7 @@ function generarPdfRecetaMedica(datos, { emitida = new Date() } = {}) {
  */
 function generarPdfIncapacidadMedica(datos, { emitida = new Date() } = {}) {
   const folio = `INC-${String(datos.historia_clinica_id || datos.id || '000000').padStart(6, '0')}`;
-  const inc = datos.incapacidad && typeof datos.incapacidad === 'object' ? datos.incapacidad : {};
+  const inc = datos.dias_incapacidad && typeof datos.incapacidad === 'object' ? datos.incapacidad : {};
 
   const diasRaw = datos.dias_incapacidad ?? inc.dias ?? inc.dias_incapacidad ?? null;
   const textoDias = diasRaw !== null && diasRaw !== ''
@@ -316,7 +316,7 @@ function generarPdfIncapacidadMedica(datos, { emitida = new Date() } = {}) {
     datos.fecha_inicio_incapacidad || inc.fecha_inicio || inc.fechaInicio || datos.fecha_atencion || datos.fecha || emitida
   );
   const fechaFin = fechaCorta(
-    datos.fecha_fin_incapacidad || inc.fecha_fin || inc.fechaFin || ''
+    datos.fecha_fin || inc.fecha_fin || inc.fechaFin || ''
   );
 
   const esProrroga = Boolean(datos.prorroga ?? inc.prorroga ?? false);
