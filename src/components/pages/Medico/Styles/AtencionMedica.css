@@ -319,7 +319,7 @@ ul li {
 
 .atencion-container.historial-ancho-completo .tabla-historial-container table {
   width: 100%;
-  min-width: 1080px;
+  min-width: 780px;
   border-collapse: collapse;
   table-layout: auto;
 }
@@ -331,4 +331,20 @@ ul li {
   line-height: 1.45;
   word-break: normal;
   overflow-wrap: break-word;
+}
+
+/* Botones de documentos apilados uno debajo del otro */
+.atencion-container.historial-ancho-completo .historial-acciones-doc {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 132px;
+}
+
+.atencion-container.historial-ancho-completo .historial-acciones-doc .btn-doc-pdf,
+.atencion-container.historial-ancho-completo .historial-acciones-doc .btn-doc-correo {
+  width: 100%;
+  justify-content: center;
+  box-sizing: border-box;
 }
