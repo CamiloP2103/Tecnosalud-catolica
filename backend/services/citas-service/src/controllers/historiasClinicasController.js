@@ -97,6 +97,20 @@ const cancelarCitaMedico = async (req, res) => {
   }
 };
 
+const obtenerCatalogosAtencion = async (req, res) => {
+  try {
+    const [diagnosticos, medicamentos, dosis] = await Promise.all([
+      repo.listarDiagnosticosCie10(req.query.q || ''),
+      repo.listarMedicamentosPos(),
+      repo.listarDosisPos()
+    ]);
+    return res.json({ ok: true, diagnosticos, medicamentos, dosis });
+  } catch (error) {
+    console.error('Error al cargar catálogos clínicos:', error);
+    return res.status(500).json({ ok: false, error: 'Error al consultar catálogos de diagnósticos y medicamentos.' });
+  }
+};
+
 // Exportar correctamente después de declararlas
 module.exports = {
   registrarAtencionMedica,
@@ -104,5 +118,6 @@ module.exports = {
   obtenerHistoriasPorMedico,
   obtenerHorarios,
   actualizarHorarios,
-  cancelarCitaMedico
+  cancelarCitaMedico,
+  obtenerCatalogosAtencion
 };

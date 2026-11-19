@@ -11,7 +11,8 @@ const {
   obtenerHistoriasPorMedico,
   obtenerHorarios,
   actualizarHorarios,
-  cancelarCitaMedico
+  cancelarCitaMedico,
+  obtenerCatalogosAtencion
 } = historiasController;
 
 // 3. Declarar las rutas usando las funciones definidas
@@ -22,5 +23,6 @@ router.get('/horarios/usuario/:usuarioId', obtenerHorarios);
 router.post('/horarios/medico/:medicoId', actualizarHorarios);
 router.patch('/:id/cancelar', cancelarCitaMedico);
 router.patch('/citas/:id/cancelar', cancelarCitaMedico);
+router.get('/catalogos/atencion', obtenerCatalogosAtencion);
 
 module.exports = router;

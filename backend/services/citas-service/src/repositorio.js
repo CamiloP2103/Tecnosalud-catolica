@@ -357,7 +357,46 @@ function crearRepositorio(pool) {
         diaSemana: mapaDias[f.diaSemana] || 'Lunes'
       }));
     },
+    async listarDiagnosticosCie10(busqueda = '') {
+      if (busqueda && busqueda.trim()) {
+        const like = `%${busqueda.trim()}%`;
+        const [filas] = await pool.query(
+          `SELECT id, codigo_cie10 AS codigoCie10, descripcion, categoria
+          FROM diagnosticos_cie10
+          WHERE activo = TRUE AND (codigo_cie10 LIKE ? OR descripcion LIKE ?)
+          ORDER BY codigo_cie10 ASC LIMIT 100`,
+          [like, like]
+        );
+        return filas;
+      }
+      const [filas] = await pool.query(
+        `SELECT id, codigo_cie10 AS codigoCie10, descripcion, categoria
+        FROM diagnosticos_cie10
+        WHERE activo = TRUE
+        ORDER BY codigo_cie10 ASC LIMIT 100`
+      );
+      return filas;
+    },
 
+    async listarMedicamentosPos() {
+      const [filas] = await pool.query(
+        `SELECT id, principio_activo AS principioActivo, presentacion, codigo_pos AS codigoPos
+        FROM medicamentos_pos
+        WHERE activo = TRUE
+        ORDER BY principio_activo ASC`
+      );
+      return filas;
+    },
+
+    async listarDosisPos() {
+      const [filas] = await pool.query(
+        `SELECT id, valor_dosis AS valorDosis, tipo_via AS tipoVia
+        FROM dosis_pos
+        WHERE activo = TRUE
+        ORDER BY id ASC`
+      );
+      return filas;
+    },
     async guardarHorariosMedico(medicoId, horariosNuevos) {
       const connection = await pool.getConnection();
       try {
