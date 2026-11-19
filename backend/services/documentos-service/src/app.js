@@ -454,7 +454,7 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
       }
 
       const notificationsUrl = String(
-        process.env.NOTIFICATIONS_SERVICE_URL || 'http://localhost:3004'
+        process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3004'
       ).replace(/\/+$/, '');
       const notificationApiKey = process.env.NOTIFICATION_API_KEY || '';
 
