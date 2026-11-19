@@ -8,7 +8,7 @@ function HistorialAtenciones() {
   const [historias, setHistorias] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
-  const [busqueda, setBusqueda] = useState(''); // 👈 Estado para la barra de búsqueda
+  const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
     const cargarHistorial = async () => {
@@ -54,6 +54,7 @@ function HistorialAtenciones() {
                 fecha_atencion: c.fecha ? `${c.fecha} ${c.hora || ''}` : (c.actualizado_en || 'N/A'),
                 afiliado_nombre: c.afiliado_nombre || c.usuario_email || c.usuarioEmail || 'Paciente',
                 afiliado_documento: c.afiliado_documento || c.usuario_doc || c.usuarioDoc || 'N/A',
+                afiliado_correo: c.usuario_email || c.usuarioEmail || '',
                 estado_registro: 'CANCELADA',
                 motivo_cancelacion: c.motivo_cancelacion || 'Sin motivo especificado',
                 diagnostico_principal: `Motivo de cancelación: ${c.motivo_cancelacion || 'Sin motivo especificado'}`,
@@ -61,7 +62,6 @@ function HistorialAtenciones() {
               })))
           : [];
 
-        // 🛡️ Validación segura si el endpoint de historias falla y tampoco hay cancelaciones
         if ((!respuesta || !respuesta.ok) && listaCanceladas.length === 0) {
           setErrorMsg(respuesta?.datos?.error || 'El módulo de historial aún no está disponible en el servidor de citas (404).');
           setCargando(false);
@@ -80,7 +80,16 @@ function HistorialAtenciones() {
     cargarHistorial();
   }, []);
 
-  // 👈 Filtrar historias y cancelaciones dinámicamente por nombre, documento o motivo de cancelación
+  // Placeholder sin integración todavía: se conectará al servicio de documentos
+  const handleDescargarPdf = (item) => {
+    // TODO: Integrar servicio de documentos para descargar PDF de la atención/documento
+  };
+
+  // Placeholder sin integración todavía: se conectará al servicio de documentos y notificación
+  const handleEnviarCorreo = (item) => {
+    // TODO: Integrar servicio de documentos y servicio de notificación por correo al paciente
+  };
+
   const historiasFiltradas = historias.filter((item) => {
     const termino = busqueda.toLowerCase();
     const nombre = (item.afiliado_nombre || item.nombre_paciente || item.usuario_email || '').toLowerCase();
@@ -92,16 +101,24 @@ function HistorialAtenciones() {
   return (
     <div className="atencion-container">
       <h2>Historial de Atenciones Clínicas</h2>
-      <p>Consulta de registros médicos previos, recetas, incapacidades y citas canceladas con su motivo.</p>
+      <p>Consulta de registros médicos previos, descarga de PDF y envío al correo del paciente.</p>
 
-      {/* 👈 Barra de Búsqueda */}
+      {/* Barra de Búsqueda */}
       <div style={{ margin: '1.5rem 0 1rem 0' }}>
         <input
           type="text"
           placeholder="🔍 Buscar por nombre del paciente, documento o motivo de cancelación..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem', outline: 'none' }}
+          style={{
+            width: '100%',
+            padding: '10px 14px',
+            borderRadius: '6px',
+            border: '1px solid #cbd5e1',
+            fontSize: '1rem',
+            outline: 'none',
+            boxSizing: 'border-box'
+          }}
         />
       </div>
 
@@ -123,6 +140,7 @@ function HistorialAtenciones() {
                 <th style={{ padding: '12px' }}>Documento</th>
                 <th style={{ padding: '12px' }}>Diagnóstico Principal / Cancelación</th>
                 <th style={{ padding: '12px' }}>Plan de Manejo</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>Documentos</th>
               </tr>
             </thead>
             <tbody>
@@ -137,17 +155,53 @@ function HistorialAtenciones() {
                     }}
                   >
                     <td style={{ padding: '12px' }}>{item.fecha_atencion || item.fecha || 'N/A'}</td>
-                    <td style={{ padding: '12px' }}><strong>{item.afiliado_nombre || item.nombre_paciente || 'Paciente'}</strong></td>
+                    <td style={{ padding: '12px' }}>
+                      <strong>{item.afiliado_nombre || item.nombre_paciente || 'Paciente'}</strong>
+                    </td>
                     <td style={{ padding: '12px' }}>{item.afiliado_documento || item.documento || 'N/A'}</td>
                     <td style={{ padding: '12px', color: esCancelada ? '#b91c1c' : '#1e293b' }}>
                       {esCancelada && (
-                        <strong style={{ display: 'inline-block', background: '#fee2e2', color: '#991b1b', padding: '2px 8px', borderRadius: '999px', fontSize: '0.75rem', marginRight: '6px' }}>
+                        <strong style={{
+                          display: 'inline-block',
+                          background: '#fee2e2',
+                          color: '#991b1b',
+                          padding: '2px 8px',
+                          borderRadius: '999px',
+                          fontSize: '0.75rem',
+                          marginRight: '6px'
+                        }}>
                           CANCELADA
                         </strong>
                       )}
                       {item.diagnostico_principal || 'No especificado'}
                     </td>
                     <td style={{ padding: '12px' }}>{item.plan_manejo || 'N/A'}</td>
+                    <td style={{ padding: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      {!esCancelada ? (
+                        <div className="historial-acciones-doc">
+                          <button
+                            type="button"
+                            className="btn-doc-pdf"
+                            onClick={() => handleDescargarPdf(item)}
+                            title="Descargar PDF de historia y receta"
+                          >
+                            <span>📄</span>
+                            <span>PDF</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-doc-correo"
+                            onClick={() => handleEnviarCorreo(item)}
+                            title="Enviar documento al correo del paciente"
+                          >
+                            <span>✉️</span>
+                            <span>Enviar correo</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Sin documento</span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
