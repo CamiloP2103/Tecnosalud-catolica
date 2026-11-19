@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const { errorBaseDatos } = require('./errores');
 const { generarConstancia } = require('./constancia');
+const { generarPdfAtencionDiagnostico, generarPdfRecetaMedica,} = require('./documentosClinicosPdf');
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const DOCUMENT_PATTERN = /^[A-Za-z0-9.-]{5,20}$/;
@@ -401,6 +402,39 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
       if (responderErrorBaseDatos(res, error)) return undefined;
       console.error('[documentos-service] Error al preparar el resumen:', error);
       return res.status(500).json({ error: 'No fue posible preparar el resumen.' });
+    }
+  });
+
+  app.post('/api/documentos/generar-pdf-clinico', autenticar, exigirPersonalClinico, async (req, res) => {
+    try {
+      const body = req.body || {};
+      const tipo = String(body.tipo_documento || '').toUpperCase();
+      const pacienteDoc = validarDocumentoPaciente(body.afiliado_documento || body.documento || body.documentoPaciente);
+
+      if (!pacienteDoc) {
+        return res.status(400).json({ error: 'El documento del paciente no es válido.' });
+      }
+      if (tipo !== 'ATENCION_DIAGNOSTICO' && tipo !== 'RECETA_MEDICA') {
+        return res.status(400).json({ error: 'Tipo de documento inválido. Use ATENCION_DIAGNOSTICO o RECETA_MEDICA.' });
+      }
+
+      const payloadPdf = {
+        ...body,
+        afiliado_documento: pacienteDoc,
+      };
+
+      const pdfBuffer = tipo === 'RECETA_MEDICA'
+        ? await generarPdfRecetaMedica(payloadPdf)
+        : await generarPdfAtencionDiagnostico(payloadPdf);
+
+      return res.json({
+        mensaje: 'PDF clínico generado exitosamente',
+        tipo_documento: tipo,
+        base64: pdfBuffer.toString('base64'),
+      });
+    } catch (error) {
+      console.error('[documentos-service] Error generando PDF clínico:', error);
+      return res.status(500).json({ error: 'Error interno generando el documento PDF clínico.' });
     }
   });
 

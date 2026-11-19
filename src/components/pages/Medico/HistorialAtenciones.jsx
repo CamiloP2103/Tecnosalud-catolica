@@ -3,7 +3,7 @@ import './Styles/AtencionMedica.css';
 import { llamarServicio } from '../../../utils/servicios';
 
 const API_CITAS = import.meta.env.VITE_API_CITAS_URL || 'http://localhost:3002/api/citas';
-const API_DOCUMENTOS = import.meta.env.VITE_API_DOCUMENTOS_URL || `${API_CITAS}/documentos`;
+const API_DOCUMENTOS = import.meta.env.VITE_API_DOCUMENTOS_URL || 'http://localhost:3003/api/documentos';
 
 function HistorialAtenciones() {
   const [historias, setHistorias] = useState([]);
@@ -93,8 +93,74 @@ function HistorialAtenciones() {
     window.URL.revokeObjectURL(url);
   };
 
+  const construirContenidoDocumento = (item, tipoDocumento) => {
+    const paciente = item.afiliado_nombre || item.nombre_paciente || 'Paciente';
+    const docPaciente = item.afiliado_documento || item.documento || 'N/A';
+    const fecha = item.fecha_atencion || item.fecha || 'N/A';
+
+    if (tipoDocumento === 'RECETA_MEDICA') {
+      const lineasReceta = [];
+      if (item.receta?.indicaciones_generales) {
+        lineasReceta.push(`Indicaciones generales: ${item.receta.indicaciones_generales}`);
+      }
+      if (Array.isArray(item.receta?.detalles) && item.receta.detalles.length > 0) {
+        item.receta.detalles.forEach((med, idx) => {
+          lineasReceta.push(
+            `${idx + 1}. ${med.medicamento || 'Medicamento'} | Dosis: ${med.dosis || 'N/A'} | Frecuencia: ${med.frecuencia || 'N/A'} | Duración: ${med.duracion_tratamiento || 'N/A'}`
+          );
+        });
+      } else {
+        lineasReceta.push(`Plan / prescripción registrada: ${item.plan_manejo || 'No especificado'}`);
+      }
+
+      return [
+        `Paciente: ${paciente} (Doc: ${docPaciente})`,
+        `Fecha de atención: ${fecha}`,
+        'Tipo de documento: RECETA MÉDICA',
+        '',
+        ...lineasReceta,
+      ].join('\n');
+    }
+
+    return [
+      `Paciente: ${paciente} (Doc: ${docPaciente})`,
+      `Fecha de atención: ${fecha}`,
+      'Tipo de documento: DIAGNÓSTICO Y ATENCIÓN CLÍNICA',
+      `Motivo de consulta: ${item.motivo_consulta || 'No especificado'}`,
+      `Diagnóstico principal: ${item.diagnostico_principal || 'No especificado'}`,
+      `Diagnóstico secundario: ${item.diagnostico_secundario || 'No especificado'}`,
+      `Plan de manejo: ${item.plan_manejo || 'No especificado'}`,
+      `Observaciones: ${item.observaciones || 'Sin observaciones adicionales'}`,
+    ].join('\n');
+  };
+
+  const descargarDocumentoPorId = async (documentoId, nombreArchivo, token, documentoAcceso) => {
+    const respDescarga = await fetch(`${API_DOCUMENTOS}/${documentoId}/descargar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ documentoAcceso })
+    });
+
+    if (!respDescarga.ok) {
+      let msg = 'No fue posible descargar el documento desde el servicio de documentos.';
+      try {
+        const errData = await respDescarga.json();
+        if (errData?.error) msg = errData.error;
+      } catch {
+        // Ignorar error de parseo si no es JSON
+      }
+      throw new Error(msg);
+    }
+
+    const blob = await respDescarga.blob();
+    dispararDescargaBlob(blob, nombreArchivo);
+  };
+
   /**
-   * Genera y descarga uno de los dos PDFs desde el servicio de documentos:
+   * Gestiona los dos documentos en documentos-service:
    * - tipoDocumento: 'ATENCION_DIAGNOSTICO' | 'RECETA_MEDICA'
    */
   const handleGenerarPdf = async (item, tipoDocumento, index) => {
@@ -105,16 +171,26 @@ function HistorialAtenciones() {
 
     try {
       const token = localStorage.getItem('tecnosalud_token') || '';
+      const pacienteDoc = String(item.afiliado_documento || item.documento || '').trim();
+
+      if (!token) {
+        setErrorMsg('Debes iniciar sesión para generar o descargar documentos clínicos.');
+        return;
+      }
+      if (!/^[A-Za-z0-9.-]{5,20}$/.test(pacienteDoc)) {
+        setErrorMsg('El documento del paciente no cumple con el formato requerido (5 a 20 caracteres).');
+        return;
+      }
+
       const esReceta = tipoDocumento === 'RECETA_MEDICA';
       const sufijoArchivo = esReceta ? 'receta_medica' : 'diagnostico_atencion';
-      const docSlug = String(item.afiliado_documento || item.documento || 'paciente').trim();
-      const nombreArchivo = `${sufijoArchivo}_${docSlug}_${historiaId}.pdf`;
+      const nombreArchivo = `${sufijoArchivo}_${pacienteDoc}_${historiaId}.pdf`;
 
-      const respuestaHttp = await fetch(`${API_DOCUMENTOS}/generar-pdf`, {
+      const respHttp = await fetch(`${API_DOCUMENTOS}/generar-pdf-clinico`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           tipo_documento: tipoDocumento,
@@ -122,7 +198,7 @@ function HistorialAtenciones() {
           cita_id: item.cita_id || null,
           afiliado_id: item.afiliado_id || null,
           afiliado_nombre: item.afiliado_nombre || item.nombre_paciente || 'Paciente',
-          afiliado_documento: item.afiliado_documento || item.documento || 'N/A',
+          afiliado_documento: pacienteDoc,
           afiliado_correo: item.afiliado_correo || item.usuario_email || '',
           fecha_atencion: item.fecha_atencion || item.fecha || '',
           motivo_consulta: item.motivo_consulta || '',
@@ -130,47 +206,26 @@ function HistorialAtenciones() {
           diagnostico_secundario: item.diagnostico_secundario || '',
           plan_manejo: item.plan_manejo || '',
           observaciones: item.observaciones || '',
-          receta: item.receta || null
-        })
+          receta: item.receta || null,
+        }),
       });
 
-      if (!respuestaHttp.ok) {
-        let mensajeError = esReceta
-          ? 'No se pudo generar el PDF de la receta médica.'
-          : 'No se pudo generar el PDF de diagnóstico y atención.';
-        try {
-          const errJson = await respuestaHttp.json();
-          if (errJson?.error || errJson?.mensaje) {
-            mensajeError = errJson.error || errJson.mensaje;
-          }
-        } catch {
-          // Si la respuesta no es JSON, conservamos el mensaje por defecto
-        }
-        setErrorMsg(mensajeError);
+      const dataJson = await respHttp.json().catch(() => ({}));
+      if (!respHttp.ok) {
+        setErrorMsg(dataJson?.error || 'No se pudo generar el PDF clínico.');
         return;
       }
 
-      const contentType = respuestaHttp.headers.get('content-type') || '';
-      if (contentType.includes('application/pdf')) {
-        const pdfBlob = await respuestaHttp.blob();
-        dispararDescargaBlob(pdfBlob, nombreArchivo);
-        return;
-      }
-
-      const dataJson = await respuestaHttp.json();
-      if (dataJson?.url || dataJson?.pdfUrl || dataJson?.archivoUrl) {
-        const urlPdf = dataJson.url || dataJson.pdfUrl || dataJson.archivoUrl;
-        window.open(urlPdf, '_blank', 'noopener,noreferrer');
-      } else if (dataJson?.pdfBase64 || dataJson?.base64) {
-        const base64Limpio = String(dataJson.pdfBase64 || dataJson.base64).replace(/^data:application\/pdf;base64,/, '');
+      if (dataJson?.base64) {
+        const base64Limpio = String(dataJson.base64).replace(/^data:application\/pdf;base64,/, '');
         const bytes = Uint8Array.from(atob(base64Limpio), (c) => c.charCodeAt(0));
         dispararDescargaBlob(new Blob([bytes], { type: 'application/pdf' }), nombreArchivo);
       } else {
-        setErrorMsg('El servicio de documentos respondió sin un archivo PDF descargable.');
+        setErrorMsg('El servicio de documentos no devolvió el contenido PDF.');
       }
     } catch (error) {
       console.error(`Error al generar PDF (${tipoDocumento}):`, error);
-      setErrorMsg('Error de conexión con el servicio de documentos.');
+      setErrorMsg(error?.message || 'Error de conexión con el servicio de documentos.');
     } finally {
       setDescargandoKey('');
     }
@@ -192,7 +247,7 @@ function HistorialAtenciones() {
   return (
     <div className="atencion-container">
       <h2>Historial de Atenciones Clínicas</h2>
-      <p>Consulta de registros médicos previos, descarga de PDFs (atención y receta) y envío al correo del paciente.</p>
+      <p>Consulta de registros médicos previos, generación/descarga de documentos (atención y receta) y envío al correo del paciente.</p>
 
       {/* Barra de Búsqueda */}
       <div style={{ margin: '1.5rem 0 1rem 0' }}>
@@ -279,20 +334,20 @@ function HistorialAtenciones() {
                             className="btn-doc-pdf"
                             disabled={cargandoAtencion}
                             onClick={() => handleGenerarPdf(item, 'ATENCION_DIAGNOSTICO', index)}
-                            title="Descargar PDF de diagnóstico y atención médica"
+                            title="Generar o descargar documento de diagnóstico y atención médica"
                           >
                             <span>📄</span>
-                            <span>{cargandoAtencion ? 'Generando...' : 'PDF Atención'}</span>
+                            <span>{cargandoAtencion ? 'Procesando...' : 'Doc. Atención'}</span>
                           </button>
                           <button
                             type="button"
                             className="btn-doc-pdf btn-doc-receta"
                             disabled={cargandoReceta}
                             onClick={() => handleGenerarPdf(item, 'RECETA_MEDICA', index)}
-                            title="Descargar PDF de receta médica"
+                            title="Generar o descargar documento de receta médica"
                           >
                             <span>💊</span>
-                            <span>{cargandoReceta ? 'Generando...' : 'PDF Receta'}</span>
+                            <span>{cargandoReceta ? 'Procesando...' : 'Doc. Receta'}</span>
                           </button>
                           <button
                             type="button"
