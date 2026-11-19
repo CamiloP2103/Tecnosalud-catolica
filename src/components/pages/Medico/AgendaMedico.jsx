@@ -112,7 +112,7 @@ function AgendaMedico({ onAtender }) {
         motivo_cancelacion: motivoLimpio
       };
 
-      let respuesta = await llamarServicio(`${API_CITAS}/${citaACancelar.id}/cancelar`, {
+      let respuesta = await llamarServicio(`${API_CITAS}/Historias/${citaACancelar.id}/cancelar`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ function AgendaMedico({ onAtender }) {
       });
 
       if (!respuesta || respuesta.status === 404) {
-        respuesta = await llamarServicio(`${API_CITAS}/${citaACancelar.id}`, {
+        respuesta = await llamarServicio(`${API_CITAS}/Historias/${citaACancelar.id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
