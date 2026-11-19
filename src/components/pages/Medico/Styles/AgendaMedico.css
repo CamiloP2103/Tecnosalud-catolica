@@ -126,3 +126,75 @@
 .btn-volver-agenda:hover {
   text-decoration: underline;
 }
+.acciones-cita {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-cancelar-cita {
+  background-color: #ffffff;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-cancelar-cita:hover {
+  background-color: #fef2f2;
+  border-color: #dc2626;
+}
+
+.badge-estado--cancelada {
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
+.modal-cancelacion-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-cancelacion-card {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.modal-cancelacion-card h3 {
+  margin: 0 0 0.5rem 0;
+  color: #0f172a;
+  font-size: 1.2rem;
+}
+
+.modal-cancelacion-card textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  margin: 0.75rem 0 1rem 0;
+  box-sizing: border-box;
+}
+
+.modal-cancelacion-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}

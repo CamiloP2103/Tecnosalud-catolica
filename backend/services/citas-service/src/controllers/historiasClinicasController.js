@@ -1,5 +1,5 @@
 // src/controllers/historiasClinicasController.js
-const { crearRepositorio } = require('../repositorio');
+const { crearRepositorio, ErrorNegocio } = require('../repositorio');
 const pool = require('../config/db');
 const repo = crearRepositorio(pool);
 
@@ -47,11 +47,11 @@ const obtenerHorarios = async (req, res) => {
   try {
     const { usuarioId } = req.params; // O podemos resolverlo buscando el medico_id por usuario_id
     const [medicoRows] = await pool.query('SELECT id FROM medicos WHERE usuario_id = ? LIMIT 1', [usuarioId]);
-    
+
     if (medicoRows.length === 0) {
       return res.status(404).json({ ok: false, error: 'No se encontró el perfil de médico para este usuario.' });
     }
-    
+
     const medicoId = medicoRows[0].id;
     const horarios = await repo.obtenerHorariosMedico(medicoId);
     return res.json({ ok: true, horarios, medicoId });
@@ -66,12 +66,34 @@ const actualizarHorarios = async (req, res) => {
   try {
     const { medicoId } = req.params;
     const { horarios } = req.body; // Array de { diaSemana, horaInicio, horaFin }
-    
+
     const resultado = await repo.guardarHorariosMedico(medicoId, horarios);
     return res.json(resultado);
   } catch (error) {
     console.error('Error al guardar horarios:', error);
     return res.status(500).json({ ok: false, error: 'Error interno al actualizar los horarios.' });
+  }
+};
+
+// Cancelar cita por inasistencia u otro motivo registrando motivo_cancelacion
+const cancelarCitaMedico = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const motivoCancelacion = req.body.motivo_cancelacion ?? req.body.motivoCancelacion ?? '';
+    const medicoId = req.body.medico_id || req.body.medicoId || req.usuario?.id || null;
+
+    const citaCancelada = await repo.cancelarCitaMedico(id, medicoId, motivoCancelacion);
+    return res.json({
+      ok: true,
+      mensaje: 'Cita cancelada correctamente.',
+      cita: citaCancelada
+    });
+  } catch (error) {
+    if (error instanceof ErrorNegocio) {
+      return res.status(error.status).json({ ok: false, error: error.message });
+    }
+    console.error('Error al cancelar cita desde el portal médico:', error);
+    return res.status(500).json({ ok: false, error: 'Error interno al cancelar la cita.' });
   }
 };
 
@@ -81,5 +103,6 @@ module.exports = {
   obtenerHistorialAfiliado,
   obtenerHistoriasPorMedico,
   obtenerHorarios,
-  actualizarHorarios
+  actualizarHorarios,
+  cancelarCitaMedico
 };

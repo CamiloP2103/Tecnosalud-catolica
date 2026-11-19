@@ -12,7 +12,7 @@ class ErrorNegocio extends Error {
 const MAX_CITAS_ACTIVAS = 5;
 
 const COLUMNAS_CITA = `c.id, DATE_FORMAT(c.fecha, '%Y-%m-%d') AS fecha, TIME_FORMAT(c.hora, '%H:%i') AS hora,
-  c.estado, c.motivo, c.usuario_id AS usuarioId, c.usuario_email AS usuarioEmail, c.usuario_doc AS usuarioDoc,
+  c.estado, c.motivo, c.motivo_cancelacion AS motivoCancelacion, c.usuario_id AS usuarioId, c.usuario_email AS usuarioEmail, c.usuario_doc AS usuarioDoc,
   m.id AS medicoId, m.nombre AS medico, e.nombre AS especialidad, s.nombre AS sede, s.zona AS sedeZona`;
 
 const DESDE_CITA = `FROM citas c
@@ -125,13 +125,57 @@ function crearRepositorio(pool) {
       return filas;
     },
 
-    async cancelarCita(id, usuarioId, ahora) {
+    async cancelarCita(id, usuarioId, ahora, motivoCancelacion = null) {
       const cita = await this.obtenerCita(id);
       if (!cita || Number(cita.usuarioId) !== Number(usuarioId)) throw new ErrorNegocio(404, 'La cita no existe.');
       if (cita.estado !== 'PROGRAMADA') throw new ErrorNegocio(409, `Solo se pueden cancelar citas programadas (esta está ${cita.estado}).`);
       if (cita.fecha < ahora.fecha) throw new ErrorNegocio(409, 'La cita ya pasó.');
-      await pool.query("UPDATE citas SET estado = 'CANCELADA' WHERE id = ?", [id]);
-      return { ...cita, estado: 'CANCELADA' };
+      const motivoLimpio = motivoCancelacion ? String(motivoCancelacion).trim() : (cita.motivoCancelacion || null);
+      await pool.query(
+        "UPDATE citas SET estado = 'CANCELADA', motivo_cancelacion = ? WHERE id = ?",
+        [motivoLimpio, id]
+      );
+      return { ...cita, estado: 'CANCELADA', motivo_cancelacion: motivoLimpio, motivoCancelacion: motivoLimpio };
+    },
+
+    // ➕ Cancelar cita por parte del médico (ej. inasistencia del paciente) guardando motivo_cancelacion
+    async cancelarCitaMedico(id, medicoId, motivoCancelacion) {
+      const motivoLimpio = String(motivoCancelacion || '').trim();
+      if (!motivoLimpio) {
+        throw new ErrorNegocio(400, 'Debes indicar un motivo de cancelación.');
+      }
+
+      const [filas] = await pool.query(
+        `SELECT c.id, c.estado, c.motivo, c.motivo_cancelacion
+         FROM citas c
+         INNER JOIN medicos m ON m.id = c.medico_id
+         WHERE c.id = ?${medicoId ? ' AND (m.id = ? OR m.usuario_id = ?)' : ''}`,
+        medicoId ? [id, medicoId, medicoId] : [id]
+      );
+
+      const cita = filas[0];
+      if (!cita) {
+        throw new ErrorNegocio(404, 'La cita no existe o no pertenece al médico.');
+      }
+      if (cita.estado === 'ATENDIDA') {
+        throw new ErrorNegocio(409, 'No se puede cancelar una cita que ya fue atendida.');
+      }
+      if (cita.estado === 'CANCELADA') {
+        throw new ErrorNegocio(409, 'La cita ya se encuentra cancelada.');
+      }
+
+      await pool.query(
+        "UPDATE citas SET estado = 'CANCELADA', motivo_cancelacion = ? WHERE id = ?",
+        [motivoLimpio, id]
+      );
+
+      const actualizada = await this.obtenerCita(id);
+      return {
+        ...actualizada,
+        estado: 'CANCELADA',
+        motivo_cancelacion: motivoLimpio,
+        motivoCancelacion: motivoLimpio
+      };
     },
 
     // ---- Administración ----
@@ -146,10 +190,18 @@ function crearRepositorio(pool) {
       return filas;
     },
 
-    async cambiarEstado(id, estado) {
+    async cambiarEstado(id, estado, motivoCancelacion = null) {
       const cita = await this.obtenerCita(id);
       if (!cita) throw new ErrorNegocio(404, 'La cita no existe.');
       if (cita.estado !== 'PROGRAMADA') throw new ErrorNegocio(409, `La cita ya está ${cita.estado}; solo se cambian citas programadas.`);
+      if (estado === 'CANCELADA') {
+        const motivoLimpio = motivoCancelacion ? String(motivoCancelacion).trim() : (cita.motivoCancelacion || null);
+        await pool.query(
+          "UPDATE citas SET estado = 'CANCELADA', motivo_cancelacion = ? WHERE id = ?",
+          [motivoLimpio, id]
+        );
+        return { ...cita, estado: 'CANCELADA', motivo_cancelacion: motivoLimpio, motivoCancelacion: motivoLimpio };
+      }
       await pool.query('UPDATE citas SET estado = ? WHERE id = ?', [estado, id]);
       return { ...cita, estado };
     },
@@ -335,7 +387,7 @@ function crearRepositorio(pool) {
         connection.release();
       }
     },
- 
+  
   };
 }
 
