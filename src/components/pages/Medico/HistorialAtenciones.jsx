@@ -288,8 +288,8 @@ function HistorialAtenciones() {
       };
 
       const urlEnvio = API_NOTIFICACIONES
-        ? `${API_NOTIFICACIONES}/notificaciones/documentos-clinicos`
-        : `${API_DOCUMENTOS}/api/notifications/email`;
+        ? `${API_NOTIFICACIONES}/api/notifications/email`
+        : `${API_DOCUMENTOS}/enviar-correo-clinico`;
 
       const respHttp = await fetch(urlEnvio, {
         method: 'POST',
