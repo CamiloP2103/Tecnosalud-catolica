@@ -13,7 +13,6 @@ function PanelMedico() {
   const handleAtenderCita = (cita) => {
     if (!cita) return;
     setCitaActual(cita);
-    setSeccionActiva('atencion');
   };
 
   const handleFinalizarAtencion = () => {
@@ -25,10 +24,7 @@ function PanelMedico() {
     <div className="panel-medico-layout">
       {/* Menú Lateral / Sidebar */}
       <aside className="panel-medico-sidebar">
-        <div className="sidebar-header">
-          <h3>Portal Médico</h3>
-          <span className="sidebar-role">Profesional de la Salud</span>
-        </div>
+        <div className="sidebar-seccion-titulo">GESTIÓN CLÍNICA</div>
         <ul className="sidebar-menu">
           <li>
             <button
@@ -59,6 +55,10 @@ function PanelMedico() {
               Historial de Atenciones
             </button>
           </li>
+        </ul>
+
+        <div className="sidebar-seccion-titulo">CONFIGURACIÓN Y PERFIL</div>
+        <ul className="sidebar-menu">
           <li>
             <button
               type="button"

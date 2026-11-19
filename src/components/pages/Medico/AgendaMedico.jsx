@@ -52,7 +52,6 @@ function AgendaMedico({ onAtender }) {
     setCargando(true);
     setErrorMsg('');
     try {
-      // Extraemos el token si existe, o usamos un string vacío
       const token = sesion.token || localStorage.getItem('tecnosalud_token') || '';
 
       const respuesta = await llamarServicio(`${API_CITAS}/medico/${medicoId}/citas`, {
@@ -61,7 +60,6 @@ function AgendaMedico({ onAtender }) {
         }
       });
 
-      // Si el backend rechaza con 401 o hay error, activamos el respaldo de prueba
       if (!respuesta || !respuesta.ok || respuesta.status === 401) {
         console.warn('Sesión sin token o no autorizada (401). Usando agenda de prueba local.');
         setCitas(citasMockDeRespaldo);
@@ -70,12 +68,11 @@ function AgendaMedico({ onAtender }) {
       }
 
       const datosCitas = respuesta.datos?.citas || respuesta.datos || [];
-      // Si la lista viene vacía, dejamos el arreglo vacío para que el componente renderice el mensaje de "Sin citas"
       setCitas(datosCitas);
     } catch (error) {
       console.error('Error al cargar agenda:', error);
       setErrorMsg('Error de conexión al cargar la agenda.');
-      setCitas([]); // En caso de error de red, dejamos la lista vacía en lugar de mostrar datos falsos
+      setCitas([]);
     } finally {
       setCargando(false);
     }
@@ -150,12 +147,18 @@ function AgendaMedico({ onAtender }) {
     }
   };
 
-  // Si el médico hizo clic en "Atender", renderizamos el formulario clínico pasando la cita real
+  const seleccionarParaAtender = (cita) => {
+    if (onAtender) {
+      onAtender(cita);
+    }
+    setCitaSeleccionada(cita);
+  };
+
   if (citaSeleccionada) {
     return (
       <div className="agenda-wrapper">
-        <button 
-          type="button" 
+        <button
+          type="button"
           className="btn-volver-agenda"
           onClick={() => {
             setCitaSeleccionada(null);
@@ -164,12 +167,12 @@ function AgendaMedico({ onAtender }) {
         >
           ← Volver a la Agenda
         </button>
-        <AtencionMedica 
-          cita={citaSeleccionada} 
+        <AtencionMedica
+          cita={citaSeleccionada}
           onAtencionFinalizada={() => {
             setCitaSeleccionada(null);
             cargarAgenda();
-          }} 
+          }}
         />
       </div>
     );
@@ -180,7 +183,6 @@ function AgendaMedico({ onAtender }) {
       <h2>Agenda Médica y Pacientes Programados</h2>
       <p>Selecciona un paciente de tu lista diaria para gestionar su atención médica o cancelar por inasistencia.</p>
 
-      {/* 🚀 1. TARJETAS DE INDICADORES RÁPIDOS (DASHBOARD DEL DÍA) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', margin: '1.5rem 0' }}>
         <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
           <span style={{ display: 'block', fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>TOTAL CITAS</span>
@@ -238,10 +240,10 @@ function AgendaMedico({ onAtender }) {
                       </span>
                     ) : (
                       <div className="acciones-cita">
-                        <button 
+                        <button
                           type="button"
                           className="btn-atender"
-                          onClick={() => setCitaSeleccionada(c)}
+                          onClick={() => seleccionarParaAtender(c)}
                         >
                           Atender
                         </button>
@@ -262,7 +264,6 @@ function AgendaMedico({ onAtender }) {
         </div>
       )}
 
-      {/* Modal para capturar motivo_cancelacion */}
       {citaACancelar && (
         <div className="modal-cancelacion-backdrop" role="dialog" aria-modal="true">
           <form className="modal-cancelacion-card" onSubmit={confirmarCancelacion}>
