@@ -1,12 +1,33 @@
 .atencion-container {
-  max-width: 900px;
-  margin: 2rem auto;
-  padding: 2.5rem;
+  width: 80%;
+  max-width: 80%;
+  margin: 0;
+  padding: 1.5rem;
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #1e293b;
+  box-sizing: border-box;
+}
+
+.tabla-historial-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tabla-historial-container table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+.tabla-historial-container th,
+.tabla-historial-container td {
+  vertical-align: top;
+  line-height: 1.45;
 }
 
 .atencion-container h2 {
