@@ -266,3 +266,19 @@ ul li {
 .btn-doc-correo:active {
   transform: scale(0.98);
 }
+.btn-doc-receta {
+  background-color: #f5f3ff;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
+
+.btn-doc-receta:hover {
+  background-color: #ede9fe;
+  border-color: #c4b5fd;
+}
+
+.btn-doc-pdf:disabled,
+.btn-doc-correo:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
