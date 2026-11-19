@@ -397,6 +397,51 @@ function crearRepositorio(pool) {
       );
       return filas;
     },
+    async obtenerHistoriasPorMedico(medicoId) {
+      const [rows] = await pool.query(
+        `SELECT h.*,
+                a.nombre AS afiliado_nombre,
+                a.documento AS afiliado_documento,
+                a.email AS afiliado_correo,
+                m.nombre AS medico_nombre,
+                m.registro_medico AS registro_medico,
+                e.nombre AS especialidad
+         FROM historias_clinicas h
+         INNER JOIN db_auth.usuarios a ON h.afiliado_id = a.id
+         INNER JOIN medicos m ON m.id = h.medico_id
+         LEFT JOIN especialidades e ON e.id = m.especialidad_id
+         WHERE m.usuario_id = ? OR m.id = ?
+         ORDER BY h.fecha_atencion DESC`,
+        [medicoId, medicoId]
+      );
+
+      for (const row of rows) {
+        const [recetas] = await pool.query(
+          `SELECT id, indicaciones_generales
+           FROM recetas_medicas
+           WHERE historia_clinica_id = ?
+           ORDER BY id DESC LIMIT 1`,
+          [row.id]
+        );
+        if (recetas.length > 0) {
+          const [detalles] = await pool.query(
+            `SELECT medicamento, concentracion, forma_farmaceutica, dosis, via_administracion, frecuencia, duracion_tratamiento, cantidad
+             FROM detalles_receta
+             WHERE receta_id = ?
+             ORDER BY id ASC`,
+            [recetas[0].id]
+          );
+          row.receta = {
+            indicaciones_generales: recetas[0].indicaciones_generales || '',
+            detalles,
+          };
+        } else {
+          row.receta = null;
+        }
+      }
+
+      return rows;
+    },
     async guardarHorariosMedico(medicoId, horariosNuevos) {
       const connection = await pool.getConnection();
       try {

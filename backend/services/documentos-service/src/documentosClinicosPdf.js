@@ -65,9 +65,38 @@ function iniciarPdf({ titulo, subject, documentoPaciente, colorEncabezado, folio
   });
 }
 
+function renderizarFirmaMedico(doc, ancho, datos, colorAcento) {
+  let y = doc.y + 18;
+  if (y + 85 > doc.page.height - 125) {
+    doc.addPage();
+    y = 60;
+  }
+
+  const nombreMedico = datos.medico_nombre || datos.medicoNombre || datos.medico || 'Profesional de la Salud';
+  const registroMedico = datos.registro_medico || datos.registroMedico || '';
+  const especialidad = datos.especialidad || '';
+
+  doc.moveTo(56, y).lineTo(280, y).strokeColor('#94a3b8').lineWidth(1).stroke();
+  y += 8;
+
+  doc.fillColor(colorAcento).font('Helvetica-Bold').fontSize(10.5).text(nombreMedico, 56, y, { width: ancho - 112 });
+  y += 14;
+
+  if (especialidad) {
+    doc.fillColor('#0f172a').font('Helvetica').fontSize(9.5).text(`Especialidad: ${especialidad}`, 56, y, { width: ancho - 112 });
+    y += 13;
+  }
+  if (registroMedico) {
+    doc.fillColor(GRIS).font('Helvetica').fontSize(9.5).text(`Registro Médico / RM: ${registroMedico}`, 56, y, { width: ancho - 112 });
+    y += 13;
+  }
+  doc.fillColor(GRIS).font('Helvetica').fontSize(9).text('Firma digital / Profesional tratante · Tecnosalud Católica', 56, y, { width: ancho - 112 });
+  doc.y = y + 12;
+}
+
 function renderizarPieLegal(doc, ancho, emitida, colorAcento) {
-  let y = Math.min(doc.y + 20, doc.page.height - 135);
-  if (y > doc.page.height - 125) {
+  let y = Math.min(doc.y + 14, doc.page.height - 125);
+  if (y > doc.page.height - 115) {
     doc.addPage();
     y = 60;
   }
@@ -133,7 +162,7 @@ function generarPdfAtencionDiagnostico(datos, { emitida = new Date() } = {}) {
         const altoTexto = doc.heightOfString(textoValor, { width: anchoValor, lineGap: 2 });
         const altoFila = Math.max(24, altoTexto + 10);
 
-        if (y + altoFila > doc.page.height - 140) {
+        if (y + altoFila > doc.page.height - 150) {
           doc.addPage();
           y = 60;
         }
@@ -150,6 +179,7 @@ function generarPdfAtencionDiagnostico(datos, { emitida = new Date() } = {}) {
       });
 
       doc.y = y;
+      renderizarFirmaMedico(doc, ancho, datos, AZUL);
       renderizarPieLegal(doc, ancho, emitida, AZUL);
     },
   });
@@ -216,7 +246,7 @@ function generarPdfRecetaMedica(datos, { emitida = new Date() } = {}) {
           ].join('\n');
 
           const altoBloque = doc.heightOfString(bloque, { width: ancho - 124, lineGap: 2 }) + 14;
-          if (y + altoBloque > doc.page.height - 140) {
+          if (y + altoBloque > doc.page.height - 150) {
             doc.addPage();
             y = 60;
           }
@@ -228,11 +258,12 @@ function generarPdfRecetaMedica(datos, { emitida = new Date() } = {}) {
           y += altoBloque + 8;
         });
       } else {
-        const textoPlan = datos.plan_manejo || 'No se registraron medicamentos detallados en esta atención.';
-        doc.fillColor('#0f172a').font('Helvetica').fontSize(10).text(textoPlan, 56, y, {
-          width: ancho - 112,
-          lineGap: 2,
-        });
+        doc.fillColor(GRIS).font('Helvetica').fontSize(10).text(
+          'No se registraron medicamentos formulados en esta atención.',
+          56,
+          y,
+          { width: ancho - 112, lineGap: 2 }
+        );
         y = doc.y + 12;
       }
 
@@ -247,6 +278,7 @@ function generarPdfRecetaMedica(datos, { emitida = new Date() } = {}) {
       }
 
       doc.y = y;
+      renderizarFirmaMedico(doc, ancho, datos, MORADO);
       renderizarPieLegal(doc, ancho, emitida, MORADO);
     },
   });

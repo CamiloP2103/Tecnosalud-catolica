@@ -171,6 +171,7 @@ function HistorialAtenciones() {
 
     try {
       const token = localStorage.getItem('tecnosalud_token') || '';
+      const sesion = JSON.parse(localStorage.getItem('tecnosalud_sesion_activa') || '{}');
       const pacienteDoc = String(item.afiliado_documento || item.documento || '').trim();
 
       if (!token) {
@@ -200,6 +201,9 @@ function HistorialAtenciones() {
           afiliado_nombre: item.afiliado_nombre || item.nombre_paciente || 'Paciente',
           afiliado_documento: pacienteDoc,
           afiliado_correo: item.afiliado_correo || item.usuario_email || '',
+          medico_nombre: item.medico_nombre || item.medico || sesion.nombre || '',
+          registro_medico: item.registro_medico || item.registroMedico || sesion.registro_medico || '',
+          especialidad: item.especialidad || sesion.especialidad || '',
           fecha_atencion: item.fecha_atencion || item.fecha || '',
           motivo_consulta: item.motivo_consulta || '',
           diagnostico_principal: item.diagnostico_principal || '',
