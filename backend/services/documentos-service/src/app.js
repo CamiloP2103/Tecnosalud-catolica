@@ -81,6 +81,29 @@ function responderErrorBaseDatos(res, error) {
   return true;
 }
 
+function tieneRecetaEnPayload(body) {
+  if (body.incluir_receta === true) return true;
+  if (!body.receta || typeof body.receta !== 'object') return false;
+  const tieneDetalles = Array.isArray(body.receta.detalles) && body.receta.detalles.length > 0;
+  const tieneIndicaciones = String(body.receta.indicaciones_generales || '').trim().length > 0;
+  return tieneDetalles || tieneIndicaciones;
+}
+
+function tieneIncapacidadEnPayload(body) {
+  if (body.incluir_incapacidad === true) return true;
+  const inc = body.incapacidad && typeof body.incapacidad === 'object' ? body.incapacidad : {};
+  const dias = body.dias_incapacidad ?? inc.dias ?? inc.dias_incapacidad ?? null;
+  const diasValidos =
+    dias !== null && dias !== undefined && String(dias).trim() !== '' && Number(dias) > 0;
+  const fechaInicio = String(
+    body.fecha_inicio_incapacidad || inc.fecha_inicio || inc.fechaInicio || ''
+  ).trim();
+  const fechaFin = String(
+    body.fecha_fin_incapacidad || inc.fecha_fin || inc.fechaFin || ''
+  ).trim();
+  return Boolean(diasValidos || fechaInicio || fechaFin);
+}
+
 function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = 'http://localhost:5173' }) {
   if (!pool || !jwtSecret || !Buffer.isBuffer(encryptionKey) || encryptionKey.length !== 32 || !storageDir) {
     throw new Error('pool, jwtSecret, una clave AES de 32 bytes y storageDir son requeridos para iniciar documentos-service.');
@@ -482,22 +505,11 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
       };
 
       const pdfAtencion = await generarPdfAtencionDiagnostico(payloadPdf);
-      const tieneReceta = Boolean(
-        body.receta &&
-          ((Array.isArray(body.receta.detalles) && body.receta.detalles.length > 0) ||
-            body.receta.indicaciones_generales)
-      );
-      const pdfReceta = tieneReceta ? await generarPdfRecetaMedica(payloadPdf) : null;
+      const tieneReceta = tieneRecetaEnPayload(body);
+      const tieneIncapacidad = tieneIncapacidadEnPayload(body);
 
-      const tieneIncapacidad = Boolean(
-        body.incluir_incapacidad ||
-          body.incapacidad ||
-          body.dias_incapacidad ||
-          body.fecha_inicio_incapacidad
-      );
-      const pdfIncapacidad = tieneIncapacidad
-        ? await generarPdfIncapacidadMedica(payloadPdf)
-        : null;
+      const pdfReceta = tieneReceta ? await generarPdfRecetaMedica(payloadPdf) : null;
+      const pdfIncapacidad = tieneIncapacidad ? await generarPdfIncapacidadMedica(payloadPdf) : null;
 
       const adjuntos = [
         {

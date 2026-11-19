@@ -5,6 +5,39 @@ import { llamarServicio } from '../../../utils/servicios';
 const API_CITAS = import.meta.env.VITE_API_CITAS_URL || 'http://localhost:3002/api/citas';
 const API_DOCUMENTOS = import.meta.env.VITE_API_DOCUMENTOS_URL || 'http://localhost:3003/api/documentos';
 
+const tieneRecetaMedica = (item) => {
+  if (!item || typeof item !== 'object') return false;
+  const detalles = Array.isArray(item.receta?.detalles)
+    ? item.receta.detalles
+    : Array.isArray(item.receta_detalles)
+      ? item.receta_detalles
+      : [];
+  const indicaciones = String(
+    item.receta?.indicaciones_generales || item.indicaciones_generales || ''
+  ).trim();
+  return detalles.length > 0 || indicaciones.length > 0;
+};
+
+const tieneIncapacidadMedica = (item) => {
+  if (!item || typeof item !== 'object') return false;
+  const inc = item.incapacidad && typeof item.incapacidad === 'object' ? item.incapacidad : {};
+  const dias = item.dias_incapacidad ?? inc.dias ?? inc.dias_incapacidad ?? null;
+  const fechaInicio = String(
+    item.fecha_inicio_incapacidad || inc.fecha_inicio || inc.fechaInicio || ''
+  ).trim();
+  const fechaFin = String(
+    item.fecha_fin_incapacidad || inc.fecha_fin || inc.fechaFin || ''
+  ).trim();
+  const motivo = String(
+    inc.motivo || inc.observaciones || item.observaciones_incapacidad || ''
+  ).trim();
+
+  const diasValidos =
+    dias !== null && dias !== undefined && String(dias).trim() !== '' && Number(dias) > 0;
+
+  return Boolean(diasValidos || fechaInicio || fechaFin || motivo);
+};
+
 function HistorialAtenciones() {
   const [historias, setHistorias] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -226,16 +259,8 @@ function HistorialAtenciones() {
         medico_nombre: item.medico_nombre || item.medico || sesion.nombre || '',
         registro_medico: item.registro_medico || item.registroMedico || sesion.registro_medico || '',
         especialidad: item.especialidad || sesion.especialidad || '',
-        incluir_receta: Boolean(
-          item.receta &&
-            ((Array.isArray(item.receta.detalles) && item.receta.detalles.length > 0) ||
-              item.receta.indicaciones_generales)
-        ),
-        incluir_incapacidad: Boolean(
-          item.incapacidad ||
-            item.dias_incapacidad ||
-            item.fecha_inicio_incapacidad
-        ),
+        incluir_receta: tieneRecetaMedica(item),
+        incluir_incapacidad: tieneIncapacidadMedica(item),
       };
 
       const respHttp = await fetch(`${API_DOCUMENTOS}/enviar-correo-clinico`, {
@@ -351,6 +376,8 @@ function HistorialAtenciones() {
                 const cargandoReceta = descargandoKey === `RECETA_MEDICA-${historiaId}`;
                 const cargandoIncapacidad = descargandoKey === `INCAPACIDAD_MEDICA-${historiaId}`;
                 const cargandoCorreo = enviandoKey === `CORREO-${historiaId}`;
+                const habilitadaReceta = tieneRecetaMedica(item);
+                const habilitadaIncapacidad = tieneIncapacidadMedica(item);
 
                 return (
                   <tr
@@ -400,9 +427,13 @@ function HistorialAtenciones() {
                           <button
                             type="button"
                             className="btn-doc-pdf btn-doc-receta"
-                            disabled={cargandoReceta}
+                            disabled={!habilitadaReceta || cargandoReceta}
                             onClick={() => handleGenerarPdf(item, 'RECETA_MEDICA', index)}
-                            title="Generar o descargar documento de receta médica"
+                            title={
+                              habilitadaReceta
+                                ? 'Generar o descargar documento de receta médica'
+                                : 'Esta atención no tiene receta médica registrada'
+                            }
                           >
                             <span>💊</span>
                             <span>{cargandoReceta ? 'Procesando...' : 'Doc. Receta'}</span>
@@ -410,9 +441,13 @@ function HistorialAtenciones() {
                           <button
                             type="button"
                             className="btn-doc-pdf btn-doc-incapacidad"
-                            disabled={cargandoIncapacidad}
+                            disabled={!habilitadaIncapacidad || cargandoIncapacidad}
                             onClick={() => handleGenerarPdf(item, 'INCAPACIDAD_MEDICA', index)}
-                            title="Generar o descargar documento de incapacidad médica"
+                            title={
+                              habilitadaIncapacidad
+                                ? 'Generar o descargar documento de incapacidad médica'
+                                : 'Esta atención no tiene incapacidad médica registrada'
+                            }
                           >
                             <span>🏥</span>
                             <span>{cargandoIncapacidad ? 'Procesando...' : 'Doc. Incapacidad'}</span>
@@ -422,7 +457,7 @@ function HistorialAtenciones() {
                             className="btn-doc-correo"
                             disabled={cargandoCorreo}
                             onClick={() => handleEnviarCorreo(item, index)}
-                            title="Enviar documentos al correo del paciente"
+                            title="Enviar documentos disponibles al correo del paciente"
                           >
                             <span>✉️</span>
                             <span>{cargandoCorreo ? 'Enviando...' : 'Enviar correo'}</span>
