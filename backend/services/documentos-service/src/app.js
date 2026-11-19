@@ -516,7 +516,7 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
               <h2 style="color: #145da0; text-align: center;">Tecnosalud Católica</h2>
               <p>Hola, <strong>${nombrePaciente}</strong>.</p>
-              <p>Adjuntamos los documentos generados en tu atención médica en el portal.</p>
+              <p>Adjuntamos los documentos generados en tu cita de atención médica</p>
               <div style="background-color: #eff6ff; border-left: 4px solid #145da0; padding: 12px 16px; margin: 20px 0; border-radius: 4px;">
                 <p style="margin: 0;"><strong>Para abrir cada PDF</strong> escribe tu <strong>número de identificación</strong>, sin puntos ni espacios.</p>
               </div>
