@@ -323,8 +323,31 @@ function HistorialAtenciones() {
     return nombre.includes(termino) || documento.includes(termino) || motivoCancel.includes(termino);
   });
 
+  const formatearFechaHora = (valor) => {
+    if (!valor) return 'N/A';
+    const str = String(valor).trim();
+
+    // Si ya viene como "YYYY-MM-DD HH:mm" o "YYYY-MM-DD HH:mm:ss"
+    const matchEspacio = str.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{2}:\d{2})/);
+    if (matchEspacio) {
+      return `${matchEspacio[1]} ${matchEspacio[2]}`;
+    }
+
+    const fechaObj = new Date(str);
+    if (!Number.isNaN(fechaObj.getTime())) {
+      const yyyy = fechaObj.getFullYear();
+      const mm = String(fechaObj.getMonth() + 1).padStart(2, '0');
+      const dd = String(fechaObj.getDate()).padStart(2, '0');
+      const hh = String(fechaObj.getHours()).padStart(2, '0');
+      const min = String(fechaObj.getMinutes()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+    }
+
+    return str;
+  };
+
   return (
-    <div className="atencion-container">
+    <div className="atencion-container historial-ancho-completo">
       <h2>Historial de Atenciones Clínicas</h2>
       <p>Consulta de registros médicos previos, generación/descarga de documentos (atención y receta) y envío al correo del paciente.</p>
 
@@ -384,7 +407,9 @@ function HistorialAtenciones() {
                       backgroundColor: esCancelada ? '#fffafa' : '#ffffff'
                     }}
                   >
-                    <td style={{ padding: '12px' }}>{item.fecha_atencion || item.fecha || 'N/A'}</td>
+                    <td style={{ padding: '12px', whiteSpace: 'nowrap' }}>
+                      {formatearFechaHora(item.fecha_atencion || item.fecha)}
+                    </td>
                     <td style={{ padding: '12px' }}>
                       <strong>{item.afiliado_nombre || item.nombre_paciente || 'Paciente'}</strong>
                     </td>

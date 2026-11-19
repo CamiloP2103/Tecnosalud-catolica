@@ -303,3 +303,32 @@ ul li {
   opacity: 0.65;
   cursor: not-allowed;
 }
+
+.atencion-container.historial-ancho-completo {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.atencion-container.historial-ancho-completo .tabla-historial-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.atencion-container.historial-ancho-completo .tabla-historial-container table {
+  width: 100%;
+  min-width: 1080px;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.atencion-container.historial-ancho-completo .tabla-historial-container th,
+.atencion-container.historial-ancho-completo .tabla-historial-container td {
+  padding: 12px 14px;
+  vertical-align: top;
+  line-height: 1.45;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
