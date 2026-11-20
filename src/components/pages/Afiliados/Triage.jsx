@@ -1,71 +1,83 @@
+import Imagen from '../../Imagen/Imagen';
+import '../../../styles/paginas.css';
 import './Styles/Triage.css';
 
 const NIVELES_TRIAGE = [
   {
     nivel: 'Triage I',
     color: 'rojo',
-    tiempo: 'Atención Inmediata',
+    tiempo: 'Atención inmediata',
     descripcion: 'Riesgo vital inminente que compromete la vida del paciente (paro cardiorrespiratorio, politraumatismo severo, pérdida de conciencia, hemorragia masiva).',
-    badge: 'Resucitación / Emergencia'
+    badge: 'Resucitación / Emergencia',
   },
   {
     nivel: 'Triage II',
     color: 'naranja',
     tiempo: 'Hasta 30 minutos',
     descripcion: 'Condición crítica con alto riesgo de deterioro rápido o daño irreversible (dolor torácico sugestivo de infarto, dificultad respiratoria severa, déficit neurológico súbito).',
-    badge: 'Emergencia'
+    badge: 'Emergencia',
   },
   {
     nivel: 'Triage III',
     color: 'amarillo',
     tiempo: 'Hasta 60 minutos',
-    descripcion: 'Condición médica que requiere intervención diagnóstica o terapéutica pero con estabilidad hemodinámica (cólico renal agudo, fracturas cerradas, fiebre alta sin convulsión).',
-    badge: 'Urgencia'
+    descripcion: 'Condición médica que requiere intervención diagnóstica o terapéutica, pero con estabilidad hemodinámica (cólico renal agudo, fracturas cerradas, fiebre alta sin convulsión).',
+    badge: 'Urgencia',
   },
   {
     nivel: 'Triage IV',
     color: 'verde',
     tiempo: 'Hasta 120 - 180 minutos',
-    descripcion: 'Condiciones médicas de baja complejidad sin riesgo de deterioro inminente. Puede ser atendido por consulta prioritaria o ambulatoria (amigdalitis, esguinces leves, diarrea sin deshidratación).',
-    badge: 'Urgencia Menor'
+    descripcion: 'Condiciones de baja complejidad sin riesgo de deterioro inminente. Pueden atenderse por consulta prioritaria o ambulatoria (amigdalitis, esguinces leves, diarrea sin deshidratación).',
+    badge: 'Urgencia menor',
   },
   {
     nivel: 'Triage V',
     color: 'azul',
     tiempo: 'Hasta 240 minutos',
     descripcion: 'Condición clínica que no compromete el estado general y no representa una urgencia. Se canaliza a consulta externa programada (dolores crónicos, control de síntomas leves).',
-    badge: 'No Urgente'
-  }
+    badge: 'No urgente',
+  },
+];
+
+const RECOMENDACIONES = [
+  {
+    titulo: 'Documentación',
+    texto: 'Presenta tu documento de identidad original y tu carné de afiliación digital desde la app de Tecnosalud.',
+  },
+  {
+    titulo: 'Historial y medicamentos',
+    texto: 'Informa sobre alergias conocidas, tratamientos farmacológicos actuales o antecedentes quirúrgicos.',
+  },
+  {
+    titulo: 'Reclasificación',
+    texto: 'Si durante la espera tus síntomas empeoran, avisa de inmediato al personal del módulo de Triage.',
+  },
 ];
 
 function Triage() {
   return (
-    <section className="page page--afiliados-sub">
-      {/* Cabecera */}
-      <div className="afiliados-sub__header">
-        <span className="afiliados-sub__tag">Servicio al Afiliado</span>
-        <h2>Sistema de Clasificación Triage</h2>
-        <p className="afiliados-sub__lead">
-          En <strong>Tecnosalud</strong> aplicamos el estándar normativo de clasificación médica para garantizar 
-          que la atención de urgencias se brinde según la gravedad clínica del paciente y no por orden de llegada.
-        </p>
-      </div>
-
-      {/* Qué es el Triage */}
-      <div className="triage-info-box">
-        <div className="triage-info-box__icon" aria-hidden="true">TI</div>        <div>
-          <h3>¿Cómo funciona el Triage en Tecnosalud?</h3>
-          <p>
-            Al ingresar al servicio de urgencias, el personal de enfermería o medicina valorará tus signos vitales 
-            y síntomas principales en una estación digital de clasificación. Este proceso no es una consulta médica 
-            completa, sino una evaluación rápida para asignarte un nivel de prioridad de I a V.
+    <section className="pg">
+      <div className="pg-fila">
+        <div className="pg-fila__texto">
+          <h2>Sistema de clasificación Triage</h2>
+          <p className="pg-lead">
+            En <strong>Tecnosalud</strong> aplicamos el estándar normativo de clasificación médica para que la
+            atención de urgencias se brinde según la gravedad clínica del paciente y no por orden de llegada.
           </p>
+          <p>
+            Al ingresar a urgencias, el personal de enfermería o medicina valora tus signos vitales y síntomas
+            principales en una estación digital de clasificación. No es una consulta médica completa: es una
+            evaluación rápida para asignarte un nivel de prioridad de I a V.
+          </p>
+        </div>
+        <div className="pg-fila__medio">
+          <Imagen nombre="triage-1" alt="Personal de salud atendiendo a un afiliado en la ventanilla de ingreso" />
         </div>
       </div>
 
-      {/* Lista de Niveles de Triage */}
-      <div className="triage-levels">
-        <h3>Niveles de Priorización Clínica</h3>
+      <section className="pg-bloque">
+        <h3 className="pg-bloque__titulo">Niveles de priorización clínica</h3>
         <div className="triage-levels__grid">
           {NIVELES_TRIAGE.map((item) => (
             <div key={item.nivel} className={`triage-card triage-card--${item.color}`}>
@@ -73,31 +85,29 @@ function Triage() {
                 <span className="triage-card__title">{item.nivel}</span>
                 <span className="triage-card__badge">{item.badge}</span>
               </div>
-              <div className="triage-card__time">
+              <p className="triage-card__time">
                 <strong>Tiempo estimado:</strong> {item.tiempo}
-              </div>
+              </p>
               <p className="triage-card__desc">{item.descripcion}</p>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Recomendaciones al paciente */}
-      <div className="triage-guide">
-        <h3>¿Qué debes tener en cuenta al acudir a Urgencias?</h3>
-        <div className="triage-guide__grid">
-          <div className="triage-guide__item">
-            <span className="triage-guide__icon" aria-hidden="true">D</span>            <h4>Documentación</h4>
-            <p>Presenta tu documento de identidad original y carné de afiliación digital desde la app de Tecnosalud.</p>
+      <div className="pg-fila pg-fila--inversa">
+        <div className="pg-fila__texto">
+          <h3>Qué debes tener en cuenta al acudir a urgencias</h3>
+          <div className="pg-apilado">
+            {RECOMENDACIONES.map((item) => (
+              <div key={item.titulo}>
+                <h4>{item.titulo}</h4>
+                <p>{item.texto}</p>
+              </div>
+            ))}
           </div>
-          <div className="triage-guide__item">
-            <span className="triage-guide__icon" aria-hidden="true">M</span>            <h4>Historial y Medicamentos</h4>
-            <p>Informa sobre alergias conocidas, tratamientos farmacológicos actuales o antecedentes quirúrgicos.</p>
-          </div>
-          <div className="triage-guide__item">
-            <span className="triage-guide__icon" aria-hidden="true">R</span>            <h4>Reclasificación</h4>
-            <p>Si durante la espera en sala sientes que tus síntomas empeoran, notifica de inmediato al personal del módulo de Triage.</p>
-          </div>
+        </div>
+        <div className="pg-fila__medio">
+          <Imagen nombre="triage-2" alt="Sala de espera con personal de salud orientando a los afiliados" />
         </div>
       </div>
     </section>

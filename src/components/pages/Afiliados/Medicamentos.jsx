@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import Imagen from '../../Imagen/Imagen';
+import '../../../styles/paginas.css';
 import './Styles/Medicamentos.css';
 
 const MOCK_MEDICAMENTOS = [
@@ -12,52 +14,50 @@ const MOCK_MEDICAMENTOS = [
 
 const MODALIDADES_ENTREGA = [
   {
-    icon: 'PD',    titulo: 'Puntos de Dispensación',
-    descripcion: 'Red de farmacias aliadas a nivel nacional para el reclamo presencial con tu fórmula médica digital y documento de identidad.'
+    titulo: 'Puntos de dispensación',
+    descripcion:
+      'Red de farmacias aliadas a nivel nacional para reclamar presencialmente con tu fórmula médica digital y tu documento de identidad.',
   },
   {
-    icon: 'ED',    titulo: 'Entrega a Domicilio',
-    descripcion: 'Disponible para pacientes mayores de 60 años, personas con movilidad reducida o afiliados con patologías crónicas priorizadas.'
+    titulo: 'Entrega a domicilio',
+    descripcion:
+      'Disponible para mayores de 60 años, personas con movilidad reducida o afiliados con patologías crónicas priorizadas.',
   },
   {
-    icon: 'AM',    titulo: 'Autorizaciones MIPRES',
-    descripcion: 'Gestión y seguimiento en línea de medicamentos no incluidos en el PBS formulados por tu médico especialista.'
+    titulo: 'Autorizaciones MIPRES',
+    descripcion:
+      'Gestión y seguimiento en línea de medicamentos no incluidos en el PBS, formulados por tu médico especialista.',
   },
   {
-    icon: 'FR',    titulo: 'Fórmula Recurrente',
-    descripcion: 'Renovación automática y recordatorio mensual para tratamientos de control y enfermedades crónicas.'
-  }
+    titulo: 'Fórmula recurrente',
+    descripcion:
+      'Renovación automática y recordatorio mensual para tratamientos de control y enfermedades crónicas.',
+  },
 ];
 
 function Medicamentos() {
   const [busqueda, setBusqueda] = useState('');
 
-  const medicamentosFiltrados = MOCK_MEDICAMENTOS.filter((med) =>
-    med.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    med.tipo.toLowerCase().includes(busqueda.toLowerCase())
+  const medicamentosFiltrados = MOCK_MEDICAMENTOS.filter(
+    (med) =>
+      med.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+      med.tipo.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   return (
-    <section className="page page--afiliados-sub">
-      {/* Cabecera */}
-      <div className="afiliados-sub__header">
-        <span className="afiliados-sub__tag">Servicio Farmacéutico</span>
-        <h2>Gestión y Entrega de Medicamentos</h2>
-        <p className="afiliados-sub__lead">
-          En <strong>Tecnosalud</strong> facilitamos el acceso oportuno, seguro y transparente a los medicamentos 
-          formulados por tu equipo médico, garantizando cobertura y trazabilidad digital.
+    <section className="pg">
+      <div className="pg-cabecera">
+        <h2>Gestión y entrega de medicamentos</h2>
+        <p className="pg-lead">
+          En <strong>Tecnosalud</strong> facilitamos el acceso oportuno, seguro y transparente a los medicamentos
+          formulados por tu equipo médico, con cobertura y trazabilidad digital.
         </p>
       </div>
 
-      {/* Buscador de medicamentos / consulta rápida */}
       <div className="meds-search-box">
-        <div className="meds-search-box__header">
-          <span className="meds-search-box__icon" aria-hidden="true">CR</span>          <div>
-            <h3>Consulta Rápida de Disponibilidad</h3>
-            <p>Busca por nombre del principio activo o categoría médica:</p>
-          </div>
-        </div>
-        
+        <h3>Consulta rápida de disponibilidad</h3>
+        <p className="meds-search-box__ayuda">Busca por nombre del principio activo o por categoría médica.</p>
+
         <input
           type="text"
           className="meds-search-input"
@@ -76,7 +76,7 @@ function Medicamentos() {
                   <th>Categoría</th>
                   <th>Cobertura</th>
                   <th>Estado</th>
-                  <th>Canal de Entrega</th>
+                  <th>Canal de entrega</th>
                 </tr>
               </thead>
               <tbody>
@@ -101,37 +101,53 @@ function Medicamentos() {
             </table>
           ) : (
             <p className="meds-no-results">
-              No se encontraron coincidencias para &ldquo;{busqueda}&rdquo;. Consulta con tu médico tratante o comunícate con la línea de farmacia.
+              No se encontraron coincidencias para &ldquo;{busqueda}&rdquo;. Consulta con tu médico tratante o
+              comunícate con la línea de farmacia.
             </p>
           )}
         </div>
       </div>
 
-      {/* Modalidades de Entrega */}
-      <div className="meds-services">
-        <h3>Modalidades de Dispensación y Servicios</h3>
-        <div className="meds-services__grid">
-          {MODALIDADES_ENTREGA.map((item, idx) => (
-            <div key={idx} className="med-service-card">
-              <span className="med-service-card__icon" aria-hidden="true">{item.icon}</span>
-              <h4>{item.titulo}</h4>
-              <p>{item.descripcion}</p>
-            </div>
-          ))}
+      <div className="pg-fila">
+        <div className="pg-fila__texto">
+          <h3>Modalidades de dispensación y servicios</h3>
+          <div className="pg-apilado">
+            {MODALIDADES_ENTREGA.map((item) => (
+              <div key={item.titulo}>
+                <h4>{item.titulo}</h4>
+                <p>{item.descripcion}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="pg-fila__medio">
+          <Imagen nombre="medicamentos-1" alt="Persona recibiendo atención en el mostrador de una farmacia" relacion="4 / 5" />
         </div>
       </div>
 
-      {/* Requisitos para reclamo */}
-      <div className="dva-card">
-        <div className="dva-card__content">
-          <span className="dva-card__badge">Información Importante</span>
-          <h3>Requisitos para el Reclamo de Medicamentos</h3>
-          <ul className="dva-card__list">
-            <li><strong>Fórmula médica vigente:</strong> Tiene una validez de 30 días calendario a partir de su expedición.</li>
-            <li><strong>Documento de identidad original:</strong> Del afiliado y de la persona autorizada (en caso de que un tercero reclame).</li>
-            <li><strong>Carta de autorización:</strong> Si el titular no puede asistir, adjuntar carta firmada con copia de ambos documentos.</li>
-            <li><strong>Trazabilidad en app:</strong> Puedes activar notificaciones para saber en tiempo real cuándo tu pedido esté listo para entrega o despacho.</li>
+      <div className="pg-fila pg-fila--inversa">
+        <div className="pg-fila__texto">
+          <h3>Requisitos para reclamar tus medicamentos</h3>
+          <ul className="pg-vinetas">
+            <li>
+              <strong>Fórmula médica vigente:</strong> tiene validez de 30 días calendario desde su expedición.
+            </li>
+            <li>
+              <strong>Documento de identidad original:</strong> del afiliado y, si un tercero reclama, también el de
+              la persona autorizada.
+            </li>
+            <li>
+              <strong>Carta de autorización:</strong> si el titular no puede asistir, debe adjuntarse firmada y con
+              copia de ambos documentos.
+            </li>
+            <li>
+              <strong>Trazabilidad en la app:</strong> activa las notificaciones para saber cuándo tu pedido está
+              listo para entrega o despacho.
+            </li>
           </ul>
+        </div>
+        <div className="pg-fila__medio">
+          <Imagen nombre="medicamentos-2" alt="Farmacéutica entregando una fórmula médica a una afiliada" />
         </div>
       </div>
     </section>

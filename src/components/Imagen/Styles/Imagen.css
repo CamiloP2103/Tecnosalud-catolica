@@ -1,0 +1,39 @@
+.imagen {
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #e2e8f0;
+}
+
+.imagen img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imagen__vacia {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.imagen__vacia svg {
+  color: #93a9d4;
+}
+
+.imagen__vacia code {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: #1d4ed8;
+}
