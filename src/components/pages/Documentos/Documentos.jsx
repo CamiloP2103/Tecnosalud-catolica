@@ -6,6 +6,14 @@ import { llamarServicio, mensajeSinConexion, SERVICIO_DOCUMENTOS } from '../../.
 const API_DOCUMENTOS = import.meta.env.VITE_API_DOCUMENTOS_URL || 'http://localhost:3006/api/documentos';
 const DOCUMENT_PATTERN = /^[A-Za-z0-9.-]{5,20}$/;
 
+const TIPOS_DOCUMENTO = [
+  'Examen de laboratorio',
+  'Radiografía / Imagen diagnóstica',
+  'Examen externo',
+  'Ecografía / Resonancia',
+  'Otro documento clínico',
+];
+
 function obtenerUsuario() {
   try {
     return JSON.parse(localStorage.getItem('tecnosalud_sesion_activa') || '{}');
@@ -36,6 +44,7 @@ function Documentos() {
   const esPersonal = ['MEDICO', 'ADMIN'].includes(String(usuario.rol || '').toUpperCase());
   const [documentoPaciente, setDocumentoPaciente] = useState(documentoSesion);
   const [documentoAcceso, setDocumentoAcceso] = useState('');
+  const [tipoDocumento, setTipoDocumento] = useState(TIPOS_DOCUMENTO[0]);
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [contenido, setContenido] = useState('');
@@ -80,6 +89,7 @@ function Documentos() {
 
     const datosFormulario = new FormData();
     datosFormulario.append('documentoPaciente', documentoPaciente.trim());
+    datosFormulario.append('tipoDocumento', tipoDocumento);
     datosFormulario.append('titulo', titulo.trim());
     datosFormulario.append('descripcion', descripcion.trim());
     datosFormulario.append('archivo', archivo);
@@ -91,6 +101,7 @@ function Documentos() {
         headers: encabezados(false),
         body: datosFormulario,
       });
+      setTipoDocumento(TIPOS_DOCUMENTO[0]);
       setTitulo('');
       setDescripcion('');
       setArchivo(null);
@@ -207,6 +218,17 @@ function Documentos() {
         <p>Formatos permitidos: PDF, PNG o JPG. Tamaño máximo: 10 MB.</p>
         <form className="documentos-form" onSubmit={manejarCarga}>
           <label>
+            Tipo de documento
+            <select
+              value={tipoDocumento}
+              onChange={(event) => setTipoDocumento(event.target.value)}
+            >
+              {TIPOS_DOCUMENTO.map((tipo) => (
+                <option key={tipo} value={tipo}>{tipo}</option>
+              ))}
+            </select>
+          </label>
+          <label>
             Título del documento
             <input value={titulo} onChange={(event) => setTitulo(event.target.value)} maxLength="150" required />
           </label>
@@ -278,7 +300,23 @@ function Documentos() {
             {documentos.map((documento) => (
               <li key={documento.id} className="documentos-lista__item">
                 <div>
-                  <strong>{documento.titulo}</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <strong>{documento.titulo}</strong>
+                    {documento.tipoDocumento && (
+                      <span
+                        style={{
+                          fontSize: '0.78rem',
+                          backgroundColor: '#eff6ff',
+                          color: '#145da0',
+                          padding: '0.15rem 0.55rem',
+                          borderRadius: '999px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {documento.tipoDocumento}
+                      </span>
+                    )}
+                  </div>
                   <span>{documento.nombreOriginal}</span>
                   {documento.descripcion && <span>{documento.descripcion}</span>}
                   <span>{new Date(documento.creadoEn).toLocaleString('es-CO')}</span>
