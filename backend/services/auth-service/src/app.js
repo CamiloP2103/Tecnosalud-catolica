@@ -13,6 +13,8 @@ const { crearEnvioConstancias } = require('./envioConstancias');
 const LARGO_MINIMO_CLAVE = 8;
 const MAX_INTENTOS_CUENTA = 5;
 const QUINCE_MINUTOS = 15 * 60 * 1000;
+const CINCO_MINUTOS = 5 * 60 * 1000;
+const MAX_INTENTOS_MFA = 5;
 const MENSAJE_RECUPERACION = 'Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.';
 
 function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
@@ -20,6 +22,7 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
 
   const limiteLogin = crearLimitador({ maximo: 5, ventanaMs: QUINCE_MINUTOS });
   const limiteRecuperacion = crearLimitador({ maximo: 5, ventanaMs: QUINCE_MINUTOS });
+  const limiteMfa = crearLimitador({ maximo: 10, ventanaMs: QUINCE_MINUTOS });
 
   app.use(cors({ origin: '*' }));
   app.use(express.json({ limit: '20kb' }));
@@ -42,11 +45,53 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
 
   const router = express.Router();
 
+  function enmascararCorreoMfa(correo) {
+    if (!correo || !correo.includes('@')) return '***@***.com';
+    const [nombre, dominio] = correo.split('@');
+    const prefijo = nombre.length > 2 ? nombre.slice(0, 2) : nombre.charAt(0);
+    return `${prefijo}***@${dominio}`;
+  }
+
   function registrarIntento({ usuarioId = null, email, ipCliente, exitoso, motivo = null }) {
     pool.query(
       `INSERT INTO bitacora_acceso (usuario_id, email_ingresado, ip_origen, exitoso, motivo_fallo) VALUES (?, ?, ?, ?, ?)`,
       [usuarioId, email.slice(0, 120), String(ipCliente).slice(0, 45), exitoso, motivo]
     ).catch((error) => console.error('[auth-service] Error bitacora:', error.code || error.message));
+  }
+
+  function plantillaCodigoMfa({ nombreUsuario, codigo }) {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <h2 style="color: #145da0; text-align: center;">Verificación en Dos Pasos (MFA)</h2>
+        <p>Hola, <strong>${nombreUsuario}</strong>.</p>
+        <p>Usa el siguiente código de 6 dígitos para completar tu inicio de sesión en <strong>Tecnosalud Católica</strong>:</p>
+        <div style="text-align: center; margin: 28px 0;">
+          <span style="display: inline-block; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #145da0; background-color: #f0f6fc; padding: 14px 28px; border-radius: 8px; border: 1px solid #cbd5e1;">
+            ${codigo}
+          </span>
+        </div>
+        <p style="color: #475569; font-size: 14px;">Este código expira en <strong>5 minutos</strong>. Si no intentaste iniciar sesión, ignora este mensaje y cambia tu contraseña.</p>
+      </div>
+    `;
+  }
+
+  async function emitirYEnviarOtp(user) {
+    const codigo = crypto.randomInt(100000, 1000000).toString();
+    const codigoHash = await bcrypt.hash(codigo, 8);
+
+    // Invalida códigos anteriores pendientes del mismo usuario
+    await pool.query('UPDATE mfa_codigos SET usado = TRUE WHERE usuario_id = ? AND usado = FALSE', [user.id]);
+
+    await pool.query(
+      'INSERT INTO mfa_codigos (usuario_id, codigo_hash, expira_en) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 5 MINUTE))',
+      [user.id, codigoHash]
+    );
+
+    await notificar({
+      to: user.email,
+      subject: 'Código de verificación de acceso - Tecnosalud Católica',
+      html: plantillaCodigoMfa({ nombreUsuario: user.nombre, codigo }),
+    });
   }
 
   router.post('/', async (req, res) => {
@@ -148,15 +193,160 @@ function crearApp({ pool, jwtSecret, frontendUrl, notificar }) {
 
       limiteLogin.limpiar(claveLimite);
       await pool.query('UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL WHERE id = ?', [user.id]);
-      registrarIntento({ usuarioId: user.id, email: emailIngresado, ipCliente, exitoso: true });
-      notificarSeguridadLogin({ destinatario: user.email, nombreUsuario: user.nombre, exito: true, ipCliente });
 
-      const token = jwt.sign({ id: user.id, email: user.email, rol: user.rol, doc: user.documento }, jwtSecret, { expiresIn: '4h' });
+      try {
+        await emitirYEnviarOtp(user);
+      } catch (notifError) {
+        console.error('[auth-service] Error enviando código MFA:', notifError.message);
+        return res.status(502).json({ error: 'No se pudo enviar el código de verificación al correo. Intenta nuevamente.' });
+      }
 
-      return res.json({ token, usuario: { id: user.id, nombre: user.nombre, email: user.email, tipoDoc: user.tipo_doc, documento: user.documento, rol: user.rol } });
+      const tempToken = jwt.sign(
+        { id: user.id, email: user.email, proposito: 'MFA_LOGIN' },
+        jwtSecret,
+        { expiresIn: '5m' }
+      );
+
+      return res.json({
+        requiereMfa: true,
+        tempToken,
+        correoEnmascarado: enmascararCorreoMfa(user.email),
+        mensaje: `Enviamos un código de 6 dígitos a ${enmascararCorreoMfa(user.email)}.`,
+      });
     } catch (error) {
       if (errorBaseDatos(error)) return res.status(503).json({ error: errorBaseDatos(error) });
       return res.status(500).json({ error: 'Error interno en el servidor.' });
+    }
+  });
+
+  // 1B. VERIFICAR CÓDIGO MFA (Paso 2 del login)
+  router.post('/verificar-mfa', async (req, res) => {
+    const { tempToken, codigo } = req.body || {};
+    const ipCliente = req.ip || 'Local';
+
+    if (typeof tempToken !== 'string' || typeof codigo !== 'string' || !tempToken.trim() || !/^\d{6}$/.test(codigo.trim())) {
+      return res.status(400).json({ error: 'Debes ingresar un código de verificación válido de 6 dígitos.' });
+    }
+
+    if (limiteMfa.bloqueado(ipCliente)) {
+      return res.status(429).json({ error: 'Demasiados intentos de verificación. Intenta de nuevo en 15 minutos.' });
+    }
+
+    let payload;
+    try {
+      payload = jwt.verify(tempToken, jwtSecret);
+      if (payload.proposito !== 'MFA_LOGIN') {
+        return res.status(401).json({ error: 'Token temporal inválido.' });
+      }
+    } catch (err) {
+      return res.status(401).json({ error: 'La verificación ha expirado. Inicia sesión nuevamente.' });
+    }
+
+    try {
+      const [codigos] = await pool.query(
+        `SELECT id, codigo_hash, intentos, (expira_en < NOW()) AS expirado
+         FROM mfa_codigos
+         WHERE usuario_id = ? AND usado = FALSE
+         ORDER BY id DESC LIMIT 1`,
+        [payload.id]
+      );
+
+      if (codigos.length === 0) {
+        return res.status(400).json({ error: 'No hay un código activo. Solicita uno nuevo.' });
+      }
+
+      const registroOtp = codigos[0];
+
+      if (Number(registroOtp.expirado)) {
+        await pool.query('UPDATE mfa_codigos SET usado = TRUE WHERE id = ?', [registroOtp.id]);
+        return res.status(400).json({ error: 'El código ha expirado. Solicita uno nuevo.' });
+      }
+
+      if (registroOtp.intentos >= MAX_INTENTOS_MFA) {
+        await pool.query('UPDATE mfa_codigos SET usado = TRUE WHERE id = ?', [registroOtp.id]);
+        return res.status(429).json({ error: 'Superaste el máximo de intentos para este código. Inicia sesión nuevamente.' });
+      }
+
+      const codigoValido = await bcrypt.compare(codigo.trim(), registroOtp.codigo_hash);
+
+      if (!codigoValido) {
+        limiteMfa.registrar(ipCliente);
+        await pool.query('UPDATE mfa_codigos SET intentos = intentos + 1 WHERE id = ?', [registroOtp.id]);
+        registrarIntento({ usuarioId: payload.id, email: payload.email, ipCliente, exitoso: false, motivo: 'MFA_INCORRECTO' });
+        return res.status(401).json({ error: 'Código de verificación incorrecto.' });
+      }
+
+      await pool.query('UPDATE mfa_codigos SET usado = TRUE WHERE id = ?', [registroOtp.id]);
+      limiteMfa.limpiar(ipCliente);
+
+      const [rows] = await pool.query(
+        `SELECT u.id, u.tipo_doc, u.documento, u.email, u.nombre, u.activo, r.nombre AS rol
+         FROM usuarios u INNER JOIN roles r ON u.rol_id = r.id WHERE u.id = ? LIMIT 1`,
+        [payload.id]
+      );
+
+      if (rows.length === 0 || !rows[0].activo) {
+        return res.status(403).json({ error: 'Usuario inactivo o no disponible.' });
+      }
+
+      const user = rows[0];
+      registrarIntento({ usuarioId: user.id, email: user.email, ipCliente, exitoso: true });
+      notificarSeguridadLogin({ destinatario: user.email, nombreUsuario: user.nombre, exito: true, ipCliente });
+
+      const token = jwt.sign(
+        { id: user.id, email: user.email, rol: user.rol, doc: user.documento },
+        jwtSecret,
+        { expiresIn: '4h' }
+      );
+
+      return res.json({
+        token,
+        usuario: {
+          id: user.id,
+          nombre: user.nombre,
+          email: user.email,
+          tipoDoc: user.tipo_doc,
+          documento: user.documento,
+          rol: user.rol,
+        },
+      });
+    } catch (error) {
+      if (errorBaseDatos(error)) return res.status(503).json({ error: errorBaseDatos(error) });
+      console.error('[auth-service] Error en /verificar-mfa:', error);
+      return res.status(500).json({ error: 'Error interno al verificar el código.' });
+    }
+  });
+
+  // 1C. REENVIAR CÓDIGO MFA
+  router.post('/reenviar-mfa', async (req, res) => {
+    const { tempToken } = req.body || {};
+    if (typeof tempToken !== 'string' || !tempToken.trim()) {
+      return res.status(400).json({ error: 'Token temporal requerido.' });
+    }
+
+    let payload;
+    try {
+      payload = jwt.verify(tempToken, jwtSecret);
+      if (payload.proposito !== 'MFA_LOGIN') {
+        return res.status(401).json({ error: 'Token temporal inválido.' });
+      }
+    } catch (err) {
+      return res.status(401).json({ error: 'Tu sesión de verificación expiró. Inicia sesión nuevamente.' });
+    }
+
+    try {
+      const [rows] = await pool.query('SELECT id, nombre, email, activo FROM usuarios WHERE id = ? LIMIT 1', [payload.id]);
+      if (rows.length === 0 || !rows[0].activo) {
+        return res.status(403).json({ error: 'Usuario no disponible.' });
+      }
+
+      await emitirYEnviarOtp(rows[0]);
+      return res.json({
+        mensaje: `Hemos enviado un nuevo código de 6 dígitos a ${enmascararCorreoMfa(rows[0].email)}.`,
+      });
+    } catch (error) {
+      console.error('[auth-service] Error en /reenviar-mfa:', error);
+      return res.status(502).json({ error: 'No se pudo reenviar el código de verificación.' });
     }
   });
 

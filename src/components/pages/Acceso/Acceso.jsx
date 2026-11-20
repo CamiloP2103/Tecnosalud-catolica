@@ -30,6 +30,14 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
   const [enviandoConstancia, setEnviandoConstancia] = useState(false);
   const [constanciaMsg, setConstanciaMsg] = useState({ tipo: '', texto: '' });
 
+  // Estados de Verificación en Dos Pasos (MFA)
+  const [pasoMfa, setPasoMfa] = useState(false);
+  const [tempToken, setTempToken] = useState('');
+  const [codigoMfa, setCodigoMfa] = useState('');
+  const [correoMfa, setCorreoMfa] = useState('');
+  const [mensajeMfa, setMensajeMfa] = useState('');
+  const [reenviandoMfa, setReenviandoMfa] = useState(false);
+
   // Estado del usuario activo
   const [usuarioLogueado, setUsuarioLogueado] = useState(() => {
     const sesionGuardada = localStorage.getItem('tecnosalud_sesion_activa');
@@ -106,13 +114,50 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     }
 
     generarCaptchaLocal();
-  }, [sesionActiva]); 
+  }, [sesionActiva]);
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
     setForm((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  const completarInicioSesion = (datos) => {
+    // Persistencia segura: Token JWT, datos del usuario, guardar rol
+    localStorage.setItem('tecnosalud_token', datos.token);
+    localStorage.setItem('tecnosalud_sesion_activa', JSON.stringify(datos.usuario));
+    const rolUsuario = datos.usuario?.rol || '';
+    localStorage.setItem('tecnosalud_rol', rolUsuario);
+
+    setUsuarioLogueado(datos.usuario);
+
+    if (form.recordarUsuario) {
+      localStorage.setItem('tecnosalud_usuario_recordado', form.usuario.trim());
+    } else {
+      localStorage.removeItem('tecnosalud_usuario_recordado');
+    }
+
+    // Pasamos el rol capturado hacia App.jsx para que el Navbar lo renderice de inmediato
+    if (onLoginExitoso) {
+      onLoginExitoso(rolUsuario);
+    }
+
+    setPasoMfa(false);
+    setTempToken('');
+    setCodigoMfa('');
+    setCorreoMfa('');
+    setMensajeMfa('');
+
+    setMensajeExito(`¡Bienvenido de nuevo, ${datos.usuario.nombre}! Has ingresado correctamente.`);
+    setEsLoginExitoso(true);
+    setModalAviso(true);
+
+    setForm((prev) => ({
+      ...prev,
+      contrasena: '',
+      usuario: prev.recordarUsuario ? prev.usuario : '',
     }));
   };
 
@@ -136,7 +181,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
 
     setCargando(true);
     try {
-      // Petición al Microservicio de Autenticación
+      // Petición al Microservicio de Autenticación (Paso 1)
       const { ok, datos } = await llamarServicio(`${API_AUTH}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -150,34 +195,16 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
         return;
       }
 
-      // Persistencia segura: Token JWT, datos del usuario, guardar rol
-      localStorage.setItem('tecnosalud_token', datos.token);
-      localStorage.setItem('tecnosalud_sesion_activa', JSON.stringify(datos.usuario));
-      const rolUsuario = datos.usuario?.rol || '';
-      localStorage.setItem('tecnosalud_rol', rolUsuario);
-
-      setUsuarioLogueado(datos.usuario);
-
-      if (form.recordarUsuario) {
-        localStorage.setItem('tecnosalud_usuario_recordado', form.usuario.trim());
-      } else {
-        localStorage.removeItem('tecnosalud_usuario_recordado');
+      if (datos.requiereMfa) {
+        setTempToken(datos.tempToken);
+        setCorreoMfa(datos.correoEnmascarado || enmascararCorreo(correoIngresado));
+        setMensajeMfa(datos.mensaje || 'Ingresa el código de 6 dígitos enviado a tu correo.');
+        setCodigoMfa('');
+        setPasoMfa(true);
+        return;
       }
 
-      // ✅ Pasamos el rol capturado hacia App.jsx para que el Navbar lo renderice de inmediato  
-      if (onLoginExitoso) {
-        onLoginExitoso(rolUsuario);
-      }
-
-      setMensajeExito(`¡Bienvenido de nuevo, ${datos.usuario.nombre}! Has ingresado correctamente.`);
-      setEsLoginExitoso(true);
-      setModalAviso(true);
-
-      setForm((prev) => ({
-        ...prev,
-        contrasena: '',
-        usuario: prev.recordarUsuario ? prev.usuario : '',
-      }));
+      completarInicioSesion(datos);
     } catch (error) {
       setErrorMsg(mensajeDeError(error, SERVICIO_AUTH));
     } finally {
@@ -186,10 +213,70 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     }
   };
 
+  const handleVerificarMfa = async (event) => {
+    event.preventDefault();
+    setErrorMsg('');
+
+    const codigoLimpio = codigoMfa.trim();
+    if (!/^\d{6}$/.test(codigoLimpio)) {
+      setErrorMsg('El código de verificación debe tener exactamente 6 dígitos.');
+      return;
+    }
+
+    setCargando(true);
+    try {
+      const { ok, datos } = await llamarServicio(`${API_AUTH}/verificar-mfa`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tempToken, codigo: codigoLimpio }),
+      }, SERVICIO_AUTH);
+
+      if (!ok) {
+        setErrorMsg(datos.error || 'Código de verificación inválido.');
+        return;
+      }
+
+      completarInicioSesion(datos);
+    } catch (error) {
+      setErrorMsg(mensajeDeError(error, SERVICIO_AUTH));
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const handleReenviarMfa = async () => {
+    setErrorMsg('');
+    setReenviandoMfa(true);
+    try {
+      const { ok, datos } = await llamarServicio(`${API_AUTH}/reenviar-mfa`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tempToken }),
+      }, SERVICIO_AUTH);
+
+      if (!ok) {
+        setErrorMsg(datos.error || 'No se pudo reenviar el código.');
+        return;
+      }
+
+      setMensajeMfa(datos.mensaje || 'Se ha enviado un nuevo código a tu correo.');
+      setCodigoMfa('');
+    } catch (error) {
+      setErrorMsg(mensajeDeError(error, SERVICIO_AUTH));
+    } finally {
+      setReenviandoMfa(false);
+    }
+  };
+
   const handleCerrarSesion = () => {
     localStorage.removeItem('tecnosalud_sesion_activa');
     localStorage.removeItem('tecnosalud_token');
     setUsuarioLogueado(null);
+    setPasoMfa(false);
+    setTempToken('');
+    setCodigoMfa('');
+    setCorreoMfa('');
+    setMensajeMfa('');
 
     const usuarioRecordado = localStorage.getItem('tecnosalud_usuario_recordado');
     setForm({
@@ -254,7 +341,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
         body: JSON.stringify({
           tipoDoc: tipoDocRecuperar,
           documento: docRecuperar.trim(),
-          correoSeleccionado
+          correoSeleccionado,
         }),
       }, SERVICIO_AUTH);
 
@@ -289,8 +376,6 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     setAlertaRecuperarClave('');
     setModalRecuperarClave(true);
   };
-
-// En src/components/pages/Acceso/Acceso.jsx
 
   const handleConsultarCorreoClave = async (e) => {
     e.preventDefault();
@@ -328,7 +413,7 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
       setCargando(false);
     }
   };
-  
+
   const handleValidarDocumentoClave = (e) => {
     e.preventDefault();
     setAlertaRecuperarClave('');
@@ -344,34 +429,27 @@ function Acceso({ sesionActiva, onLoginExitoso, onLogout, onNavigate }) {
     setModalAviso(true);
   };
 
- const handleCerrarAviso = () => {
+  const handleCerrarAviso = () => {
     setModalAviso(false);
     if (esLoginExitoso && onNavigate) {
-      // Validamos el rol para redirigir a la vista correspondiente
       const rol = usuarioLogueado?.rol?.toLowerCase();
-      
+
       if (rol === 'admin' || rol === 'administrador') {
-        onNavigate('admin'); // Cambia 'perfil-admin' por el nombre real de tu ruta
+        onNavigate('admin');
+      } else if (rol === 'afiliaciones') {
+        onNavigate('afiliaciones');
+      } else if (rol === 'medico' || rol === 'profesional') {
+        onNavigate('medico-atencion');
+      } else if (rol === 'farmacia') {
+        onNavigate('farmacias');
       } else {
-              if (rol === 'afiliaciones' ) {
-              onNavigate('afiliaciones'); // Navega al perfil de afiliaciones 
-              } else {
-                        if (rol === 'medico' ) {
-                        onNavigate('medico-atencion'); // Navega al perfil de Medico 
-                        } else {
-                                if (rol === 'farmacia' ) {
-                                onNavigate('farmacias'); // Navega al perfil de Farmacia 
-                                } else {
-                                  onNavigate('servicios');
-                                }
-                              } 
-                      }
-              }
+        onNavigate('servicios');
+      }
     }
   };
 
   // Pide a auth-service que envíe la constancia de registro (PDF con contraseña) al correo del usuario
-const enviarMiConstancia = async () => {
+  const enviarMiConstancia = async () => {
     setEnviandoConstancia(true);
     setConstanciaMsg({ tipo: '', texto: '' });
     try {
@@ -379,10 +457,9 @@ const enviarMiConstancia = async () => {
       const { ok, datos } = await llamarServicio(`${API_AUTH}/mi-constancia`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        // 👇 AGREGA ESTA LÍNEA EXACTAMENTE AQUÍ 👇
-        body: JSON.stringify({ email: usuarioLogueado.email, documento: usuarioLogueado.documento })
+        body: JSON.stringify({ email: usuarioLogueado.email, documento: usuarioLogueado.documento }),
       }, SERVICIO_AUTH);
-      
+
       setConstanciaMsg(ok
         ? { tipo: 'exito', texto: datos.mensaje }
         : { tipo: 'error', texto: datos.error || 'No se pudo enviar la constancia.' });
@@ -443,7 +520,7 @@ const enviarMiConstancia = async () => {
                   } else if (rol === 'afiliaciones') {
                     onNavigate('afiliaciones');
                   } else if (rol === 'medico' || rol === 'profesional') {
-                    onNavigate('medico-atencion'); // 👈 Ruta del médico
+                    onNavigate('medico-atencion');
                   } else if (rol === 'farmacia') {
                     onNavigate('farmacias');
                   } else {
@@ -457,7 +534,7 @@ const enviarMiConstancia = async () => {
                 : ['afiliaciones'].includes(usuarioLogueado?.rol?.toLowerCase())
                   ? 'Ir al Perfil Afiliaciones'
                   : ['medico', 'profesional'].includes(usuarioLogueado?.rol?.toLowerCase())
-                    ? 'Ir al Panel Médico' // 👈 Texto del botón para médico
+                    ? 'Ir al Panel Médico'
                     : ['farmacia'].includes(usuarioLogueado?.rol?.toLowerCase())
                       ? 'Ir al Perfil Farmacias'
                       : 'Ir a Servicios Clínicos'}
@@ -486,98 +563,155 @@ const enviarMiConstancia = async () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} noValidate>
-        <fieldset className="form__section">
-          <legend>Credenciales de Ingreso</legend>
-          <div className="acceso__grid">
-            <label>
-              Correo electrónico *
-              <input
-                type="email"
-                name="usuario"
-                value={form.usuario}
-                onChange={handleChange}
-                placeholder="ejemplo@correo.com"
-                required
-                disabled={cargando}
-              />
-            </label>
-
-            <label>
-              Contraseña *
-              <input
-                type="password"
-                name="contrasena"
-                value={form.contrasena}
-                onChange={handleChange}
-                placeholder="••••••••"
-                required
-                disabled={cargando}
-              />
-            </label>
-
-            <div className="acceso__opciones">
-              <label className="acceso__checkbox-label">
+      {pasoMfa ? (
+        <form onSubmit={handleVerificarMfa} noValidate>
+          <fieldset className="form__section">
+            <legend>Verificación en Dos Pasos (MFA)</legend>
+            <p style={{ marginBottom: '1rem' }}>
+              {mensajeMfa || `Enviamos un código de 6 dígitos a ${correoMfa}.`}
+            </p>
+            <div className="acceso__grid">
+              <label>
+                Código de verificación (6 dígitos) *
                 <input
-                  type="checkbox"
-                  name="recordarUsuario"
-                  checked={form.recordarUsuario}
-                  onChange={handleChange}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={codigoMfa}
+                  onChange={(e) => setCodigoMfa(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  required
+                  disabled={cargando}
+                  autoFocus
+                  style={{ letterSpacing: '0.35rem', fontSize: '1.2rem', textAlign: 'center' }}
                 />
-                <span>Recordar usuario en este equipo</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <button type="submit" className="form__submit-btn" disabled={cargando}>
+            {cargando ? 'Verificando código...' : 'Verificar e ingresar'}
+          </button>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
+            <button
+              type="button"
+              className="acceso__link-btn"
+              onClick={handleReenviarMfa}
+              disabled={reenviandoMfa || cargando}
+            >
+              {reenviandoMfa ? 'Reenviando...' : 'Reenviar código'}
+            </button>
+            <button
+              type="button"
+              className="acceso__link-btn"
+              onClick={() => {
+                setPasoMfa(false);
+                setTempToken('');
+                setCodigoMfa('');
+                setErrorMsg('');
+                generarCaptchaLocal();
+              }}
+              disabled={cargando}
+            >
+              Volver al inicio de sesión
+            </button>
+          </div>
+        </form>
+      ) : (
+        <form onSubmit={handleSubmit} noValidate>
+          <fieldset className="form__section">
+            <legend>Credenciales de Ingreso</legend>
+            <div className="acceso__grid">
+              <label>
+                Correo electrónico *
+                <input
+                  type="email"
+                  name="usuario"
+                  value={form.usuario}
+                  onChange={handleChange}
+                  placeholder="ejemplo@correo.com"
+                  required
+                  disabled={cargando}
+                />
               </label>
 
-              <div className="acceso__links-group">
-                <button
-                  type="button"
-                  className="acceso__link-btn"
-                  onClick={handleAbrirModalUsuario}
-                >
-                  ¿Olvidaste tu usuario?
-                </button>
-                <span className="acceso__link-separator">|</span>
-                <button
-                  type="button"
-                  className="acceso__link-btn"
-                  onClick={handleAbrirModalClave}
-                >
-                  ¿Olvidaste tu contraseña?
-                </button>
+              <label>
+                Contraseña *
+                <input
+                  type="password"
+                  name="contrasena"
+                  value={form.contrasena}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  required
+                  disabled={cargando}
+                />
+              </label>
+
+              <div className="acceso__opciones">
+                <label className="acceso__checkbox-label">
+                  <input
+                    type="checkbox"
+                    name="recordarUsuario"
+                    checked={form.recordarUsuario}
+                    onChange={handleChange}
+                  />
+                  <span>Recordar usuario en este equipo</span>
+                </label>
+
+                <div className="acceso__links-group">
+                  <button
+                    type="button"
+                    className="acceso__link-btn"
+                    onClick={handleAbrirModalUsuario}
+                  >
+                    ¿Olvidaste tu usuario?
+                  </button>
+                  <span className="acceso__link-separator">|</span>
+                  <button
+                    type="button"
+                    className="acceso__link-btn"
+                    onClick={handleAbrirModalClave}
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                </div>
               </div>
             </div>
+          </fieldset>
+
+          <div className="form__captcha-container">
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: 'bold' }}>
+              <span>Seguridad: ¿Cuánto es {captchaChallenge.num1} + {captchaChallenge.num2}? *</span>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="number"
+                  value={captchaInput}
+                  onChange={(e) => setCaptchaInput(e.target.value)}
+                  placeholder="Respuesta"
+                  required
+                  style={{ width: '120px' }}
+                  disabled={cargando}
+                />
+                <button
+                  type="button"
+                  onClick={generarCaptchaLocal}
+                  className="acceso__link-btn"
+                  title="Generar nueva operación"
+                  disabled={cargando}
+                >
+                  Cambiar
+                </button>
+              </div>
+            </label>
           </div>
-        </fieldset>
 
-        <div className="form__captcha-container">
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: 'bold' }}>
-            <span>Seguridad: ¿Cuánto es {captchaChallenge.num1} + {captchaChallenge.num2}? *</span>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <input
-                type="number"
-                value={captchaInput}
-                onChange={(e) => setCaptchaInput(e.target.value)}
-                placeholder="Respuesta"
-                required
-                style={{ width: '120px' }}
-                disabled={cargando}
-              />
-              <button
-                type="button"
-                onClick={generarCaptchaLocal}
-                className="acceso__link-btn"
-                title="Generar nueva operación"
-                disabled={cargando}
-              >
-                Cambiar
-              </button>
-            </div>
-          </label>
-        </div>
-
-        <button type="submit" className="form__submit-btn" disabled={cargando}>
-          {cargando ? 'Validando credenciales...' : 'Iniciar sesión'}
-        </button>
-      </form>
+          <button type="submit" className="form__submit-btn" disabled={cargando}>
+            {cargando ? 'Validando credenciales...' : 'Iniciar sesión'}
+          </button>
+        </form>
+      )}
 
       {/* Modal 1: Recuperar Usuario */}
       {modalRecuperarUsuario && (

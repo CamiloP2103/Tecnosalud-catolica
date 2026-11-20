@@ -8,6 +8,8 @@ import { plantillaAlertaLogin } from '../src/plantillas.js';
 const JWT_SECRET = 'secreto-de-prueba';
 const CLAVE = 'ClaveSegura1';
 const HASH = bcrypt.hashSync(CLAVE, 4);
+const CODIGO_OTP = '123456';
+const HASH_OTP = bcrypt.hashSync(CODIGO_OTP, 4);
 
 const usuarioBase = {
   id: 1,
@@ -20,12 +22,20 @@ const usuarioBase = {
   rol: 'afiliado',
 };
 
+const mfaBase = {
+  id: 50,
+  codigo_hash: HASH_OTP,
+  intentos: 0,
+  expirado: 0,
+};
+
 // Simula mysql2: responde según la consulta SQL recibida
-function crearPool({ usuario = usuarioBase, token = null } = {}) {
+function crearPool({ usuario = usuarioBase, token = null, mfaCodigo = mfaBase } = {}) {
   return {
     query: vi.fn(async (sql) => {
       if (sql.includes('FROM usuarios')) return [usuario ? [usuario] : []];
       if (sql.includes('FROM tokens_recuperacion')) return [token ? [token] : []];
+      if (sql.includes('FROM mfa_codigos')) return [mfaCodigo ? [mfaCodigo] : []];
       return [{ affectedRows: 1 }];
     }),
   };
@@ -36,6 +46,10 @@ function crear(opciones) {
   const notificar = vi.fn().mockResolvedValue();
   const app = crearApp({ pool, jwtSecret: JWT_SECRET, frontendUrl: 'http://localhost:5173', notificar });
   return { app, pool, notificar };
+}
+
+function crearTempToken(payload = { id: usuarioBase.id, email: usuarioBase.email, proposito: 'MFA_LOGIN' }, opciones = { expiresIn: '5m' }) {
+  return jwt.sign(payload, JWT_SECRET, opciones);
 }
 
 beforeEach(() => {
@@ -69,23 +83,29 @@ describe('POST /api/auth/login', () => {
     );
   });
 
-  it('con credenciales correctas devuelve un JWT válido sin datos sensibles', async () => {
-    const { app, notificar } = crear();
+  it('con credenciales correctas solicita MFA, devuelve tempToken y envía código OTP por correo', async () => {
+    const { app, pool, notificar } = crear();
     const res = await request(app)
       .post('/api/auth/login')
       .send({ usuario: ' Carlos@Tecnosalud.com.co ', contrasena: CLAVE });
+
     expect(res.status).toBe(200);
-    expect(jwt.verify(res.body.token, JWT_SECRET)).toMatchObject({ id: 1, email: usuarioBase.email });
-    expect(res.body.usuario).toEqual({
+    expect(res.body.requiereMfa).toBe(true);
+    expect(res.body.token).toBeUndefined();
+    expect(jwt.verify(res.body.tempToken, JWT_SECRET)).toMatchObject({
       id: 1,
-      nombre: 'Carlos Jiménez',
       email: usuarioBase.email,
-      tipoDoc: 'CC',
-      documento: '72000607',
-      rol: 'afiliado',
+      proposito: 'MFA_LOGIN',
     });
+    expect(pool.query).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO mfa_codigos'),
+      expect.any(Array)
+    );
     expect(notificar).toHaveBeenCalledWith(
-      expect.objectContaining({ subject: expect.stringContaining('Inicio de sesión') })
+      expect.objectContaining({
+        to: usuarioBase.email,
+        subject: expect.stringContaining('Código de verificación'),
+      })
     );
   });
 
@@ -107,15 +127,121 @@ describe('POST /api/auth/login', () => {
   });
 });
 
+describe('POST /api/auth/verificar-mfa', () => {
+  it('exige tempToken y un código numérico de 6 dígitos', async () => {
+    const { app } = crear();
+    const res = await request(app)
+      .post('/api/auth/verificar-mfa')
+      .send({ tempToken: crearTempToken(), codigo: '123' });
+    expect(res.status).toBe(400);
+  });
+
+  it('rechaza un tempToken inválido o expirado', async () => {
+    const { app } = crear();
+    const res = await request(app)
+      .post('/api/auth/verificar-mfa')
+      .send({ tempToken: 'token-invalido', codigo: CODIGO_OTP });
+    expect(res.status).toBe(401);
+  });
+
+  it('rechaza un código OTP incorrecto, suma intentos y registra en bitácora', async () => {
+    const { app, pool } = crear();
+    const res = await request(app)
+      .post('/api/auth/verificar-mfa')
+      .send({ tempToken: crearTempToken(), codigo: '999999' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.error).toContain('incorrecto');
+    expect(pool.query).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE mfa_codigos SET intentos = intentos + 1'),
+      [mfaBase.id]
+    );
+    expect(pool.query).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO bitacora_acceso'),
+      expect.arrayContaining([usuarioBase.id, usuarioBase.email, false, 'MFA_INCORRECTO'])
+    );
+  });
+
+  it('rechaza un código OTP expirado', async () => {
+    const { app } = crear({ mfaCodigo: { ...mfaBase, expirado: 1 } });
+    const res = await request(app)
+      .post('/api/auth/verificar-mfa')
+      .send({ tempToken: crearTempToken(), codigo: CODIGO_OTP });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('expirado');
+  });
+
+  it('con código correcto devuelve JWT válido, marca OTP como usado y envía alerta de inicio de sesión', async () => {
+    const { app, pool, notificar } = crear();
+    const res = await request(app)
+      .post('/api/auth/verificar-mfa')
+      .send({ tempToken: crearTempToken(), codigo: CODIGO_OTP });
+
+    expect(res.status).toBe(200);
+    expect(jwt.verify(res.body.token, JWT_SECRET)).toMatchObject({ id: 1, email: usuarioBase.email });
+    expect(res.body.usuario).toEqual({
+      id: 1,
+      nombre: 'Carlos Jiménez',
+      email: usuarioBase.email,
+      tipoDoc: 'CC',
+      documento: '72000607',
+      rol: 'afiliado',
+    });
+    expect(pool.query).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE mfa_codigos SET usado = TRUE'),
+      [mfaBase.id]
+    );
+    expect(notificar).toHaveBeenCalledWith(
+      expect.objectContaining({ subject: expect.stringContaining('Inicio de sesión') })
+    );
+  });
+});
+
+describe('POST /api/auth/reenviar-mfa', () => {
+  it('rechaza si falta tempToken o es inválido', async () => {
+    const { app } = crear();
+    const sinToken = await request(app).post('/api/auth/reenviar-mfa').send({});
+    expect(sinToken.status).toBe(400);
+
+    const invalido = await request(app).post('/api/auth/reenviar-mfa').send({ tempToken: 'malo' });
+    expect(invalido.status).toBe(401);
+  });
+
+  it('con tempToken válido genera y envía un nuevo código OTP', async () => {
+    const { app, pool, notificar } = crear();
+    const res = await request(app)
+      .post('/api/auth/reenviar-mfa')
+      .send({ tempToken: crearTempToken() });
+
+    expect(res.status).toBe(200);
+    expect(pool.query).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO mfa_codigos'),
+      expect.any(Array)
+    );
+    expect(notificar).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: usuarioBase.email,
+        subject: expect.stringContaining('Código de verificación'),
+      })
+    );
+  });
+});
+
 describe('bitácora de accesos y bloqueo de cuenta en db_auth', () => {
   const sentencias = (pool, inicio) => pool.query.mock.calls.filter(([sql]) => sql.trim().startsWith(inicio));
   const motivos = (pool) => sentencias(pool, 'INSERT INTO bitacora_acceso').map(([, p]) => [p[3], p[4]]);
 
-  it('registra el acceso exitoso y reinicia los intentos fallidos', async () => {
+  it('reinicia intentos fallidos en login y registra el acceso exitoso tras verificar MFA', async () => {
     const { app, pool } = crear();
-    await request(app).post('/api/auth/login').send({ usuario: usuarioBase.email, contrasena: CLAVE });
-    expect(motivos(pool)).toEqual([[true, null]]);
+    const paso1 = await request(app).post('/api/auth/login').send({ usuario: usuarioBase.email, contrasena: CLAVE });
     expect(sentencias(pool, 'UPDATE usuarios SET intentos_fallidos = 0')[0][1]).toEqual([1]);
+
+    await request(app)
+      .post('/api/auth/verificar-mfa')
+      .send({ tempToken: paso1.body.tempToken, codigo: CODIGO_OTP });
+
+    expect(motivos(pool)).toEqual([[true, null]]);
   });
 
   it('suma el intento fallido en la base y lo registra con su motivo', async () => {
@@ -145,14 +271,16 @@ describe('bitácora de accesos y bloqueo de cuenta en db_auth', () => {
     expect(notificar).not.toHaveBeenCalled();
   });
 
-  it('no falla el login si no se puede escribir en la bitácora', async () => {
+  it('no falla la verificación de login si no se puede escribir en la bitácora', async () => {
     const { app, pool } = crear();
     const consultaOriginal = pool.query.getMockImplementation();
     pool.query.mockImplementation(async (sql, parametros) => {
       if (sql.includes('INSERT INTO bitacora_acceso')) throw Object.assign(new Error('tabla'), { code: 'ER_NO_SUCH_TABLE' });
       return consultaOriginal(sql, parametros);
     });
-    const res = await request(app).post('/api/auth/login').send({ usuario: usuarioBase.email, contrasena: CLAVE });
+    const res = await request(app)
+      .post('/api/auth/verificar-mfa')
+      .send({ tempToken: crearTempToken(), codigo: CODIGO_OTP });
     expect(res.status).toBe(200);
   });
 });
