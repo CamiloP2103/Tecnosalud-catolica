@@ -36,6 +36,8 @@ function PanelAfiliaciones() {
           <button
             type="button"
             className={`adm-menu__opcion ${seccionActiva === 'solicitudes' ? 'adm-menu__opcion--activa' : ''}`}
+            disabled
+            style={{ opacity: 0.5, cursor: 'not-allowed' }}
             onClick={() => seleccionarSeccion('solicitudes')}
           >
             <span>Aprobación de Solicitudes</span>
