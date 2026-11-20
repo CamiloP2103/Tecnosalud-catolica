@@ -3,6 +3,7 @@ import './Styles/PanelMedico.css';
 import AgendaMedico from './AgendaMedico';
 import AtencionMedica from './AtencionMedica';
 import HistorialAtenciones from './HistorialAtenciones';
+import DocumentosExternosMedico from './DocumentosExternosMedico';
 import GestionHorarios from './GestionHorarios';
 import PerfilMedico from './PerfilMedico';
 
@@ -55,6 +56,15 @@ function PanelMedico() {
               Historial de Atenciones
             </button>
           </li>
+          <li>
+            <button
+              type="button"
+              className={`sidebar-btn ${seccionActiva === 'documentos' ? 'active' : ''}`}
+              onClick={() => setSeccionActiva('documentos')}
+            >
+              Documentos y Exámenes
+            </button>
+          </li>
         </ul>
 
         <div className="sidebar-seccion-titulo">CONFIGURACIÓN Y PERFIL</div>
@@ -98,6 +108,9 @@ function PanelMedico() {
             <p>Consulta de registros médicos previos, recetas e incapacidades emitidas por el profesional.</p>
           </div>
         )}
+        {seccionActiva === 'documentos' && (
+          <DocumentosExternosMedico />
+        )}
         {seccionActiva === 'horarios' && (
           <GestionHorarios />
         )}
@@ -106,4 +119,5 @@ function PanelMedico() {
     </div>
   );
 }
+
 export default PanelMedico;

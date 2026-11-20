@@ -1,0 +1,346 @@
+import { useState } from 'react';
+
+const API_DOCUMENTOS =  import.meta.env.VITE_API_DOCUMENTOS_URL || 'http://localhost:3006/api/documentos';
+const TIPOS_SUGERIDOS = ['Examen de laboratorio','Radiografía / Imagen diagnóstica','Examen externo','Ecografía / Resonancia','Otro documento clínico',];
+
+function DocumentosExternosMedico() {
+  const [documentoPaciente, setDocumentoPaciente] = useState('');
+  const [tipoExamen, setTipoExamen] = useState(TIPOS_SUGERIDOS[0]);
+  const [titulo, setTitulo] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [archivo, setArchivo] = useState(null);
+
+  const [documentos, setDocumentos] = useState([]);
+  const [consultadoDoc, setConsultadoDoc] = useState('');
+  const [cargandoLista, setCargandoLista] = useState(false);
+  const [subiendo, setSubiendo] = useState(false);
+  const [descargandoId, setDescargandoId] = useState(null);
+  const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
+
+  const obtenerToken = () => localStorage.getItem('tecnosalud_token') || '';
+
+  const obtenerDocMedico = () => {
+    try {
+      const sesion = JSON.parse(localStorage.getItem('tecnosalud_sesion_activa') || '{}');
+      return sesion?.documento || '';
+    } catch {
+      return '';
+    }
+  };
+
+  const consultarDocumentos = async (docObjetivo) => {
+    const docLimpio = String(docObjetivo ?? documentoPaciente).trim();
+    if (!docLimpio) {
+      setMensaje({ tipo: 'error', texto: 'Ingresa el número de documento del paciente.' });
+      return;
+    }
+
+    setCargandoLista(true);
+    setMensaje({ tipo: '', texto: '' });
+    try {
+      const res = await fetch(
+        `${API_DOCUMENTOS}?documentoPaciente=${encodeURIComponent(docLimpio)}`,
+        {
+          headers: { Authorization: `Bearer ${obtenerToken()}` },
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMensaje({ tipo: 'error', texto: data.error || 'No se pudieron consultar los documentos.' });
+        setDocumentos([]);
+        return;
+      }
+      setDocumentos(data.documentos || []);
+      setConsultadoDoc(docLimpio);
+    } catch {
+      setMensaje({ tipo: 'error', texto: 'Error de conexión con el servicio de documentos.' });
+    } finally {
+      setCargandoLista(false);
+    }
+  };
+
+  const handleSubirDocumento = async (e) => {
+    e.preventDefault();
+    setMensaje({ tipo: '', texto: '' });
+
+    const docLimpio = documentoPaciente.trim();
+    const tituloFinal = titulo.trim() || tipoExamen;
+
+    if (!docLimpio) {
+      setMensaje({ tipo: 'error', texto: 'Ingresa la identificación del paciente.' });
+      return;
+    }
+    if (!archivo) {
+      setMensaje({ tipo: 'error', texto: 'Selecciona un archivo PDF, PNG o JPG.' });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('documentoPaciente', docLimpio);
+    formData.append('titulo', tituloFinal.slice(0, 150));
+    formData.append(
+      'descripcion',
+      (descripcion.trim() ? `${tipoExamen} - ${descripcion.trim()}` : tipoExamen).slice(0, 500)
+    );
+    formData.append('archivo', archivo);
+
+    setSubiendo(true);
+    try {
+      const res = await fetch(API_DOCUMENTOS, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${obtenerToken()}` },
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setMensaje({ tipo: 'error', texto: data.error || 'No se pudo cargar el documento.' });
+        return;
+      }
+
+      setMensaje({
+        tipo: 'exito',
+        texto: `Documento "${data.documento?.titulo || tituloFinal}" cargado correctamente. El paciente ya puede consultarlo en su perfil.`,
+      });
+      setTitulo('');
+      setDescripcion('');
+      setArchivo(null);
+      e.target.reset();
+
+      await consultarDocumentos(docLimpio);
+    } catch {
+      setMensaje({ tipo: 'error', texto: 'Error de conexión al subir el documento.' });
+    } finally {
+      setSubiendo(false);
+    }
+  };
+
+  const handleDescargar = async (docItem) => {
+    const docMedico = obtenerDocMedico();
+    if (!docMedico) {
+      setMensaje({ tipo: 'error', texto: 'No se encontró la identificación del médico en la sesión.' });
+      return;
+    }
+
+    setDescargandoId(docItem.id);
+    setMensaje({ tipo: '', texto: '' });
+    try {
+      const res = await fetch(`${API_DOCUMENTOS}/${docItem.id}/descargar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${obtenerToken()}`,
+        },
+        body: JSON.stringify({ documentoAcceso: docMedico }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setMensaje({ tipo: 'error', texto: data.error || 'No se pudo descargar el archivo.' });
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = docItem.nombreOriginal || `${docItem.titulo}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      setMensaje({ tipo: 'error', texto: 'Error de conexión al descargar el documento.' });
+    } finally {
+      setDescargandoId(null);
+    }
+  };
+
+  return (
+    <div style={{ padding: '0.5rem 0' }}>
+      <h2>Documentos y Exámenes Externos</h2>
+      <p style={{ color: '#475569', marginBottom: '1.25rem' }}>
+        Carga resultados de laboratorio, radiografías o exámenes externos a la historia clínica del paciente.
+      </p>
+
+      {mensaje.texto && (
+        <div
+          role="alert"
+          style={{
+            padding: '0.85rem 1rem',
+            borderRadius: '8px',
+            marginBottom: '1rem',
+            backgroundColor: mensaje.tipo === 'exito' ? '#ecfdf5' : '#fef2f2',
+            color: mensaje.tipo === 'exito' ? '#065f46' : '#991b1b',
+            border: `1px solid ${mensaje.tipo === 'exito' ? '#a7f3d0' : '#fecaca'}`,
+          }}
+        >
+          {mensaje.texto}
+        </div>
+      )}
+
+      {/* Bloque 1: Identificación del paciente */}
+      <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.25rem' }}>
+        <h3 style={{ marginTop: 0 }}>1. Paciente</h3>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            type="text"
+            value={documentoPaciente}
+            onChange={(e) => setDocumentoPaciente(e.target.value)}
+            placeholder="Número de documento del paciente (ej. 72000607)"
+            style={{ flex: '1 1 260px', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+          />
+          <button
+            type="button"
+            onClick={() => consultarDocumentos()}
+            disabled={cargandoLista}
+            style={{
+              backgroundColor: '#145da0',
+              color: '#fff',
+              border: 'none',
+              padding: '0.65rem 1.2rem',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            {cargandoLista ? 'Consultando...' : 'Consultar documentos'}
+          </button>
+        </div>
+      </div>
+
+      {/* Bloque 2: Formulario de carga */}
+      <form
+        onSubmit={handleSubirDocumento}
+        style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.25rem' }}
+      >
+        <h3 style={{ marginTop: 0 }}>2. Cargar documento clínico</h3>
+        <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: 0 }}>
+          Formatos permitidos: PDF, PNG o JPG. Tamaño máximo: 10 MB.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontWeight: 600 }}>
+            Tipo de documento
+            <select
+              value={tipoExamen}
+              onChange={(e) => setTipoExamen(e.target.value)}
+              style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+            >
+              {TIPOS_SUGERIDOS.map((tipo) => (
+                <option key={tipo} value={tipo}>{tipo}</option>
+              ))}
+            </select>
+          </label>
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontWeight: 600 }}>
+            Título del documento *
+            <input
+              type="text"
+              maxLength={150}
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              placeholder="Ej: Radiografía de tórax"
+              required
+              style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+            />
+          </label>
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontWeight: 600 }}>
+            Descripción / Observaciones (opcional)
+            <input
+              type="text"
+              maxLength={450}
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              placeholder="Ej: Laboratorio externo - control anual"
+              style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+            />
+          </label>
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontWeight: 600 }}>
+            Archivo (PDF, PNG, JPG) *
+            <input
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+              onChange={(e) => setArchivo(e.target.files?.[0] || null)}
+              required
+              style={{ padding: '0.45rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+            />
+          </label>
+        </div>
+
+        <button
+          type="submit"
+          disabled={subiendo}
+          style={{
+            backgroundColor: '#145da0',
+            color: '#fff',
+            border: 'none',
+            padding: '0.7rem 1.4rem',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
+        >
+          {subiendo ? 'Subiendo archivo...' : 'Guardar en historia clínica'}
+        </button>
+      </form>
+
+      {/* Bloque 3: Lista de documentos del paciente */}
+      {consultadoDoc && (
+        <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1.25rem' }}>
+          <h3 style={{ marginTop: 0 }}>
+            Documentos del paciente {consultadoDoc} ({documentos.length})
+          </h3>
+          {documentos.length === 0 ? (
+            <p style={{ color: '#64748b' }}>No hay documentos registrados para este paciente.</p>
+          ) : (
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {documentos.map((doc) => (
+                <li
+                  key={doc.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    padding: '0.85rem 1rem',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div>
+                    <strong>{doc.titulo}</strong>
+                    {doc.descripcion && <div style={{ fontSize: '0.9rem', color: '#475569' }}>{doc.descripcion}</div>}
+                    <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                      {doc.nombreOriginal} · {new Date(doc.creadoEn).toLocaleString('es-CO')}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDescargar(doc)}
+                    disabled={descargandoId === doc.id}
+                    style={{
+                      backgroundColor: '#0f766e',
+                      color: '#fff',
+                      border: 'none',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {descargandoId === doc.id ? 'Descargando...' : 'Descargar'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default DocumentosExternosMedico;
