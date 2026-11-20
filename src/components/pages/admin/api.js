@@ -16,7 +16,7 @@ export const URLS_RAIZ = {
   citas: env.VITE_API_CITAS_URL || 'https://tecnosalud-citas-2026-exaxf8etbceve9cs.brazilsouth-01.azurewebsites.net',
 };
 
-// URLs con prefijo para el funcionamiento normal de los módulos de administración y botones
+// URLs con prefijo para el funcionamiento normal de los módulos de administración y botones - Prueba de replicacion
 export const URLS = {
   auth: (env.VITE_API_AUTH_URL || 'https://tecnosalud-auth-2026-grgzcsa5ajhje5f8.brazilsouth-01.azurewebsites.net') ,
   registro: (env.VITE_API_REGISTRO_URL || 'https://tecnosalud-registro-2026-bcfjf5gndedjfmd9.brazilsouth-01.azurewebsites.net') ,
