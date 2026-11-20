@@ -316,7 +316,7 @@ function generarPdfIncapacidadMedica(datos, { emitida = new Date() } = {}) {
     datos.fecha_inicio_incapacidad || inc.fecha_inicio || inc.fechaInicio || datos.fecha_atencion || datos.fecha || emitida
   );
   const fechaFin = fechaCorta(
-    datos.fecha_fin || inc.fecha_fin || inc.fechaFin || ''
+    datos.fecha_fin_incapacidad || inc.fecha_fin || inc.fechaFin || ''
   );
 
   const esProrroga = Boolean(datos.prorroga ?? inc.prorroga ?? false);

@@ -331,10 +331,15 @@ function crearRepositorio(pool) {
     },
     async obtenerHistoriasPorMedico(medicoId) {
       const [rows] = await pool.query(
-        `SELECT h.*, a.nombre AS afiliado_nombre, a.documento AS afiliado_documento 
+        `SELECT h.*, inc.fecha_inicio AS fecha_inicio_incapacidad, 
+     inc.fecha_fin AS fecha_fin_incapacidad, 
+     inc.dias AS dias_incapacidad,
+	 (inc.dias > 0) AS incapacidad,
+     a.nombre AS afiliado_nombre, a.documento AS afiliado_documento 
         FROM historias_clinicas h 
         INNER JOIN db_auth.usuarios a ON h.afiliado_id = a.id
         INNER JOIN medicos m ON m.id  = h.medico_id 
+        LEFT JOIN incapacidades inc ON inc.historia_clinica_id = h.id 
         WHERE m.usuario_id = ? ORDER BY h.fecha_atencion DESC`,
         [medicoId]
       );
