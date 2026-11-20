@@ -147,8 +147,8 @@ function HistorialAtenciones() {
         setErrorMsg('Debes iniciar sesión para generar o descargar documentos clínicos.');
         return;
       }
-      if (!/^[A-Za-z0-9.-]{5,20}$/.test(pacienteDoc)) {
-        setErrorMsg('El documento del paciente no cumple con el formato requerido (5 a 20 caracteres).');
+      if (!/^[A-Za-z0-9.-]{5,70}$/.test(pacienteDoc)) {
+        setErrorMsg('El documento del paciente no cumple con el formato requerido (5 a 70 caracteres).');
         return;
       }
 
