@@ -141,7 +141,7 @@ function HistorialAtenciones() {
     try {
       const token = localStorage.getItem('tecnosalud_token') || '';
       const sesion = JSON.parse(localStorage.getItem('tecnosalud_sesion_activa') || '{}');
-      const pacienteDoc = String(item.afiliado_documento || item.documento || '').trim();
+      const pacienteDoc = String(item.nombre_paciente || item.documento || '').trim();
 
       if (!token) {
         setErrorMsg('Debes iniciar sesión para generar o descargar documentos clínicos.');
