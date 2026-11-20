@@ -133,6 +133,7 @@ test('permite a un paciente cargar un PDF únicamente en su propio expediente', 
   const form = new FormData();
   form.append('documentoPaciente', PACIENTE.doc);
   form.append('titulo', 'Resultado de laboratorio');
+  form.append('tipoDocumento', 'Examen de laboratorio');
   form.append('descripcion', 'Examen de control');
   form.append('archivo', new Blob(['%PDF-1.7\nprueba'], { type: 'application/pdf' }), 'resultado.pdf');
 
@@ -141,10 +142,13 @@ test('permite a un paciente cargar un PDF únicamente en su propio expediente', 
     headers: { Authorization: `Bearer ${fixture.token(PACIENTE)}` },
     body: form,
   });
+  const data = await response.json();
   assert.equal(response.status, 201);
-  assert.equal((await response.json()).documento.nombreOriginal, 'resultado.pdf');
+  assert.equal(data.documento.nombreOriginal, 'resultado.pdf');
+  assert.equal(data.documento.tipoDocumento, 'Examen de laboratorio');
   assert.equal(registro[1], PACIENTE.doc);
-  const ciphertext = await fs.readFile(path.join(fixture.storageDir, registro[5]));
+  assert.equal(registro[3], 'Examen de laboratorio');
+  const ciphertext = await fs.readFile(path.join(fixture.storageDir, registro[6]));
   assert.equal(decryptContents(ciphertext, ENCRYPTION_KEY).toString(), '%PDF-1.7\nprueba');
 });
 
@@ -174,8 +178,8 @@ test('permite al personal clínico generar un documento de texto', async () => {
 
   assert.equal(response.status, 201);
   assert.equal(registro[1], PACIENTE.doc);
-  assert.equal(registro[7], 'text/plain');
-  const ciphertext = await fs.readFile(path.join(fixture.storageDir, registro[5]));
+  assert.equal(registro[8], 'text/plain');
+  const ciphertext = await fs.readFile(path.join(fixture.storageDir, registro[6]));
   const texto = decryptContents(ciphertext, ENCRYPTION_KEY).toString();
   assert.match(texto, /Resumen clínico/);
   assert.match(texto, /Control médico de seguimiento\./);

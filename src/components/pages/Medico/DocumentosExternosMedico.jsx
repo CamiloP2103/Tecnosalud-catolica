@@ -1,7 +1,25 @@
 import { useState } from 'react';
 
-const API_DOCUMENTOS =  import.meta.env.VITE_API_DOCUMENTOS_URL || 'http://localhost:3006/api/documentos';
-const TIPOS_SUGERIDOS = ['Examen de laboratorio','Radiografía / Imagen diagnóstica','Examen externo','Ecografía / Resonancia','Otro documento clínico',];
+const API_DOCUMENTOS = import.meta.env.VITE_API_DOCUMENTOS_URL || 'http://localhost:3006/api/documentos';
+
+const TIPOS_SUGERIDOS = [
+  'Examen de laboratorio',
+  'Radiografía / Imagen diagnóstica',
+  'Examen externo',
+  'Ecografía / Resonancia',
+  'Otro documento clínico',
+];
+
+const estiloCampo = {
+  width: '100%',
+  height: '42px',
+  padding: '0 0.75rem',
+  borderRadius: '6px',
+  border: '1px solid #cbd5e1',
+  boxSizing: 'border-box',
+  fontSize: '0.95rem',
+  backgroundColor: '#fff',
+};
 
 function DocumentosExternosMedico() {
   const [documentoPaciente, setDocumentoPaciente] = useState('');
@@ -28,7 +46,7 @@ function DocumentosExternosMedico() {
     }
   };
 
-  const consultarDocumentos = async (docObjetivo) => {
+  const consultarDocumentos = async (docObjetivo, limpiarMensaje = true) => {
     const docLimpio = String(docObjetivo ?? documentoPaciente).trim();
     if (!docLimpio) {
       setMensaje({ tipo: 'error', texto: 'Ingresa el número de documento del paciente.' });
@@ -36,7 +54,9 @@ function DocumentosExternosMedico() {
     }
 
     setCargandoLista(true);
-    setMensaje({ tipo: '', texto: '' });
+    if (limpiarMensaje) {
+      setMensaje({ tipo: '', texto: '' });
+    }
     try {
       const res = await fetch(
         `${API_DOCUMENTOS}?documentoPaciente=${encodeURIComponent(docLimpio)}`,
@@ -77,11 +97,9 @@ function DocumentosExternosMedico() {
 
     const formData = new FormData();
     formData.append('documentoPaciente', docLimpio);
+    formData.append('tipoDocumento', tipoExamen);
     formData.append('titulo', tituloFinal.slice(0, 150));
-    formData.append(
-      'descripcion',
-      (descripcion.trim() ? `${tipoExamen} - ${descripcion.trim()}` : tipoExamen).slice(0, 500)
-    );
+    formData.append('descripcion', descripcion.trim().slice(0, 500));
     formData.append('archivo', archivo);
 
     setSubiendo(true);
@@ -107,7 +125,7 @@ function DocumentosExternosMedico() {
       setArchivo(null);
       e.target.reset();
 
-      await consultarDocumentos(docLimpio);
+      await consultarDocumentos(docLimpio,false);
     } catch {
       setMensaje({ tipo: 'error', texto: 'Error de conexión al subir el documento.' });
     } finally {
@@ -188,7 +206,7 @@ function DocumentosExternosMedico() {
             value={documentoPaciente}
             onChange={(e) => setDocumentoPaciente(e.target.value)}
             placeholder="Número de documento del paciente (ej. 72000607)"
-            style={{ flex: '1 1 260px', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+            style={{ ...estiloCampo, flex: '1 1 260px', width: 'auto' }}
           />
           <button
             type="button"
@@ -198,7 +216,8 @@ function DocumentosExternosMedico() {
               backgroundColor: '#145da0',
               color: '#fff',
               border: 'none',
-              padding: '0.65rem 1.2rem',
+              height: '42px',
+              padding: '0 1.25rem',
               borderRadius: '6px',
               cursor: 'pointer',
               fontWeight: 600,
@@ -209,23 +228,31 @@ function DocumentosExternosMedico() {
         </div>
       </div>
 
-      {/* Bloque 2: Formulario de carga */}
+      {/* Bloque 2: Formulario de carga (cuadrícula 2x2 alineada) */}
       <form
         onSubmit={handleSubirDocumento}
         style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.25rem' }}
       >
         <h3 style={{ marginTop: 0 }}>2. Cargar documento clínico</h3>
-        <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: 0 }}>
+        <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: 0, marginBottom: '1rem' }}>
           Formatos permitidos: PDF, PNG o JPG. Tamaño máximo: 10 MB.
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontWeight: 600 }}>
-            Tipo de documento
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: '1rem 1.25rem',
+            alignItems: 'end',
+            marginBottom: '1.25rem',
+          }}
+        >
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: 600 }}>
+            <span>Tipo de documento *</span>
             <select
               value={tipoExamen}
               onChange={(e) => setTipoExamen(e.target.value)}
-              style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+              style={estiloCampo}
             >
               {TIPOS_SUGERIDOS.map((tipo) => (
                 <option key={tipo} value={tipo}>{tipo}</option>
@@ -233,8 +260,8 @@ function DocumentosExternosMedico() {
             </select>
           </label>
 
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontWeight: 600 }}>
-            Título del documento *
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: 600 }}>
+            <span>Título del documento *</span>
             <input
               type="text"
               maxLength={150}
@@ -242,30 +269,30 @@ function DocumentosExternosMedico() {
               onChange={(e) => setTitulo(e.target.value)}
               placeholder="Ej: Radiografía de tórax"
               required
-              style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+              style={estiloCampo}
             />
           </label>
 
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontWeight: 600 }}>
-            Descripción / Observaciones (opcional)
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: 600 }}>
+            <span>Descripción (opcional)</span>
             <input
               type="text"
-              maxLength={450}
+              maxLength={500}
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               placeholder="Ej: Laboratorio externo - control anual"
-              style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+              style={estiloCampo}
             />
           </label>
 
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontWeight: 600 }}>
-            Archivo (PDF, PNG, JPG) *
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: 600 }}>
+            <span>Archivo (PDF, PNG, JPG) *</span>
             <input
               type="file"
               accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
               onChange={(e) => setArchivo(e.target.files?.[0] || null)}
               required
-              style={{ padding: '0.45rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+              style={{ ...estiloCampo, padding: '0.45rem 0.6rem' }}
             />
           </label>
         </div>
@@ -312,7 +339,23 @@ function DocumentosExternosMedico() {
                   }}
                 >
                   <div>
-                    <strong>{doc.titulo}</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <strong>{doc.titulo}</strong>
+                      {doc.tipoDocumento && (
+                        <span
+                          style={{
+                            fontSize: '0.78rem',
+                            backgroundColor: '#eff6ff',
+                            color: '#145da0',
+                            padding: '0.15rem 0.55rem',
+                            borderRadius: '999px',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {doc.tipoDocumento}
+                        </span>
+                      )}
+                    </div>
                     {doc.descripcion && <div style={{ fontSize: '0.9rem', color: '#475569' }}>{doc.descripcion}</div>}
                     <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
                       {doc.nombreOriginal} · {new Date(doc.creadoEn).toLocaleString('es-CO')}

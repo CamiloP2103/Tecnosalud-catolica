@@ -162,7 +162,7 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
     return DOCUMENT_PATTERN.test(documento) ? documento : null;
   }
 
-  async function guardarDocumento({ pacienteDoc, titulo, descripcion, originalName, contentType, contents, creadorDoc }) {
+  async function guardarDocumento({ pacienteDoc, titulo, tipoDocumento = null, descripcion, originalName, contentType, contents, creadorDoc }) {
     const id = crypto.randomUUID();
     const extension = MIME_TYPES[contentType]?.extension || '.txt';
     const nombreGuardado = `${id}.enc`;
@@ -175,11 +175,11 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
     try {
       await pool.execute(
         `INSERT INTO documentos
-          (id, paciente_doc, titulo, descripcion, nombre_original, nombre_guardado, extension,
+          (id, paciente_doc, titulo, tipo_documento, descripcion, nombre_original, nombre_guardado, extension,
            content_type, tamano, creado_por_doc)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          id, pacienteDoc, titulo, descripcion || null, originalName, nombreGuardado, extension,
+          id, pacienteDoc, titulo, tipoDocumento || null, descripcion || null, originalName, nombreGuardado, extension,
           contentType, contents.length, creadorDoc,
         ]
       );
@@ -193,6 +193,7 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
     return {
       id,
       titulo,
+      tipoDocumento: tipoDocumento || null,
       descripcion: descripcion || null,
       nombreOriginal: originalName,
       contentType,
@@ -237,7 +238,7 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
 
     try {
       const [rows] = await pool.execute(
-        `SELECT id, titulo, descripcion, nombre_original AS nombreOriginal,
+        `SELECT id, titulo, tipo_documento AS tipoDocumento, descripcion, nombre_original AS nombreOriginal,
                 content_type AS contentType, tamano, creado_en AS creadoEn
          FROM documentos WHERE paciente_doc = ? ORDER BY creado_en DESC`,
         [pacienteDoc]
@@ -254,6 +255,9 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
     const body = req.body || {};
     const pacienteDoc = validarDocumentoPaciente(body.documentoPaciente);
     const titulo = typeof body.titulo === 'string' ? body.titulo.trim() : '';
+    const tipoDocumento = typeof (body.tipoDocumento ?? body.tipo_documento) === 'string'
+      ? String(body.tipoDocumento ?? body.tipo_documento).trim().slice(0, 100)
+      : 'Otro documento clínico';
     const descripcion = typeof body.descripcion === 'string' ? body.descripcion.trim() : '';
 
     if (!pacienteDoc) {
@@ -276,6 +280,7 @@ function createApp({ pool, jwtSecret, encryptionKey, storageDir, frontendUrl = '
       const documento = await guardarDocumento({
         pacienteDoc,
         titulo,
+        tipoDocumento,
         descripcion,
         originalName: sanitizeOriginalName(req.file.originalname),
         contentType: req.file.mimetype,

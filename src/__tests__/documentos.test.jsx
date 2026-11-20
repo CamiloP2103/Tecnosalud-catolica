@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import Documentos from '../components/pages/Documentos/Documentos';
+import DocumentosExternosMedico from '../components/pages/Medico/DocumentosExternosMedico';
 
 const respuesta = (status, cuerpo) => ({ ok: status < 400, status, json: async () => cuerpo });
 const DOCUMENTO = {
   id: '6f1c2b0e-8a7d-4c1e-9f2a-1b2c3d4e5f60',
   titulo: 'Resultado de laboratorio',
+  tipoDocumento: 'Examen de laboratorio',
   nombreOriginal: 'resultado.pdf',
   descripcion: 'Control',
   creadoEn: '2026-10-15T10:00:00Z',
@@ -93,5 +95,91 @@ describe('Página de Documentos clínicos', () => {
     render(<Documentos />);
 
     expect(await screen.findByRole('alert')).toHaveTextContent('no puede usar la base de datos');
+  });
+});
+
+describe('DocumentosExternosMedico (Panel Médico)', () => {
+  it('consulta los documentos de un paciente por identificación y muestra su tipoDocumento', async () => {
+    iniciarSesion({ id: 3, nombre: 'María', documento: '52148963', rol: 'MEDICO' });
+    const fetch = vi.fn().mockResolvedValue(respuesta(200, { documentos: [DOCUMENTO] }));
+    vi.stubGlobal('fetch', fetch);
+
+    render(<DocumentosExternosMedico />);
+
+    fireEvent.change(
+      screen.getByPlaceholderText('Número de documento del paciente (ej. 72000607)'),
+      { target: { value: '72000607' } }
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar documentos' }));
+
+    expect(await screen.findByText('Resultado de laboratorio')).toBeInTheDocument();
+    //expect(screen.getByText('Examen de laboratorio')).toBeInTheDocument();
+
+    const [url, opciones] = fetch.mock.calls[0];
+    expect(url).toBe('http://localhost:3006/api/documentos?documentoPaciente=72000607');
+    expect(opciones.headers.Authorization).toBe('Bearer token-de-prueba');
+  });
+
+  it('sube un examen externo enviando tipoDocumento, titulo, descripcion y archivo en FormData', async () => {
+    iniciarSesion({ id: 3, nombre: 'María', documento: '52148963', rol: 'MEDICO' });
+    const docCreado = {
+      ...DOCUMENTO,
+      titulo: 'Radiografía de tórax',
+      tipoDocumento: 'Radiografía / Imagen diagnóstica',
+      descripcion: 'Control anual',
+    };
+
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(respuesta(201, { documento: docCreado }))
+      .mockResolvedValueOnce(respuesta(200, { documentos: [docCreado] }));
+    vi.stubGlobal('fetch', fetch);
+
+    const { container } = render(<DocumentosExternosMedico />);
+
+    fireEvent.change(
+      screen.getByPlaceholderText('Número de documento del paciente (ej. 72000607)'),
+      { target: { value: '72000607' } }
+    );
+    fireEvent.change(screen.getByRole('combobox'), {
+      target: { value: 'Radiografía / Imagen diagnóstica' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Ej: Radiografía de tórax'), {
+      target: { value: 'Radiografía de tórax' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Ej: Laboratorio externo - control anual'), {
+      target: { value: 'Control anual' },
+    });
+
+    const archivo = new File(['%PDF-1.7'], 'rx_torax.pdf', { type: 'application/pdf' });
+    fireEvent.change(container.querySelector('input[type="file"]'), { target: { files: [archivo] } });
+    fireEvent.submit(screen.getByRole('button', { name: 'Guardar en historia clínica' }).closest('form'));
+
+    expect(await screen.findByText(/cargado correctamente/i)).toBeInTheDocument();
+
+    const [urlPost, opcionesPost] = fetch.mock.calls[0];
+    expect(urlPost).toBe('http://localhost:3006/api/documentos');
+    expect(opcionesPost.method).toBe('POST');
+    expect(opcionesPost.body).toBeInstanceOf(FormData);
+    expect(opcionesPost.body.get('documentoPaciente')).toBe('72000607');
+    expect(opcionesPost.body.get('tipoDocumento')).toBe('Radiografía / Imagen diagnóstica');
+    expect(opcionesPost.body.get('titulo')).toBe('Radiografía de tórax');
+    expect(opcionesPost.body.get('descripcion')).toBe('Control anual');
+    expect(opcionesPost.headers['Content-Type']).toBeUndefined();
+    expect(opcionesPost.headers.Authorization).toBe('Bearer token-de-prueba');
+  });
+
+  it('muestra alerta si falla la conexión con el servicio de documentos', async () => {
+    iniciarSesion({ id: 3, nombre: 'María', documento: '52148963', rol: 'MEDICO' });
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+
+    render(<DocumentosExternosMedico />);
+
+    fireEvent.change(
+      screen.getByPlaceholderText('Número de documento del paciente (ej. 72000607)'),
+      { target: { value: '72000607' } }
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar documentos' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Error de conexión con el servicio de documentos.');
   });
 });
