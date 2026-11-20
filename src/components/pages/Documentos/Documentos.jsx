@@ -216,38 +216,75 @@ function Documentos() {
       <section className="documentos-card">
         <h3>Cargar un documento</h3>
         <p>Formatos permitidos: PDF, PNG o JPG. Tamaño máximo: 10 MB.</p>
-        <form className="documentos-form" onSubmit={manejarCarga}>
-          <label>
+        <form
+          className="documentos-form"
+          onSubmit={manejarCarga}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: '1rem',
+            alignItems: 'end',
+          }}
+        >
+          <label style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             Tipo de documento
             <select
               value={tipoDocumento}
               onChange={(event) => setTipoDocumento(event.target.value)}
+              style={{
+                width: '100%',
+                height: '44px',
+                padding: '0 0.75rem',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                backgroundColor: '#fff',
+                fontSize: '0.95rem',
+                boxSizing: 'border-box',
+              }}
             >
               {TIPOS_DOCUMENTO.map((tipo) => (
                 <option key={tipo} value={tipo}>{tipo}</option>
               ))}
             </select>
           </label>
-          <label>
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             Título del documento
-            <input value={titulo} onChange={(event) => setTitulo(event.target.value)} maxLength="150" required />
+            <input
+              value={titulo}
+              onChange={(event) => setTitulo(event.target.value)}
+              maxLength="150"
+              required
+              style={{ height: '44px', boxSizing: 'border-box' }}
+            />
           </label>
-          <label>
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             Descripción (opcional)
-            <input value={descripcion} onChange={(event) => setDescripcion(event.target.value)} maxLength="500" />
+            <input
+              value={descripcion}
+              onChange={(event) => setDescripcion(event.target.value)}
+              maxLength="500"
+              style={{ height: '44px', boxSizing: 'border-box' }}
+            />
           </label>
-          <label>
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             Archivo
             <input
               type="file"
               accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
               onChange={(event) => setArchivo(event.target.files[0] || null)}
               required
+              style={{ height: '44px', boxSizing: 'border-box' }}
             />
           </label>
-          <button className="documentos-boton" type="submit" disabled={cargando}>
-            Cargar archivo
-          </button>
+
+          <div style={{ gridColumn: '1 / -1' }}>
+            <button className="documentos-boton" type="submit" disabled={cargando}>
+              Cargar archivo
+            </button>
+          </div>
         </form>
       </section>
 
