@@ -141,7 +141,8 @@ function HistorialAtenciones() {
     try {
       const token = localStorage.getItem('tecnosalud_token') || '';
       const sesion = JSON.parse(localStorage.getItem('tecnosalud_sesion_activa') || '{}');
-      const pacienteDoc = String(item.nombre_paciente || item.documento || '').trim();
+      const pacienteDoc = String(item.afiliado_documento || item.documento || '').trim();
+      const nombrePaciente = String(item.afiliado_nombre || item.nombre_paciente || 'Paciente').trim();
 
       if (!token) {
         setErrorMsg('Debes iniciar sesión para generar o descargar documentos clínicos.');
@@ -152,6 +153,13 @@ function HistorialAtenciones() {
         return;
       }
 
+      const nombreSlug = nombrePaciente
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Za-z0-9_-]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 70) || 'Paciente';
+
       const esReceta = tipoDocumento === 'RECETA_MEDICA';
       const esIncapacidad = tipoDocumento === 'INCAPACIDAD_MEDICA';
       const sufijoArchivo = esReceta
@@ -159,7 +167,7 @@ function HistorialAtenciones() {
         : esIncapacidad
           ? 'incapacidad_medica'
           : 'diagnostico_atencion';
-      const nombreArchivo = `${sufijoArchivo}_${pacienteDoc}_${historiaId}.pdf`;
+      const nombreArchivo = `${sufijoArchivo}_${nombreSlug}_${historiaId}.pdf`;
 
       const respHttp = await fetch(`${API_DOCUMENTOS}/generar-pdf-clinico`, {
         method: 'POST',
