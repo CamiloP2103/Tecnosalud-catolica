@@ -22,17 +22,21 @@ const estiloCampo = {
 };
 
 function DocumentosExternosMedico() {
-  const [documentoPaciente, setDocumentoPaciente] = useState('');
+  // Estado del bloque 1 (Consulta)
+  const [documentoConsulta, setDocumentoConsulta] = useState('');
+  const [documentos, setDocumentos] = useState([]);
+  const [consultadoDoc, setConsultadoDoc] = useState('');
+  const [cargandoLista, setCargandoLista] = useState(false);
+  const [descargandoId, setDescargandoId] = useState(null);
+
+  // Estado del bloque 2 (Carga)
+  const [documentoCarga, setDocumentoCarga] = useState('');
   const [tipoExamen, setTipoExamen] = useState(TIPOS_SUGERIDOS[0]);
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [archivo, setArchivo] = useState(null);
-
-  const [documentos, setDocumentos] = useState([]);
-  const [consultadoDoc, setConsultadoDoc] = useState('');
-  const [cargandoLista, setCargandoLista] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
-  const [descargandoId, setDescargandoId] = useState(null);
+
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
 
   const obtenerToken = () => localStorage.getItem('tecnosalud_token') || '';
@@ -47,9 +51,9 @@ function DocumentosExternosMedico() {
   };
 
   const consultarDocumentos = async (docObjetivo, limpiarMensaje = true) => {
-    const docLimpio = String(docObjetivo ?? documentoPaciente).trim();
+    const docLimpio = String(docObjetivo ?? documentoConsulta).trim();
     if (!docLimpio) {
-      setMensaje({ tipo: 'error', texto: 'Ingresa el número de documento del paciente.' });
+      setMensaje({ tipo: 'error', texto: 'Ingresa el número de documento del paciente para consultar.' });
       return;
     }
 
@@ -83,11 +87,11 @@ function DocumentosExternosMedico() {
     e.preventDefault();
     setMensaje({ tipo: '', texto: '' });
 
-    const docLimpio = documentoPaciente.trim();
+    const docLimpio = documentoCarga.trim();
     const tituloFinal = titulo.trim() || tipoExamen;
 
     if (!docLimpio) {
-      setMensaje({ tipo: 'error', texto: 'Ingresa la identificación del paciente.' });
+      setMensaje({ tipo: 'error', texto: 'Ingresa la identificación del paciente en el formulario de carga.' });
       return;
     }
     if (!archivo) {
@@ -118,14 +122,17 @@ function DocumentosExternosMedico() {
 
       setMensaje({
         tipo: 'exito',
-        texto: `Documento "${data.documento?.titulo || tituloFinal}" cargado correctamente. El paciente ya puede consultarlo en su perfil.`,
+        texto: `Documento "${data.documento?.titulo || tituloFinal}" cargado correctamente para el paciente ${docLimpio}.`,
       });
       setTitulo('');
       setDescripcion('');
       setArchivo(null);
       e.target.reset();
 
-      await consultarDocumentos(docLimpio,false);
+      // Si el paciente consultado en el punto 1 es el mismo, refresca la lista automáticamente
+      if (consultadoDoc === docLimpio) {
+        await consultarDocumentos(docLimpio, false);
+      }
     } catch {
       setMensaje({ tipo: 'error', texto: 'Error de conexión al subir el documento.' });
     } finally {
@@ -178,7 +185,7 @@ function DocumentosExternosMedico() {
     <div style={{ padding: '0.5rem 0' }}>
       <h2>Documentos y Exámenes Externos</h2>
       <p style={{ color: '#475569', marginBottom: '1.25rem' }}>
-        Carga resultados de laboratorio, radiografías o exámenes externos a la historia clínica del paciente.
+        Consulta los archivos existentes de un paciente o carga nuevos resultados de laboratorio, radiografías y exámenes externos.
       </p>
 
       {mensaje.texto && (
@@ -197,14 +204,14 @@ function DocumentosExternosMedico() {
         </div>
       )}
 
-      {/* Bloque 1: Identificación del paciente */}
+      {/* Bloque 1: Consulta y resultados en el mismo contenedor */}
       <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.25rem' }}>
-        <h3 style={{ marginTop: 0 }}>1. Paciente</h3>
+        <h3 style={{ marginTop: 0 }}>1. Consultar documentos del paciente</h3>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <input
             type="text"
-            value={documentoPaciente}
-            onChange={(e) => setDocumentoPaciente(e.target.value)}
+            value={documentoConsulta}
+            onChange={(e) => setDocumentoConsulta(e.target.value)}
             placeholder="Número de documento del paciente (ej. 72000607)"
             style={{ ...estiloCampo, flex: '1 1 260px', width: 'auto' }}
           />
@@ -226,12 +233,80 @@ function DocumentosExternosMedico() {
             {cargandoLista ? 'Consultando...' : 'Consultar documentos'}
           </button>
         </div>
+
+        {consultadoDoc && (
+          <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
+            <h4 style={{ marginTop: 0, marginBottom: '0.75rem', color: '#0f172a' }}>
+              Documentos del paciente {consultadoDoc} ({documentos.length})
+            </h4>
+            {documentos.length === 0 ? (
+              <p style={{ color: '#64748b', margin: 0 }}>No hay documentos registrados para este paciente.</p>
+            ) : (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {documentos.map((doc) => (
+                  <li
+                    key={doc.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      padding: '0.85rem 1rem',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <strong>{doc.titulo}</strong>
+                        {doc.tipoDocumento && (
+                          <span
+                            style={{
+                              fontSize: '0.78rem',
+                              backgroundColor: '#eff6ff',
+                              color: '#145da0',
+                              padding: '0.15rem 0.55rem',
+                              borderRadius: '999px',
+                              fontWeight: 600,
+                            }}
+                          >
+                            {doc.tipoDocumento}
+                          </span>
+                        )}
+                      </div>
+                      {doc.descripcion && <div style={{ fontSize: '0.9rem', color: '#475569' }}>{doc.descripcion}</div>}
+                      <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                        {doc.nombreOriginal} · {new Date(doc.creadoEn).toLocaleString('es-CO')}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDescargar(doc)}
+                      disabled={descargandoId === doc.id}
+                      style={{
+                        backgroundColor: '#0f766e',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {descargandoId === doc.id ? 'Descargando...' : 'Descargar'}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Bloque 2: Formulario de carga (cuadrícula 2x2 alineada) */}
+      {/* Bloque 2: Formulario de carga con su propio campo de documento */}
       <form
         onSubmit={handleSubirDocumento}
-        style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.25rem' }}
+        style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1.25rem' }}
       >
         <h3 style={{ marginTop: 0 }}>2. Cargar documento clínico</h3>
         <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: 0, marginBottom: '1rem' }}>
@@ -247,6 +322,18 @@ function DocumentosExternosMedico() {
             marginBottom: '1.25rem',
           }}
         >
+          <label style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: 600 }}>
+            <span>Número de documento del paciente *</span>
+            <input
+              type="text"
+              value={documentoCarga}
+              onChange={(e) => setDocumentoCarga(e.target.value)}
+              placeholder="Ej: 72000607"
+              required
+              style={estiloCampo}
+            />
+          </label>
+
           <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: 600 }}>
             <span>Tipo de documento *</span>
             <select
@@ -313,75 +400,6 @@ function DocumentosExternosMedico() {
           {subiendo ? 'Subiendo archivo...' : 'Guardar en historia clínica'}
         </button>
       </form>
-
-      {/* Bloque 3: Lista de documentos del paciente */}
-      {consultadoDoc && (
-        <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1.25rem' }}>
-          <h3 style={{ marginTop: 0 }}>
-            Documentos del paciente {consultadoDoc} ({documentos.length})
-          </h3>
-          {documentos.length === 0 ? (
-            <p style={{ color: '#64748b' }}>No hay documentos registrados para este paciente.</p>
-          ) : (
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {documentos.map((doc) => (
-                <li
-                  key={doc.id}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: '1rem',
-                    padding: '0.85rem 1rem',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <strong>{doc.titulo}</strong>
-                      {doc.tipoDocumento && (
-                        <span
-                          style={{
-                            fontSize: '0.78rem',
-                            backgroundColor: '#eff6ff',
-                            color: '#145da0',
-                            padding: '0.15rem 0.55rem',
-                            borderRadius: '999px',
-                            fontWeight: 600,
-                          }}
-                        >
-                          {doc.tipoDocumento}
-                        </span>
-                      )}
-                    </div>
-                    {doc.descripcion && <div style={{ fontSize: '0.9rem', color: '#475569' }}>{doc.descripcion}</div>}
-                    <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
-                      {doc.nombreOriginal} · {new Date(doc.creadoEn).toLocaleString('es-CO')}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDescargar(doc)}
-                    disabled={descargandoId === doc.id}
-                    style={{
-                      backgroundColor: '#0f766e',
-                      color: '#fff',
-                      border: 'none',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {descargandoId === doc.id ? 'Descargando...' : 'Descargar'}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
     </div>
   );
 }

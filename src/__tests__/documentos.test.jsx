@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import Documentos from '../components/pages/Documentos/Documentos';
 import DocumentosExternosMedico from '../components/pages/Medico/DocumentosExternosMedico';
 
@@ -13,7 +13,6 @@ const DOCUMENTO = {
   creadoEn: '2026-10-15T10:00:00Z',
 };
 
-// Simula la sesión guardada por Acceso.jsx
 function iniciarSesion(usuario) {
   vi.stubGlobal('localStorage', {
     getItem: vi.fn((clave) => ({
@@ -39,7 +38,6 @@ describe('Página de Documentos clínicos', () => {
     const [url, opciones] = fetch.mock.calls[0];
     expect(url).toBe('http://localhost:3006/api/documentos?documentoPaciente=72000607');
     expect(opciones.headers.Authorization).toBe('Bearer token-de-prueba');
-    // El paciente no puede cambiar la identificación ni generar documentos
     expect(screen.getByLabelText('Identificación del paciente')).toHaveAttribute('readonly');
     expect(screen.queryByText('Generar documento clínico')).not.toBeInTheDocument();
   });
@@ -66,7 +64,6 @@ describe('Página de Documentos clínicos', () => {
     fireEvent.change(screen.getAllByLabelText('Título del documento')[0], { target: { value: 'Resultado' } });
     const archivo = new File(['%PDF-1.7'], 'resultado.pdf', { type: 'application/pdf' });
     fireEvent.change(container.querySelector('input[type="file"]'), { target: { files: [archivo] } });
-    // jsdom no reconoce archivos simulados en inputs "required": se envía el formulario directamente
     fireEvent.submit(screen.getByRole('button', { name: 'Cargar archivo' }).closest('form'));
 
     expect(await screen.findByText('Documento cargado correctamente.')).toBeInTheDocument();
@@ -113,7 +110,7 @@ describe('DocumentosExternosMedico (Panel Médico)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Consultar documentos' }));
 
     expect(await screen.findByText('Resultado de laboratorio')).toBeInTheDocument();
-    //expect(screen.getByText('Examen de laboratorio')).toBeInTheDocument();
+    expect(within(screen.getByRole('list')).getByText('Examen de laboratorio')).toBeInTheDocument();
 
     const [url, opciones] = fetch.mock.calls[0];
     expect(url).toBe('http://localhost:3006/api/documentos?documentoPaciente=72000607');
@@ -129,17 +126,14 @@ describe('DocumentosExternosMedico (Panel Médico)', () => {
       descripcion: 'Control anual',
     };
 
-    const fetch = vi.fn()
-      .mockResolvedValueOnce(respuesta(201, { documento: docCreado }))
-      .mockResolvedValueOnce(respuesta(200, { documentos: [docCreado] }));
+    const fetch = vi.fn().mockResolvedValueOnce(respuesta(201, { documento: docCreado }));
     vi.stubGlobal('fetch', fetch);
 
     const { container } = render(<DocumentosExternosMedico />);
 
-    fireEvent.change(
-      screen.getByPlaceholderText('Número de documento del paciente (ej. 72000607)'),
-      { target: { value: '72000607' } }
-    );
+    fireEvent.change(screen.getByPlaceholderText('Ej: 72000607'), {
+      target: { value: '72000607' },
+    });
     fireEvent.change(screen.getByRole('combobox'), {
       target: { value: 'Radiografía / Imagen diagnóstica' },
     });
